@@ -1,22 +1,27 @@
-<script setup>
-import ApplicationLogo from '@/Components/ApplicationLogo.vue';
-import { Link } from '@inertiajs/vue3';
-</script>
-
 <template>
-    <div
-        class="flex min-h-screen flex-col items-center bg-gray-100 pt-6 sm:justify-center sm:pt-0"
-    >
-        <div>
-            <Link href="/">
-                <ApplicationLogo class="h-20 w-20 fill-current text-gray-500" />
-            </Link>
-        </div>
+  <div class="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center px-4">
+    <div class="w-full max-w-md">
+      <!-- Logo/Header -->
+      <div class="text-center mb-8">
+        <h1 class="text-3xl font-bold text-blue-600">
+          Smart Forum
+        </h1>
+        <p class="text-gray-600 mt-2">Academic Discussion Platform</p>
+      </div>
 
-        <div
-            class="mt-6 w-full overflow-hidden bg-white px-6 py-4 shadow-md sm:max-w-md sm:rounded-lg"
-        >
-            <slot />
-        </div>
+      <!-- Content -->
+      <div class="bg-white rounded-lg shadow-lg p-8">
+        <slot></slot>
+      </div>
+
+      <!-- Footer -->
+      <div class="text-center mt-6 text-sm text-gray-600">
+        <p>© 2026 Smart Discussion Forum. All rights reserved.</p>
+      </div>
     </div>
+  </div>
 </template>
+
+<style scoped>
+/* Additional styling if needed */
+</style>
