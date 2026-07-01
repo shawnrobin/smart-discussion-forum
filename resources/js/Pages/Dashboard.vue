@@ -1,127 +1,98 @@
 <template>
-  <AuthenticatedLayout title="Dashboard">
+  <AuthenticatedLayout
+    page-title="Dashboard"
+    :user-name="auth.user.name"
+  >
     <div class="space-y-6">
-      <!-- Welcome -->
-      <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-8">
-        <h2 class="text-3xl font-bold">Welcome back, {{ authStore.user?.name }}! 👋</h2>
-        <p class="mt-2 opacity-90">
-          You have {{ unreadNotifications }} unread notifications
+      <!-- Welcome Section -->
+      <Card title="Welcome Back!">
+        <p class="text-gray-700">
+          Hello {{ auth.user.name }}, welcome to Smart Discussion Forum.
         </p>
-      </div>
+      </Card>
 
-      <!-- Stats Cards -->
+      <!-- Stats Grid -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard label="My Groups" :value="myGroups.length" icon="📁" />
-        <StatCard label="Active Topics" :value="24" icon="💬" />
-        <StatCard label="Participation Points" :value="myScore" icon="⭐" />
+        <StatsCard label="My Groups" :value="5" />
+        <StatsCard label="Discussions" :value="24"  />
+        <StatsCard label="Quizzes" :value="3" />
       </div>
 
       <!-- Search Bar -->
-      <div class="bg-white rounded-lg shadow-md p-6">
-        <input
-          v-model="searchQuery"
-          type="text"
-          placeholder="🔍 Search topics, groups, users..."
-          class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          @keyup.enter="search"
-        />
-      </div>
-
-      <!-- My Groups -->
-      <div class="bg-white rounded-lg shadow-md p-6">
-        <div class="flex justify-between items-center mb-4">
-          <h3 class="text-2xl font-bold text-gray-900">My Groups</h3>
-          <router-link to="/groups" class="text-blue-600 hover:underline">
-            View All →
-          </router-link>
+      <Card>
+        <div class="flex gap-2">
+          <TextInput
+            v-model="searchQuery"
+            placeholder="Search topics, posts, users..."
+            class="flex-1"
+          />
+          <PrimaryButton @click="search">
+             Search
+          </PrimaryButton>
         </div>
+      </Card>
 
+      <!-- Groups Section -->
+      <Card title="My Groups">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div
-            v-for="group in myGroups.slice(0, 4)"
+            v-for="group in groups"
             :key="group.id"
-            @click="goToGroup(group.id)"
-            class="p-4 border border-gray-200 rounded-lg hover:shadow-lg cursor-pointer transition"
+            class="p-4 border border-gray-200 rounded-lg hover:shadow-md cursor-pointer transition"
           >
-            <h4 class="font-bold text-gray-900">{{ group.name }}</h4>
-            <p class="text-sm text-gray-600 mt-2">{{ group.description }}</p>
-            <div class="mt-3 flex justify-between text-xs text-gray-500">
-              <span>👥 {{ group.members_count }} members</span>
-              <span>💬 {{ group.topics_count }} topics</span>
-            </div>
+            <h3 class="font-semibold text-gray-900">{{ group.name }}</h3>
+            <p class="text-sm text-gray-600 mt-1">{{ group.members }} members</p>
+            <p class="text-xs text-gray-500 mt-2">Last activity: {{ group.lastActivity }}</p>
           </div>
         </div>
-      </div>
+      </Card>
 
-      <!-- Recent Activity -->
-      <div class="bg-white rounded-lg shadow-md p-6">
-        <h3 class="text-2xl font-bold text-gray-900 mb-4">Recent Activity</h3>
-
+      <!-- Recent Activity Section -->
+      <Card title="Recent Activity">
         <div class="space-y-3">
           <div
-            v-for="activity in recentActivities"
+            v-for="activity in activities"
             :key="activity.id"
-            class="p-4 bg-gray-50 rounded-lg border-l-4 border-blue-500"
+            class="p-3 bg-gray-50 rounded-lg"
           >
-            <p class="text-sm font-medium text-gray-900">{{ activity.message }}</p>
+            <p class="text-sm text-gray-900">{{ activity.message }}</p>
             <p class="text-xs text-gray-500 mt-1">{{ activity.time }}</p>
           </div>
         </div>
-      </div>
+      </Card>
     </div>
   </AuthenticatedLayout>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
-import axios from 'axios';
+import { ref } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import StatCard from '@/Components/StatCard.vue';
+import Card from '@/Components/Card.vue';
+import StatsCard from '@/Components/StatsCard.vue';
+import TextInput from '@/Components/TextInput.vue';
+import PrimaryButton from '@/Components/PrimaryButton.vue';
 
-const router = useRouter();
-const authStore = useAuthStore();
-
-const myGroups = ref([]);
+const auth = usePage().props.auth;
 const searchQuery = ref('');
-const myScore = ref(0);
-const unreadNotifications = ref(3);
 
-const recentActivities = ref([
-  { id: 1, message: 'Jane replied to "Understanding Recursion"', time: '2 hours ago' },
-  { id: 2, message: 'Quiz "Database Design" published', time: '4 hours ago' },
-  { id: 3, message: 'Bob marked your answer as correct', time: '1 day ago' }
+const groups = ref([
+  { id: 1, name: 'Data Structures', members: 18, lastActivity: '2 hours ago' },
+  { id: 2, name: 'Web Development', members: 25, lastActivity: '1 hour ago' },
+  { id: 3, name: 'Database Design', members: 12, lastActivity: '4 hours ago' },
+  { id: 4, name: 'OOP Concepts', members: 20, lastActivity: '30 minutes ago' },
+  { id: 5, name: 'UI/UX Discussion', members: 15, lastActivity: '1 day ago' }
 ]);
 
-onMounted(async () => {
-  // Load user's groups
-  try {
-    const response = await axios.get(`${import.meta.env.VITE_API_URL}/groups`, {
-      headers: { 'Authorization': `Bearer ${authStore.token}` }
-    });
-    myGroups.value = response.data.groups;
-
-    // Load participation score
-    const scoreResponse = await axios.get(`${import.meta.env.VITE_API_URL}/participation-score`, {
-      headers: { 'Authorization': `Bearer ${authStore.token}` }
-    });
-    myScore.value = scoreResponse.data.total_score || 0;
-  } catch (err) {
-    console.error('Failed to load data:', err);
-  }
-});
+const activities = ref([
+  { id: 1, message: 'John replied to "Understanding Recursion"', time: '2 hours ago' },
+  { id: 2, message: 'Quiz "Database Basics" is now available', time: '4 hours ago' },
+  { id: 3, message: 'You were added to "Web Development" group', time: '1 day ago' },
+  { id: 4, message: 'Mary started a new discussion "REST APIs"', time: '1 day ago' }
+]);
 
 const search = () => {
-  if (searchQuery.value.trim()) {
-    router.push({
-      name: 'search',
-      query: { q: searchQuery.value }
-    });
-  }
-};
-
-const goToGroup = (groupId) => {
-  router.push({ name: 'group-show', params: { id: groupId } });
+  console.log('Searching for:', searchQuery.value);
+  // Will implement search functionality later
 };
 </script>
