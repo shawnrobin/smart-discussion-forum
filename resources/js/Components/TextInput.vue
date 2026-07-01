@@ -1,26 +1,30 @@
-<script setup>
-import { onMounted, ref } from 'vue';
-
-const model = defineModel({
-    type: String,
-    required: true,
-});
-
-const input = ref(null);
-
-onMounted(() => {
-    if (input.value.hasAttribute('autofocus')) {
-        input.value.focus();
-    }
-});
-
-defineExpose({ focus: () => input.value.focus() });
-</script>
-
 <template>
+  <div class="mb-4">
+    <label v-if="label" class="block text-sm font-medium text-gray-700 mb-1">
+      {{ label }}
+    </label>
     <input
-        class="rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-        v-model="model"
-        ref="input"
+      :type="type"
+      :placeholder="placeholder"
+      :value="modelValue"
+      @input="$emit('update:modelValue', $event.target.value)"
+      class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
     />
+    <p v-if="error" class="mt-1 text-sm text-red-600">{{ error }}</p>
+  </div>
 </template>
+
+<script setup>
+defineProps({
+  modelValue: String,
+  label: String,
+  placeholder: String,
+  error: String,
+  type: {
+    type: String,
+    default: 'text'
+  }
+});
+
+defineEmits(['update:modelValue']);
+</script>
