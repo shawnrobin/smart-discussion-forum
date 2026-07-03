@@ -26,6 +26,10 @@ Route::middleware('auth')->group(function () {
             ]
         ]);
     })->name('dashboard');
+
+    Route::get('/profile', function () {
+        return Inertia::render('Profile/Edit');
+    })->name('profile.edit');
 });
 
 // Home route - redirect to dashboard if authenticated, login if guest
