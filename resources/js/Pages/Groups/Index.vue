@@ -1,9 +1,9 @@
 <template>
-  <AuthenticatedLayout title="All Discussion Groups">
+  <AuthenticatedLayout :page-title="'Discussion Groups'" :user-name="auth.user.name">
     <div class="space-y-6">
       <div class="flex justify-between items-center">
         <h1 class="text-3xl font-bold text-gray-900">Discussion Groups</h1>
-        <button v-if="authStore.isAdmin" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+        <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
           + Create Group
         </button>
       </div>
@@ -32,7 +32,7 @@
 
           <div class="mt-4 flex gap-2">
             <button
-              v-if="!isMember(group.id)"
+              v-if="!group.joined"
               @click="joinGroup(group.id)"
               class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 text-sm"
             >
