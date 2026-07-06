@@ -1,49 +1,53 @@
 <template>
-  <AuthenticatedLayout title="All Discussion Groups">
+  <AuthenticatedLayout page-title="Groups" :user-name="auth?.user?.name || 'User'">
     <div class="space-y-6">
       <div class="flex justify-between items-center">
-        <h1 class="text-3xl font-bold text-gray-900">Discussion Groups</h1>
-        <button v-if="authStore.isAdmin" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+        <h2 class="text-xl font-semibold">All Discussion Groups</h2>
+        <PrimaryButton @click="showCreateModal = true">
           + Create Group
-        </button>
+        </PrimaryButton>
       </div>
 
-      <!-- Search & Filter -->
-      <input
-        v-model="searchQuery"
-        placeholder="Search groups..."
-        class="w-full px-4 py-2 border border-gray-300 rounded-lg"
-      />
+      <div class="flex gap-4">
+        <TextInput
+          v-model="searchQuery"
+          placeholder="Search groups..."
+          class="flex-1"
+        />
+        <select v-model="sortBy" class="px-4 py-2 border border-gray-300 rounded-lg bg-white">
+          <option value="recent">Recent</option>
+          <option value="members">Most Members</option>
+          <option value="active">Most Active</option>
+        </select>
+      </div>
 
-      <!-- Groups Grid -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div
           v-for="group in filteredGroups"
           :key="group.id"
-          class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition"
+          @click="goToGroup(group.id)"
+          class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg cursor-pointer transition hover:translate-y-[-2px]"
         >
-          <h3 class="text-lg font-bold text-gray-900">{{ group.name }}</h3>
-          <p class="text-gray-600 text-sm mt-2">{{ group.description }}</p>
-
+          <h3 class="text-lg font-semibold text-gray-900">{{ group.name }}</h3>
+          <p class="text-sm text-gray-600 mt-2">{{ group.description }}</p>
           <div class="mt-4 flex justify-between text-sm text-gray-500">
-            <span>👥 {{ group.members_count || 0 }} members</span>
-            <span>💬 {{ group.topics_count || 0 }} topics</span>
+            <span>👥 {{ group.members }} members</span>
+            <span>💬 {{ group.discussions }} discussions</span>
           </div>
-
-          <div class="mt-4 flex gap-2">
+          <div class="mt-4">
             <button
-              v-if="!isMember(group.id)"
-              @click="joinGroup(group.id)"
-              class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 text-sm"
+              v-if="!group.joined"
+              @click.stop="joinGroup(group.id)"
+              class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               Join
             </button>
             <button
               v-else
-              @click="goToGroup(group.id)"
-              class="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 text-sm"
+              @click.stop="leaveGroup(group.id)"
+              class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
             >
-              Enter Group
+              Leave
             </button>
           </div>
         </div>
@@ -53,53 +57,51 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { useAuthStore } from '@/stores/auth';
-import axios from 'axios';
+import { ref, computed } from 'vue';
+import { usePage, router } from '@inertiajs/vue3';
+
+// If your alias @ fails, replace these paths with relative ones (e.g., '../../Components/TextInput.vue')
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import TextInput from '@/Components/TextInput.vue';
+import PrimaryButton from '@/Components/PrimaryButton.vue';
 
-const router = useRouter();
-const authStore = useAuthStore();
+// Safely extract props using a computed property or direct hook assignment
+const page = usePage();
+const auth = computed(() => page.props.auth);
 
-const groups = ref([]);
 const searchQuery = ref('');
-const myGroupIds = ref([]);
+const sortBy = ref('recent');
+const showCreateModal = ref(false);
+
+const groups = ref([
+  { id: 1, name: 'Data Structures', description: 'Learn about arrays, linked lists, trees, and graphs', members: 18, discussions: 45, joined: true },
+  { id: 2, name: 'Web Development', description: 'Frontend and backend web development', members: 25, discussions: 62, joined: true },
+  { id: 3, name: 'Database Design', description: 'SQL, NoSQL, and database design patterns', members: 12, discussions: 28, joined: false },
+  { id: 4, name: 'OOP Concepts', description: 'Object-Oriented Programming in Java and C++', members: 20, discussions: 38, joined: true },
+  { id: 5, name: 'UI/UX Discussion', description: 'User interface and user experience design', members: 15, discussions: 21, joined: false },
+  { id: 6, name: 'Machine Learning', description: 'Introduction to ML algorithms and frameworks', members: 22, discussions: 55, joined: true }
+]);
 
 const filteredGroups = computed(() => {
-  return groups.value.filter(g =>
-    g.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+  return groups.value.filter(group =>
+    group.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+    group.description.toLowerCase().includes(searchQuery.value.toLowerCase())
   );
 });
 
-onMounted(async () => {
-  try {
-    const response = await axios.get(`${import.meta.env.VITE_API_URL}/groups`, {
-      headers: { 'Authorization': `Bearer ${authStore.token}` }
-    });
-    groups.value = response.data.groups;
-  } catch (err) {
-    console.error('Failed to load groups:', err);
-  }
-});
-
-const isMember = (groupId) => myGroupIds.value.includes(groupId);
-
-const joinGroup = async (groupId) => {
-  try {
-    await axios.post(
-      `${import.meta.env.VITE_API_URL}/groups/${groupId}/join`,
-      {},
-      { headers: { 'Authorization': `Bearer ${authStore.token}` } }
-    );
-    myGroupIds.value.push(groupId);
-    alert('Joined group successfully!');
-  } catch (err) {
-    alert('Failed to join group');
-  }
+const goToGroup = (groupId) => {
+  router.visit(`/groups/${groupId}`);
 };
 
-const goToGroup = (groupId) => {
-  router.push({ name: 'group-show', params: { id: groupId } });
+const joinGroup = (groupId) => {
+  console.log('Joining group:', groupId);
+  const group = groups.value.find(g => g.id === groupId);
+  if (group) group.joined = true;
+};
+
+const leaveGroup = (groupId) => {
+  console.log('Leaving group:', groupId);
+  const group = groups.value.find(g => g.id === groupId);
+  if (group) group.joined = false;
 };
 </script>
