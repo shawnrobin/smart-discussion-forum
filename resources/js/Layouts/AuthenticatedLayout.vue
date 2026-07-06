@@ -1,3 +1,4 @@
+<NotificationBell />
 <template>
   <div class="flex h-screen bg-gray-100">
     <!-- Sidebar Navigation -->
@@ -32,10 +33,8 @@
       <header class="bg-white shadow-sm p-6 flex justify-between items-center">
         <h1 class="text-2xl font-semibold text-gray-900">{{ pageTitle }}</h1>
         <div class="flex items-center gap-4">
-          <button class="relative">
-            🔔
-            <span class="absolute top-0 right-0 w-2 h-2 bg-red-600 rounded-full"></span>
-          </button>
+          <NotificationBell />
+          
           <span class="text-sm text-gray-600">{{ userName }}</span>
         </div>
       </header>
@@ -52,7 +51,7 @@
 import { ref } from 'vue';
 import { router } from '@inertiajs/vue3';
 import NavLink from '@/Components/NavLink.vue';
-
+import NotificationBell from '@/Components/NotificationBell.vue';
 defineProps({
   pageTitle: String,
   userName: String

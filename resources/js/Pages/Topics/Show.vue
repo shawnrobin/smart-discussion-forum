@@ -2,45 +2,75 @@
   <AuthenticatedLayout title="Discussion">
     <div class="max-w-4xl mx-auto space-y-6">
       <!-- Original Topic -->
-      <div class="bg-white rounded-lg shadow-md p-8">
-        <div class="flex gap-4">
-          <div class="w-12 h-12 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold flex-shrink-0">
-            {{ topic?.author?.name?.[0] }}
-          </div>
+<div class="bg-white rounded-lg shadow-md p-8">
+  <div class="flex gap-4">
+    <div
+      class="w-12 h-12 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold flex-shrink-0"
+    >
+      {{ topic?.author?.name?.[0] }}
+    </div>
 
-          <div class="flex-1">
-            <h2 class="text-3xl font-bold text-gray-900">{{ topic?.title }}</h2>
-            <p class="text-sm text-gray-500 mt-1">
-              by {{ topic?.author?.name }} • {{ formatDate(topic?.created_at) }}
-            </p>
+    <div class="flex-1">
+      <!-- Title -->
+      <h2 class="text-3xl font-bold text-gray-900">
+        {{ topic?.title }}
+      </h2>
 
-            <div class="mt-4 text-gray-800 text-lg">{{ topic?.description }}</div>
+      <!-- Meta Section -->
+      <p class="text-sm text-gray-500 mt-1">
+        by {{ topic?.author?.name }} • {{ formatDate(topic?.created_at) }}
+      </p>
 
-            <!-- Status Badges -->
-            <div class="mt-4 flex gap-2">
-              <span v-if="topic?.is_question" class="px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                ❓ Question
-              </span>
-              <span v-if="topic?.is_answered" class="px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                ✓ Answered
-              </span>
-            </div>
+      <!-- Meta Actions -->
+      <div class="mt-4 flex gap-4">
+        <button
+          @click="exportPdf"
+          class="text-gray-600 hover:text-blue-600 transition-colors"
+        >
+          📥 Export PDF
+        </button>
 
-            <!-- Actions -->
-            <div class="mt-6 flex gap-4 text-sm">
-              <button @click="exportPdf" class="text-blue-600 hover:underline flex items-center gap-1">
-                📥 Export PDF
-              </button>
-              <button @click="shareToSocial" class="text-blue-600 hover:underline flex items-center gap-1">
-                📤 Share
-              </button>
-              <button class="text-gray-600 hover:underline flex items-center gap-1">
-                👍 Like ({{ topic?.likes || 0 }})
-              </button>
-            </div>
-          </div>
-        </div>
+        <button
+          @click="shareToSocial"
+          class="text-gray-600 hover:text-blue-600 transition-colors"
+        >
+          📤 Share
+        </button>
       </div>
+
+      <!-- Topic Description -->
+      <div class="mt-4 text-gray-800 text-lg">
+        {{ topic?.description }}
+      </div>
+
+      <!-- Status Badges -->
+      <div class="mt-4 flex gap-2">
+        <span
+          v-if="topic?.is_question"
+          class="px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
+        >
+          ❓ Question
+        </span>
+
+        <span
+          v-if="topic?.is_answered"
+          class="px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full"
+        >
+          ✓ Answered
+        </span>
+      </div>
+
+      <!-- Actions -->
+      <div class="mt-6 flex gap-4 text-sm">
+        <button
+          class="text-gray-600 hover:underline flex items-center gap-1"
+        >
+          👍 Like ({{ topic?.likes || 0 }})
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 
       <!-- Replies Section (Requirement #2: Nested/Threaded) -->
       <div>
@@ -96,6 +126,7 @@
 
         <form @submit.prevent="submitReply" class="space-y-4">
           <textarea
+          id=""
             v-model="newReply.content"
             placeholder="Share your thoughts..."
             rows="6"
@@ -204,6 +235,7 @@ const submitReply = async () => {
     // Reload topic
     location.reload();
   } catch (err) {
+    console.error('Failed to post reply:', err);
     alert('Failed to post reply');
   } finally {
     loading.value = false;
@@ -219,6 +251,7 @@ const markAsAnswer = async (messageId) => {
     );
     location.reload();
   } catch (err) {
+    console.error('Failed to mark answer:', err);
     alert('Failed to mark answer');
   }
 };
