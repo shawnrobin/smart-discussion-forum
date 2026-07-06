@@ -45,3 +45,6 @@ Route::get('/Topics', function () {
 Route::get('/Groups', function () {
     return Inertia::render('Groups/Show');
 });
+Route::get('/Groups', function () {
+    return Inertia::render('Groups/Index');
+});
