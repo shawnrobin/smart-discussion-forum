@@ -45,6 +45,6 @@ Route::get('/Topics', function () {
 Route::get('/Groups', function () {
     return Inertia::render('Groups/Show');//existing route
 });
-Route::get('/Groups', function () {
-    return Inertia::render('Groups/Index');//new route  
+Route::get('/GroupList', function () {
+    return Inertia::render('GroupList/Index');//new route  
 });
