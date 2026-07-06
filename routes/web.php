@@ -9,6 +9,8 @@ Route::middleware('guest')->group(function () {
         return Inertia::render('Auth/Login');
     })->name('login');
 
+   
+
     Route::get('/register', function () {
         return Inertia::render('Auth/Register');
     })->name('register');
@@ -35,4 +37,11 @@ Route::middleware('auth')->group(function () {
 // Home route - redirect to dashboard if authenticated, login if guest
 Route::get('/', function () {
     return auth()->check() ? redirect('/dashboard') : redirect('/login');
+});
+ 
+Route::get('/Topics', function () {
+    return Inertia::render('Topics/Show');
+});
+Route::get('/Groups', function () {
+    return Inertia::render('Groups/Show');
 });
