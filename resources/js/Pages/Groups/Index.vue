@@ -9,7 +9,9 @@
       </div>
 
       <!-- Search & Filter -->
+      <label for="group-search" class="sr-only">Search groups</label>
       <input
+        id="group-search"
         v-model="searchQuery"
         placeholder="Search groups..."
         class="w-full px-4 py-2 border border-gray-300 rounded-lg"
@@ -95,7 +97,12 @@ const joinGroup = async (groupId) => {
     myGroupIds.value.push(groupId);
     alert('Joined group successfully!');
   } catch (err) {
-    alert('Failed to join group');
+    console.error('Failed to join group:', err);
+    const message =
+      err.response?.data?.message ||
+      err.message ||
+      'Failed to join group.';
+    alert(message);
   }
 };
 
