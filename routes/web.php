@@ -38,13 +38,3 @@ Route::middleware('auth')->group(function () {
 Route::get('/', function () {
     return auth()->check() ? redirect('/dashboard') : redirect('/login');
 });
- 
-Route::get('/Topics', function () {
-    return Inertia::render('Topics/Show');
-});
-Route::get('/Groups', function () {
-    return Inertia::render('Groups/Show');
-});
-Route::get('/Groups', function () {
-    return Inertia::render('Groups/');
-});
