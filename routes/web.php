@@ -46,6 +46,11 @@ Route::get('/groups/{id}', function ($id) {
     return Inertia::render('Groups/Show');
 })->name('groups.show');
 
+// Main Overview List Page
+Route::get('/groups', function () {
+    return Inertia::render('GroupList/Index');
+})->name('groups.index');
+
 // Main Overview List Page 
 Route::get('/groups', function () {
     return Inertia::render('GroupList/Index');
