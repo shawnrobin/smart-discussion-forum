@@ -24,11 +24,22 @@
           placeholder="Search topics by title or content..." 
           class="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
         />
-        <select v-model="filterBy" class="px-4 py-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-indigo-500">
-          <option value="recent">Sort by: Recent</option>
-          <option value="popular">Sort by: Most Popular</option>
-        </select>
-      </div>
+       <div class="flex items-center">
+    <label for="filterBy" class="mr-2 text-sm text-gray-600">
+        Sort by
+    </label>
+
+    <select
+        id="filterBy"
+        v-model="filterBy"
+        class="px-4 py-2 border border-gray-300 rounded-md"
+    >
+        <option value="recent">Recent</option>
+        <option value="popular">Most Popular</option>
+        <option value="most_replied">Most Replied</option>
+        <option value="unanswered">Unanswered</option>
+    </select>
+</div>
 
       <!-- Topics List Layout -->
       <div class="space-y-4">
