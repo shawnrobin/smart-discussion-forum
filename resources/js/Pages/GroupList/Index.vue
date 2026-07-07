@@ -21,8 +21,7 @@
         </select>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div
+     <div
           v-for="group in filteredGroups"
           :key="group.id"
           @click="goToGroup(group.id)"
@@ -34,25 +33,27 @@
             <span>👥 {{ group.members }} members</span>
             <span>💬 {{ group.discussions }} discussions</span>
           </div>
-          <div class="mt-4">
+          
+          <div class="mt-4" @click.stop>
             <button
               v-if="!group.joined"
-              @click.stop="joinGroup(group.id)"
+              @click="joinGroup(group.id)"
               class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               Join
             </button>
             <button
               v-else
-              @click.stop="leaveGroup(group.id)"
+              @click="leaveGroup(group.id)"
               class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
             >
               Leave
             </button>
+         
           </div>
         </div>
       </div>
-    </div>
+    
   </AuthenticatedLayout>
 </template>
 

@@ -42,9 +42,11 @@ Route::get('/', function () {
 Route::get('/Topics', function () {
     return Inertia::render('Topics/Show');//existing route
 });
-Route::get('/Groups', function () {
-    return Inertia::render('Groups/Show');//existing route
-});
-Route::get('/GroupList', function () {
-    return Inertia::render('GroupList/Index');//new route  
-});
+Route::get('/groups/{id}', function ($id) {
+    return Inertia::render('Groups/Show');
+})->name('groups.show');
+
+// Main Overview List Page 
+Route::get('/groups', function () {
+    return Inertia::render('GroupList/Index');
+})->name('groups.index');

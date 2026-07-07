@@ -1,160 +1,228 @@
 <template>
-  <AuthenticatedLayout :page-title="group.name" :user-name="auth.user.name">
-    <div class="space-y-6">
-      <!-- Group Info & Create Button -->
+  <AuthenticatedLayout :auth="auth" page-title="Group Details">
+    <div class="space-y-6 p-6">
+      
+      <!-- Group Info Header -->
       <div class="bg-white rounded-lg shadow-md p-6">
         <div class="flex justify-between items-start">
           <div>
-            <h2 class="text-2xl font-bold text-gray-900">{{ group.name }}</h2>
-            <p class="text-gray-600 mt-2">{{ group.description }}</p>
-            <p class="text-sm text-gray-500 mt-4">
-              👥 {{ group.members }} members • 💬 {{ group.topics }} topics
-            </p>
+            <h2 class="text-2xl font-bold text-gray-900">Data Structures & Algorithms</h2>
+            <p class="text-gray-600 mt-2">Discussion forum for mastering core engineering concepts.</p>
+            <p class="text-sm text-gray-500 mt-4">👥 18 members • 💬 {{ topics.length }} topics</p>
           </div>
-          <PrimaryButton @click="showCreateTopic = true">
+          <button @click="openCreateModal" class="px-4 py-2 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700 transition">
             + New Topic
-          </PrimaryButton>
+          </button>
         </div>
       </div>
 
-      <!-- Search & Filter -->
-      <div class="flex gap-4">
-        <TextInput
-          v-model="searchQuery"
-          placeholder="Search topics..."
-          class="flex-1"
+      <!-- TASK 12: Search & Filter Bar -->
+      <div class="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-lg shadow-sm">
+        <input 
+          v-model="searchQuery" 
+          type="text" 
+          placeholder="Search topics by title or content..." 
+          class="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
         />
-        <select v-model="filterBy" class="px-4 py-2 border border-gray-300 rounded-lg">
-          <option value="recent">Recent</option>
-          <option value="popular">Most Replied</option>
-          <option value="unanswered">Unanswered</option>
+        <select v-model="filterBy" class="px-4 py-2 border border-gray-300 rounded-md bg-white focus:ring-2 focus:ring-indigo-500">
+          <option value="recent">Sort by: Recent</option>
+          <option value="popular">Sort by: Most Popular</option>
         </select>
       </div>
 
-      <!-- Topics List -->
+      <!-- Topics List Layout -->
       <div class="space-y-4">
-        <div
-          v-for="topic in filteredTopics"
-          :key="topic.id"
-          @click="goToTopic(topic.id)"
-          class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg cursor-pointer transition"
+        <div v-if="filteredTopics.length === 0" class="text-center py-12 bg-white rounded-lg shadow-sm text-gray-500">
+          No topics found matching your criteria.
+        </div>
+
+        <div 
+          v-for="topic in filteredTopics" 
+          :key="topic.id" 
+          class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition relative border border-gray-100"
         >
           <div class="flex gap-4">
-            <!-- Author Avatar -->
-            <div class="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold">
-              {{ topic.author.initials }}
+            <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white font-bold shrink-0">
+              {{ topic.authorInitials }}
             </div>
-
-            <!-- Content -->
             <div class="flex-1">
-              <div class="flex items-start justify-between">
+              <div class="flex justify-between items-start">
                 <div>
                   <h3 class="text-lg font-semibold text-gray-900">{{ topic.title }}</h3>
-                  <p class="text-sm text-gray-600 mt-1">{{ topic.excerpt }}</p>
+                  <p class="text-gray-600 mt-1 text-sm whitespace-pre-line">{{ topic.body }}</p>
                 </div>
-                <span
-                  v-if="topic.status === 'answered'"
-                  class="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full"
-                >
-                  ✓ Answered
-                </span>
-                <span
-                  v-else
-                  class="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full"
-                >
-                  ? Unanswered
-                </span>
+                
+                <!-- TASK 11: Edit/Delete Actions -->
+                <div class="flex gap-2">
+                  <button @click="openEditModal(topic)" class="text-xs text-amber-600 hover:underline px-2 py-1 bg-amber-50 rounded">Edit</button>
+                  <button @click="deleteTopic(topic.id)" class="text-xs text-rose-600 hover:underline px-2 py-1 bg-rose-50 rounded">Delete</button>
+                </div>
               </div>
 
-              <!-- Meta -->
-              <div class="mt-4 flex justify-between text-sm text-gray-500">
-                <span>by {{ topic.author.name }} • {{ topic.createdAt }}</span>
-                <span>💬 {{ topic.replies }} replies • 👁️ {{ topic.views }} views</span>
+              <div class="mt-4 flex justify-between items-center text-xs text-gray-500">
+                <span>Posted by <strong>{{ topic.author }}</strong> • {{ topic.date }}</span>
+                <span class="bg-gray-100 px-2 py-1 rounded-full font-medium text-gray-700">💬 {{ topic.replies }} replies</span>
               </div>
             </div>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Pagination -->
-      <div class="flex justify-center gap-2">
-        <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-          Previous
-        </button>
-        <button class="px-4 py-2 bg-blue-600 text-white rounded-lg">1</button>
-        <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">2</button>
-        <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-          Next
-        </button>
+    <!-- TASK 10 & 11: Unified Create / Edit Modal Interface -->
+    <div v-if="showModal" class="fixed inset-0 bg-gray-900 bg-opacity-50 flex items-center justify-center p-4 z-50">
+      <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+        <h3 class="text-xl font-bold text-gray-900 mb-4">
+          {{ isEditing ? 'Edit Topic' : 'Create New Topic' }}
+        </h3>
+        
+        <form @submit.prevent="saveTopic" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Topic Title</label>
+            <input 
+              v-model="form.title" 
+              type="text" 
+              required
+              placeholder="e.g., Understanding QuickSort"
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Content Description</label>
+            <textarea 
+              v-model="form.body" 
+              rows="4" 
+              required
+              placeholder="Describe your question or discussion point in detail..."
+              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+            ></textarea>
+          </div>
+
+          <div class="flex justify-end gap-3 pt-2">
+            <button type="button" @click="closeModal" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
+              Cancel
+            </button>
+            <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700">
+              {{ isEditing ? 'Save Changes' : 'Post Topic' }}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
+
   </AuthenticatedLayout>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
-import { usePage, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import TextInput from '@/Components/TextInput.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
 
-const auth = usePage().props.auth;
-const group = ref({
-  id: 1,
-  name: 'Data Structures',
-  description: 'Learn about arrays, linked lists, trees, graphs, and more!',
-  members: 18,
-  topics: 45
+// Safe Layout Protection Object
+const auth = ref({
+  user: {
+    name: 'Developer Mode',
+    email: 'dev@forum.com'
+  }
 });
 
-const searchQuery = ref('');
-const filterBy = ref('recent');
-const showCreateTopic = ref(false);
-
+// Mock Database State for Topics
 const topics = ref([
   {
     id: 1,
-    title: 'Understanding Recursion',
-    excerpt: 'I\'m struggling to understand how recursion works. Can someone explain with examples?',
-    author: { name: 'John Doe', initials: 'JD' },
-    createdAt: '2 days ago',
-    replies: 8,
-    views: 52,
-    status: 'answered'
+    title: 'Understanding Recursion Stack Overflows',
+    body: 'Can someone explain exactly how memory allocation behaves when a recursive function fails to hit its base case in Java?',
+    author: 'Alex Namanya',
+    authorInitials: 'AN',
+    date: '2 hours ago',
+    replies: 5
   },
   {
     id: 2,
-    title: 'Binary Search Trees Implementation',
-    excerpt: 'How do I implement a BST efficiently in Java?',
-    author: { name: 'Jane Smith', initials: 'JS' },
-    createdAt: '1 day ago',
-    replies: 12,
-    views: 78,
-    status: 'answered'
-  },
-  {
-    id: 3,
-    title: 'Sorting Algorithm Comparison',
-    excerpt: 'What\'s the difference between Quick Sort and Merge Sort?',
-    author: { name: 'Bob Wilson', initials: 'BW' },
-    createdAt: '6 hours ago',
-    replies: 0,
-    views: 15,
-    status: 'unanswered'
+    title: 'Best approach for balancing Binary Search Trees',
+    body: 'Is it worth manually implementing an AVL tree balancing rotation sequence, or should we rely on high-level library primitives for academic projects?',
+    author: 'Dianah Petra',
+    authorInitials: 'DP',
+    date: '1 day ago',
+    replies: 14
   }
 ]);
 
-const filteredTopics = computed(() => {
-  return topics.value
-    .filter(t => t.title.toLowerCase().includes(searchQuery.value.toLowerCase()))
-    .sort((a, b) => {
-      if (filterBy.value === 'popular') return b.replies - a.replies;
-      if (filterBy.value === 'unanswered') return a.replies - b.replies;
-      return 0;
-    });
+// Search & Filtering State (Task 12)
+const searchQuery = ref('');
+const filterBy = ref('recent');
+
+// Modal & Form State (Task 10 & 11)
+const showModal = ref(false);
+const isEditing = ref(false);
+const currentTopicId = ref(null);
+const form = ref({
+  title: '',
+  body: ''
 });
 
-const goToTopic = (topicId) => {
-  router.visit(`/groups/${group.value.id}/topics/${topicId}`);
+// Task 12 Logic: Computed filtering and sorting
+const filteredTopics = computed(() => {
+  let list = topics.value.filter(topic => {
+    const matchesTitle = topic.title.toLowerCase().includes(searchQuery.value.toLowerCase());
+    const matchesBody = topic.body.toLowerCase().includes(searchQuery.value.toLowerCase());
+    return matchesTitle || matchesBody;
+  });
+
+  if (filterBy.value === 'popular') {
+    return list.sort((a, b) => b.replies - a.replies);
+  }
+  return list.sort((a, b) => b.id - a.id); // Default to recent (higher ID first)
+});
+
+// Modal Actions
+const openCreateModal = () => {
+  isEditing.value = false;
+  form.value.title = '';
+  form.value.body = '';
+  showModal.value = true;
+};
+
+const openEditModal = (topic) => {
+  isEditing.value = true;
+  currentTopicId.value = topic.id;
+  form.value.title = topic.title;
+  form.value.body = topic.body;
+  showModal.value = true;
+};
+
+const closeModal = () => {
+  showModal.value = false;
+};
+
+// Task 10 & 11 Backend Handler Simulation
+const saveTopic = () => {
+  if (isEditing.value) {
+    // Task 11: Handle Edit
+    const topic = topics.value.find(t => t.id === currentTopicId.value);
+    if (topic) {
+      topic.title = form.value.title;
+      topic.body = form.value.body;
+    }
+  } else {
+    // Task 10: Handle Create
+    const newId = topics.value.length ? Math.max(...topics.value.map(t => t.id)) + 1 : 1;
+    topics.value.unshift({
+      id: newId,
+      title: form.value.title,
+      body: form.value.body,
+      author: 'Developer Mode',
+      authorInitials: 'DM',
+      date: 'Just now',
+      replies: 0
+    });
+  }
+  closeModal();
+};
+
+// Task 11: Handle Delete
+const deleteTopic = (id) => {
+  if (confirm('Are you absolutely sure you want to delete this discussion topic?')) {
+    topics.value = topics.value.filter(t => t.id !== id);
+  }
 };
 </script>
