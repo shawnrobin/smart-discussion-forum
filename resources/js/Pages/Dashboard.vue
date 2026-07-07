@@ -69,7 +69,7 @@ import { ref } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Card from '@/Components/Card.vue';
-import StatsCard from '@/Components/StatsCard.vue';
+import StatsCard from '@/Components/Statscard.vue';
 import TextInput from '@/Components/TextInput.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 
