@@ -1,60 +1,38 @@
 <template>
-  <AuthenticatedLayout page-title="Discussion" :user-name="auth.user.name">
+  <AuthenticatedLayout
+    page-title="Discussion"
+    :user-name="auth.user?.name ?? 'Guest'"
+>
     <div class="space-y-6 max-w-4xl mx-auto">
       <!-- Original Topic -->
-      <div class="bg-white rounded-lg shadow-md p-8">
+      <Card :title="topic.title">
         <div class="flex gap-4">
-          <div class="w-12 h-12 rounded-full bg-blue-500 text-white flex items-center justify-center font-bold flex-shrink-0">
-            {{ topic?.author?.name?.[0] }}
+          <button @click="exportPDF" class="text-gray-600 hover:text-blue-600">
+               📥 Export PDF
+           </button>
+            <button @click="shareToSocial" class="text-gray-600 hover:text-blue-600">
+              📤 Share
+           </button>
+          <div class="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold flex-shrink-0">
+            {{ topic.author.initials }}
           </div>
-
           <div class="flex-1">
-            <h2 class="text-3xl font-bold text-gray-900">{{ topic?.title }}</h2>
-           <p class="text-sm text-gray-500 mt-1">
-  by {{ topic?.author?.name }} • {{ formatDate(topic?.created_at) }}
-</p>
-
-<!-- Meta Actions -->
-<div class="mt-4 flex gap-4">
-  <button
-    @click="exportPdf"
-    class="text-gray-600 hover:text-blue-600 transition-colors"
-  >
-    📥 Export PDF
-  </button>
-
-  <button
-    @click="shareToSocial"
-    class="text-gray-600 hover:text-blue-600 transition-colors"
-  >
-    📤 Share
-  </button>
-</div>
-
-<div class="mt-4 text-gray-800 text-lg">
-  {{ topic?.description }}
-</div>
-
-<!-- Status Badges -->
-<div class="mt-4 flex gap-2">
-              <span v-if="topic?.is_question" class="px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                ❓ Question
-              </span>
-              <span v-if="topic?.is_answered" class="px-3 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                ✓ Answered
+            <div class="flex items-center gap-2">
+              <span class="font-semibold">{{ topic.author.name }}</span>
+              <span v-if="topic.author.role === 'lecturer'" class="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded">
+                Lecturer
               </span>
             </div>
-
-            <!-- Actions -->
-<!-- Actions -->
-<div class="mt-6 flex gap-4 text-sm">
-  <button class="text-gray-600 hover:underline flex items-center gap-1">
-    👍 Like ({{ topic?.likes || 0 }})
-  </button>
-</div>
+            <p class="text-sm text-gray-500 mt-1">{{ topic.createdAt }}</p>
+            <p class="mt-4 text-gray-800">{{ topic.content }}</p>
+            <div class="mt-4 flex gap-4 text-sm">
+              <button class="text-gray-600 hover:text-blue-600">👍 Like ({{ topic.likes }})</button>
+              <button class="text-gray-600 hover:text-blue-600">💬 Reply</button>
+              <button class="text-gray-600 hover:text-red-600">🚩 Report</button>
+            </div>
           </div>
         </div>
-      </div>
+      </Card>
 
       <!-- Replies Section -->
       <div>
@@ -94,38 +72,26 @@
       <!-- Reply Form -->
       <Card title="Your Reply">
         <form @submit.prevent="submitReply" class="space-y-4">
-          <label for="reply-content" class="sr-only">Your reply</label>
-          <textarea
-            id="reply-content"
-            v-model="newReply.content"
-            placeholder="Share your thoughts..."
-            rows="6"
-            class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-          ></textarea>
-
-          <!-- User Exclusion Feature (Requirement #3) -->
-          <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-200">
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input v-model="newReply.useExclusion" type="checkbox" class="w-4 h-4" />
-              <span class="text-sm font-medium text-gray-700">
-                Exclude certain members from seeing this message
-              </span>
+          <div>
+            <label for="reply-content" class="block text-sm font-medium text-gray-700 mb-2">
+              Your Reply
             </label>
-
-            <fieldset v-if="newReply.useExclusion" class="mt-3">
-              <legend class="text-xs font-medium text-gray-600 block mb-2">Select members to exclude:</legend>
-              <div class="space-y-1 max-h-32 overflow-y-auto">
-                <label v-for="member in groupMembers" :key="member.id" class="flex items-center gap-2 text-sm">
-                  <input
-                    :value="member.id"
-                    v-model.number="newReply.excludedUsers"
-                    type="checkbox"
-                    class="w-3 h-3"
-                  />
-                  <span>{{ member.name }}</span>
-                </label>
-              </div>
-            </fieldset>
+            <textarea
+              id="reply-content"
+              v-model="newReply.content"
+              placeholder="Share your thoughts..."
+              rows="6"
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            ></textarea>
+          </div>
+          <div class="flex items-center gap-2">
+            <input
+              id="reply-is-answer"
+              v-model="newReply.isAnswer"
+              type="checkbox"
+              class="w-4 h-4 text-blue-600"
+            />
+            <label for="reply-is-answer" class="text-sm text-gray-700">Mark as answer</label>
           </div>
           <PrimaryButton type="submit">
             Post Reply
@@ -188,96 +154,21 @@ const topic = ref({
 
 const newReply = ref({
   content: '',
-  useExclusion: false,
-  excludedUsers: []
+  isAnswer: false
 });
 
-const canMarkAnswer = computed(() => {
-  return authStore.user?.id === topic.value?.user_id ||
-         authStore.isAdmin ||
-         authStore.isLecturer;
-});
-
-onMounted(async () => {
-  try {
-    const response = await axios.get(
-      `${import.meta.env.VITE_API_URL}/topics/${route.params.id}`,
-      { headers: { 'Authorization': `Bearer ${authStore.token}` } }
-    );
-    topic.value = response.data.topic;
-
-    // Load group members
-    const membersResponse = await axios.get(
-      `${import.meta.env.VITE_API_URL}/groups/${topic.value.group_id}/members`,
-      { headers: { 'Authorization': `Bearer ${authStore.token}` } }
-    );
-    groupMembers.value = membersResponse.data.members;
-  } catch (err) {
-    console.error('Failed to load topic:', err);
-  }
-});
-
-const submitReply = async () => {
-  loading.value = true;
-
-  try {
-    await axios.post(
-      `${import.meta.env.VITE_API_URL}/topics/${topic.value.id}/messages`,
-      {
-        content: newReply.value.content,
-        excluded_users: newReply.value.useExclusion ? newReply.value.excludedUsers : []
-      },
-      { headers: { 'Authorization': `Bearer ${authStore.token}` } }
-    );
-
-    // Reset form
-    newReply.value = { content: '', useExclusion: false, excludedUsers: [] };
-    
-    // Reload topic
-    location.reload();
-  } catch (err) {
-    console.error('Failed to post reply:', err);
-    alert('Failed to post reply');
-  } finally {
-    loading.value = false;
-  }
-};
-
-const markAsAnswer = async (messageId) => {
-  try {
-    await axios.post(
-      `${import.meta.env.VITE_API_URL}/messages/${messageId}/mark-answer`,
-      {},
-      { headers: { 'Authorization': `Bearer ${authStore.token}` } }
-    );
-    location.reload();
-  } catch (err) {
-    console.error('Failed to mark answer:', err);
-    alert('Failed to mark answer');
-  }
-};
-
-const exportPdf = () => {
-  alert('PDF export feature coming soon');
+const exportPDF = () => {
+  console.log('Exporting topic as PDF');
+  window.print();
 };
 
 const shareToSocial = () => {
   alert('Social sharing feature coming soon');
 };
-
-const replyTo = (messageId) => {
-  alert('Reply to nested message feature coming soon');
-};
-
-const formatDate = (date) => {
-  if (!date) return '';
-  return new Date(date).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+const submitReply = () => {
+  console.log('Submitting reply:', newReply.value);
+  // API call would go here
+  newReply.value.content = '';
+  newReply.value.isAnswer = false;
 };
 </script>
-
-

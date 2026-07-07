@@ -4,9 +4,11 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
+const LOGIN_ROUTE = '/login';
+
 // Public routes (guest only)
 Route::middleware('guest')->group(function () {
-    Route::get('/login', function () {
+    Route::get(LOGIN_ROUTE, function () {
         return Inertia::render('Auth/Login');
     })->name('login');
 
@@ -17,7 +19,7 @@ Route::middleware('guest')->group(function () {
     })->name('register');
 
     Route::post('/register', [\App\Http\Controllers\AuthController::class, 'store'])->name('register.store');
-    Route::post('/login', [\App\Http\Controllers\AuthController::class, 'login'])->name('login.store');
+    Route::post(LOGIN_ROUTE, [\App\Http\Controllers\AuthController::class, 'login'])->name('login.store');
 });
 
 // Protected routes (authenticated only)
@@ -40,19 +42,15 @@ Route::get('/', function () {
     return Auth::check() ? redirect('/dashboard') : redirect('/login');
 });
  
-Route::get('/Topics', function () {
+Route::get('/topics', function () {
     return Inertia::render('Topics/Show');//existing route
 });
-Route::get('/groups/{id}', function ($id) {
-    return Inertia::render('Groups/Show');
-})->name('groups.show');
-
-// Main Overview List Page
 Route::get('/groups', function () {
-    return Inertia::render('GroupList/Index');
-})->name('groups.index');
-
-// Main Overview List Page 
-Route::get('/groups', function () {
-    return Inertia::render('GroupList/Index');
-})->name('groups.index');
+    return Inertia::render('Groups/Show');//existing route
+});
+Route::get('/grouplists', function () {
+    return Inertia::render('GroupList/Index');//new route
+});
+Route::get('/quizzes', function () {
+    return Inertia::render('Quizzes/Index');//new route
+});
