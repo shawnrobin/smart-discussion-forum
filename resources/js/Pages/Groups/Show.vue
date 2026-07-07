@@ -24,11 +24,14 @@
           placeholder="Search topics..."
           class="flex-1"
         />
-        <select v-model="filterBy" class="px-4 py-2 border border-gray-300 rounded-lg">
-          <option value="recent">Recent</option>
-          <option value="popular">Most Replied</option>
-          <option value="unanswered">Unanswered</option>
-        </select>
+        <div class="flex items-center">
+          <label for="filterBy" class="mr-2 text-sm text-gray-600">Sort by</label>
+          <select id="filterBy" v-model="filterBy" class="px-4 py-2 border border-gray-300 rounded-lg">
+            <option value="recent">Recent</option>
+            <option value="popular">Most Replied</option>
+            <option value="unanswered">Unanswered</option>
+          </select>
+        </div>
       </div>
 
       <!-- Topics List -->

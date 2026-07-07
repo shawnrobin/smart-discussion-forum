@@ -10,14 +10,33 @@
 
           <div class="flex-1">
             <h2 class="text-3xl font-bold text-gray-900">{{ topic?.title }}</h2>
-            <p class="text-sm text-gray-500 mt-1">
-              by {{ topic?.author?.name }} • {{ formatDate(topic?.created_at) }}
-            </p>
+           <p class="text-sm text-gray-500 mt-1">
+  by {{ topic?.author?.name }} • {{ formatDate(topic?.created_at) }}
+</p>
 
-            <div class="mt-4 text-gray-800 text-lg">{{ topic?.description }}</div>
+<!-- Meta Actions -->
+<div class="mt-4 flex gap-4">
+  <button
+    @click="exportPdf"
+    class="text-gray-600 hover:text-blue-600 transition-colors"
+  >
+    📥 Export PDF
+  </button>
 
-            <!-- Status Badges -->
-            <div class="mt-4 flex gap-2">
+  <button
+    @click="shareToSocial"
+    class="text-gray-600 hover:text-blue-600 transition-colors"
+  >
+    📤 Share
+  </button>
+</div>
+
+<div class="mt-4 text-gray-800 text-lg">
+  {{ topic?.description }}
+</div>
+
+<!-- Status Badges -->
+<div class="mt-4 flex gap-2">
               <span v-if="topic?.is_question" class="px-3 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
                 ❓ Question
               </span>
@@ -27,17 +46,12 @@
             </div>
 
             <!-- Actions -->
-            <div class="mt-6 flex gap-4 text-sm">
-              <button @click="exportPdf" class="text-blue-600 hover:underline flex items-center gap-1">
-                📥 Export PDF
-              </button>
-              <button @click="shareToSocial" class="text-blue-600 hover:underline flex items-center gap-1">
-                📤 Share
-              </button>
-              <button class="text-gray-600 hover:underline flex items-center gap-1">
-                👍 Like ({{ topic?.likes || 0 }})
-              </button>
-            </div>
+<!-- Actions -->
+<div class="mt-6 flex gap-4 text-sm">
+  <button class="text-gray-600 hover:underline flex items-center gap-1">
+    👍 Like ({{ topic?.likes || 0 }})
+  </button>
+</div>
           </div>
         </div>
       </div>
@@ -80,7 +94,9 @@
       <!-- Reply Form -->
       <Card title="Your Reply">
         <form @submit.prevent="submitReply" class="space-y-4">
+          <label for="reply-content" class="sr-only">Your reply</label>
           <textarea
+            id="reply-content"
             v-model="newReply.content"
             placeholder="Share your thoughts..."
             rows="6"
@@ -96,8 +112,8 @@
               </span>
             </label>
 
-            <div v-if="newReply.useExclusion" class="mt-3">
-              <label class="text-xs font-medium text-gray-600 block mb-2">Select members to exclude:</label>
+            <fieldset v-if="newReply.useExclusion" class="mt-3">
+              <legend class="text-xs font-medium text-gray-600 block mb-2">Select members to exclude:</legend>
               <div class="space-y-1 max-h-32 overflow-y-auto">
                 <label v-for="member in groupMembers" :key="member.id" class="flex items-center gap-2 text-sm">
                   <input
@@ -109,7 +125,7 @@
                   <span>{{ member.name }}</span>
                 </label>
               </div>
-            </div>
+            </fieldset>
           </div>
           <PrimaryButton type="submit">
             Post Reply
@@ -220,6 +236,7 @@ const submitReply = async () => {
     // Reload topic
     location.reload();
   } catch (err) {
+    console.error('Failed to post reply:', err);
     alert('Failed to post reply');
   } finally {
     loading.value = false;
@@ -235,6 +252,7 @@ const markAsAnswer = async (messageId) => {
     );
     location.reload();
   } catch (err) {
+    console.error('Failed to mark answer:', err);
     alert('Failed to mark answer');
   }
 };
