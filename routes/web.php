@@ -48,3 +48,6 @@ Route::get('/Groups', function () {
 Route::get('/GroupList', function () {
     return Inertia::render('GroupList/Index');//new route  
 });
+Route::get('/Quizzes', function () {
+    return Inertia::render('Quizzes/Index');//new route  
+});
