@@ -54,3 +54,4 @@ Route::get('/grouplists', function () {
 Route::get('/quizzes', function () {
     return Inertia::render('Quizzes/Index');//new route
 });
+
