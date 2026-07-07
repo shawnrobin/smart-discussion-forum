@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 // Public routes (guest only)
@@ -24,7 +25,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', function () {
         return Inertia::render('Dashboard', [
             'auth' => [
-                'user' => auth()->user()
+                'user' => Auth::user()
             ]
         ]);
     })->name('dashboard');
@@ -36,18 +37,22 @@ Route::middleware('auth')->group(function () {
 
 // Home route - redirect to dashboard if authenticated, login if guest
 Route::get('/', function () {
-    return auth()->check() ? redirect('/dashboard') : redirect('/login');
+    return Auth::check() ? redirect('/dashboard') : redirect('/login');
 });
  
 Route::get('/Topics', function () {
     return Inertia::render('Topics/Show');//existing route
 });
-Route::get('/Groups', function () {
-    return Inertia::render('Groups/Show');//existing route
-});
-Route::get('/GroupList', function () {
-    return Inertia::render('GroupList/Index');//new route  
-});
-Route::get('/Quizzes', function () {
-    return Inertia::render('Quizzes/Index');//new route  
-});
+Route::get('/groups/{id}', function ($id) {
+    return Inertia::render('Groups/Show');
+})->name('groups.show');
+
+// Main Overview List Page
+Route::get('/groups', function () {
+    return Inertia::render('GroupList/Index');
+})->name('groups.index');
+
+// Main Overview List Page 
+Route::get('/groups', function () {
+    return Inertia::render('GroupList/Index');
+})->name('groups.index');
