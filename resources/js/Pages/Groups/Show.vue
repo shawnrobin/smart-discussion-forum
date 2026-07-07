@@ -120,7 +120,7 @@
         </form>
       </div>
     </div>
-
+  </div>
   </AuthenticatedLayout>
 </template>
 
