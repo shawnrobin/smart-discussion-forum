@@ -5,11 +5,19 @@
       <div class="bg-white rounded-lg shadow-md p-6">
         <div class="flex justify-between items-start">
           <div>
-            <h2 class="text-2xl font-bold text-gray-900">{{ group.name }}</h2>
-            <p class="text-gray-600 mt-2">{{ group.description }}</p>
-            <p class="text-sm text-gray-500 mt-4">
-              👥 {{ group.members }} members • 💬 {{ group.topics }} topics
-            </p>
+
+
+            <h2 class="text-2xl font-bold text-gray-900">{{ group?.name || 'Data Structures & Algorithms' }}</h2>
+            <p class="text-gray-600 mt-2">{{ group?.description || 'Discussion forum for mastering core engineering concepts.' }}</p>
+            <div class="flex items-center gap-4 text-sm text-gray-500 mt-4">
+              <span class="flex items-center gap-1">
+                <UsersIcon class="w-4 h-4 text-orange-500" /> 18 members
+              </span>
+              <span class="flex items-center gap-1">
+                <MessageSquareIcon class="w-4 h-4 text-orange-500" /> {{ topics.length }} topics
+              </span>
+            </div>
+
           </div>
           <PrimaryButton @click="showCreateTopic = true">
             + New Topic
@@ -52,8 +60,25 @@
             <div class="flex-1">
               <div class="flex items-start justify-between">
                 <div>
-                  <h3 class="text-lg font-semibold text-gray-900">{{ topic.title }}</h3>
-                  <p class="text-sm text-gray-600 mt-1">{{ topic.excerpt }}</p>
+
+
+                  <h3 
+                    @click="goToTopic(topic.id)" 
+                    class="text-lg font-semibold text-gray-900 hover:text-orange-600 transition cursor-pointer"
+                  >
+                    {{ topic.title }}
+                  </h3>
+                  <p class="text-gray-600 mt-1 text-sm whitespace-pre-line">{{ topic.body }}</p>
+                </div>
+                
+                <div class="flex gap-2 shrink-0">
+                  <button @click="openEditModal(topic)" class="flex items-center gap-1 text-xs text-amber-700 hover:bg-amber-100 px-2 py-1 bg-amber-50 rounded transition font-medium">
+                    <Edit2Icon class="w-3 h-3" /> Edit
+                  </button>
+                  <button @click="deleteTopic(topic.id)" class="flex items-center gap-1 text-xs text-rose-700 hover:bg-rose-100 px-2 py-1 bg-rose-50 rounded transition font-medium">
+                    <Trash2Icon class="w-3 h-3" /> Delete
+                  </button>
+
                 </div>
                 <span
                   v-if="topic.status === 'answered'"
@@ -101,13 +126,39 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import TextInput from '@/Components/TextInput.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 
-const auth = usePage().props.auth;
+
+const Auth = usePage().props.auth;
 const group = ref({
   id: 1,
   name: 'Data Structures',
   description: 'Learn about arrays, linked lists, trees, graphs, and more!',
   members: 18,
   topics: 45
+});
+import { 
+  Search as SearchIcon, 
+  Plus as PlusIcon, 
+  MessageSquare as MessageSquareIcon, 
+  Users as UsersIcon, 
+  Edit2 as Edit2Icon, 
+  Trash2 as Trash2Icon,
+  SlidersHorizontal as SlidersHorizontalIcon
+} from 'lucide-vue-next';
+
+// FIXED: Define the group prop passed down from Laravel Inertia
+const props = defineProps({
+  group: {
+    type: Object,
+    default: () => ({ id: 1, name: 'Data Structures & Algorithms' })
+  }
+});
+
+const auth = ref({
+  user: {
+    name: 'Developer Mode',
+    email: 'dev@forum.com'
+  }
+
 });
 
 const searchQuery = ref('');
@@ -147,17 +198,83 @@ const topics = ref([
   }
 ]);
 
+
+
+const SearchQuery = ref('');
+const FilterBy = ref('recent');
+
+const showModal = ref(false);
+const isEditing = ref(false);
+const currentTopicId = ref(null);
+const form = ref({
+  title: '',
+  body: ''
+});
+
 const filteredTopics = computed(() => {
   return topics.value
-    .filter(t => t.title.toLowerCase().includes(searchQuery.value.toLowerCase()))
+    .filter(t => t.title.toLowerCase().includes(SearchQuery.value.toLowerCase()))
     .sort((a, b) => {
-      if (filterBy.value === 'popular') return b.replies - a.replies;
-      if (filterBy.value === 'unanswered') return a.replies - b.replies;
+      if (FilterBy.value === 'popular') return b.replies - a.replies;
+      if (FilterBy.value === 'unanswered') return a.replies - b.replies;
       return 0;
     });
 });
 
-const goToTopic = (topicId) => {
+
+const GoToTopic = (topicId) => {
   router.visit(`/groups/${group.value.id}/topics/${topicId}`);
+};
+const openCreateModal = () => {
+  isEditing.value = false;
+  form.value.title = '';
+  form.value.body = '';
+  showModal.value = true;
+};
+
+const openEditModal = (topic) => {
+  isEditing.value = true;
+  currentTopicId.value = topic.id;
+  form.value.title = topic.title;
+  form.value.body = topic.body;
+  showModal.value = true;
+};
+
+const closeModal = () => {
+  showModal.value = false;
+};
+
+const saveTopic = () => {
+  if (isEditing.value) {
+    const topic = topics.value.find(t => t.id === currentTopicId.value);
+    if (topic) {
+      topic.title = form.value.title;
+      topic.body = form.value.body;
+    }
+  } else {
+    const newId = topics.value.length ? Math.max(...topics.value.map(t => t.id)) + 1 : 1;
+    topics.value.unshift({
+      id: newId,
+      title: form.value.title,
+      body: form.value.body,
+      author: 'Developer Mode',
+      authorInitials: 'DM',
+      date: 'Just now',
+      replies: 0
+    });
+  }
+  closeModal();
+};
+
+const deleteTopic = (id) => {
+  if (confirm('Are you absolutely sure you want to delete this discussion topic?')) {
+    topics.value = topics.value.filter(t => t.id !== id);
+  }
+
+};
+
+// FIXED: Now correctly reads `props.group.id` rather than a missing global variable
+const goToTopic = (topicId) => {
+  router.visit(`/groups/${props.group.id}/topics/${topicId}`);
 };
 </script>
