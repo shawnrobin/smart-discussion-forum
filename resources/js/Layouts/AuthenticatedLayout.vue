@@ -60,6 +60,7 @@ defineProps({
 const navLinks = ref([
   { id: 1, label: 'Dashboard', href: '/dashboard' },
   { id: 2, label: 'Groups', href: '/groups' },
+  []
   { id: 3, label: 'Quizzes', href: '/quizzes' },
   { id: 4, label: 'Profile', href: '/profile' },
   { id: 5, label: 'Settings', href: '/settings' }
