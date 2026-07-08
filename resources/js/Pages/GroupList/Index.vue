@@ -62,12 +62,12 @@
 import { ref, computed } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
 
-<<<<<<< HEAD
-=======
+
+
 import { Heart, ShoppingCart, Search } from 'lucide-vue-next'
 
 
->>>>>>> 58d3bd8 (afew changes on the looks of our pages)
+
 // If your alias @ fails, replace these paths with relative ones (e.g., '../../Components/TextInput.vue')
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import TextInput from '@/Components/TextInput.vue';

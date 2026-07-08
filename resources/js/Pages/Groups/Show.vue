@@ -5,13 +5,8 @@
       <div class="bg-white rounded-lg shadow-md p-6">
         <div class="flex justify-between items-start">
           <div>
-<<<<<<< HEAD
-            <h2 class="text-2xl font-bold text-gray-900">{{ group.name }}</h2>
-            <p class="text-gray-600 mt-2">{{ group.description }}</p>
-            <p class="text-sm text-gray-500 mt-4">
-              👥 {{ group.members }} members • 💬 {{ group.topics }} topics
-            </p>
-=======
+
+
             <h2 class="text-2xl font-bold text-gray-900">{{ group?.name || 'Data Structures & Algorithms' }}</h2>
             <p class="text-gray-600 mt-2">{{ group?.description || 'Discussion forum for mastering core engineering concepts.' }}</p>
             <div class="flex items-center gap-4 text-sm text-gray-500 mt-4">
@@ -22,7 +17,7 @@
                 <MessageSquareIcon class="w-4 h-4 text-orange-500" /> {{ topics.length }} topics
               </span>
             </div>
->>>>>>> 58d3bd8 (afew changes on the looks of our pages)
+
           </div>
           <PrimaryButton @click="showCreateTopic = true">
             + New Topic
@@ -65,10 +60,8 @@
             <div class="flex-1">
               <div class="flex items-start justify-between">
                 <div>
-<<<<<<< HEAD
-                  <h3 class="text-lg font-semibold text-gray-900">{{ topic.title }}</h3>
-                  <p class="text-sm text-gray-600 mt-1">{{ topic.excerpt }}</p>
-=======
+
+
                   <h3 
                     @click="goToTopic(topic.id)" 
                     class="text-lg font-semibold text-gray-900 hover:text-orange-600 transition cursor-pointer"
@@ -85,7 +78,7 @@
                   <button @click="deleteTopic(topic.id)" class="flex items-center gap-1 text-xs text-rose-700 hover:bg-rose-100 px-2 py-1 bg-rose-50 rounded transition font-medium">
                     <Trash2Icon class="w-3 h-3" /> Delete
                   </button>
->>>>>>> 58d3bd8 (afew changes on the looks of our pages)
+
                 </div>
                 <span
                   v-if="topic.status === 'answered'"
@@ -133,15 +126,15 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import TextInput from '@/Components/TextInput.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 
-<<<<<<< HEAD
-const auth = usePage().props.auth;
+
+const Auth = usePage().props.auth;
 const group = ref({
   id: 1,
   name: 'Data Structures',
   description: 'Learn about arrays, linked lists, trees, graphs, and more!',
   members: 18,
   topics: 45
-=======
+});
 import { 
   Search as SearchIcon, 
   Plus as PlusIcon, 
@@ -165,7 +158,7 @@ const auth = ref({
     name: 'Developer Mode',
     email: 'dev@forum.com'
   }
->>>>>>> 58d3bd8 (afew changes on the looks of our pages)
+
 });
 
 const searchQuery = ref('');
@@ -205,10 +198,10 @@ const topics = ref([
   }
 ]);
 
-<<<<<<< HEAD
-=======
-const searchQuery = ref('');
-const filterBy = ref('recent');
+
+
+const SearchQuery = ref('');
+const FilterBy = ref('recent');
 
 const showModal = ref(false);
 const isEditing = ref(false);
@@ -218,21 +211,20 @@ const form = ref({
   body: ''
 });
 
->>>>>>> 58d3bd8 (afew changes on the looks of our pages)
 const filteredTopics = computed(() => {
   return topics.value
-    .filter(t => t.title.toLowerCase().includes(searchQuery.value.toLowerCase()))
+    .filter(t => t.title.toLowerCase().includes(SearchQuery.value.toLowerCase()))
     .sort((a, b) => {
-      if (filterBy.value === 'popular') return b.replies - a.replies;
-      if (filterBy.value === 'unanswered') return a.replies - b.replies;
+      if (FilterBy.value === 'popular') return b.replies - a.replies;
+      if (FilterBy.value === 'unanswered') return a.replies - b.replies;
       return 0;
     });
 });
 
-<<<<<<< HEAD
-const goToTopic = (topicId) => {
+
+const GoToTopic = (topicId) => {
   router.visit(`/groups/${group.value.id}/topics/${topicId}`);
-=======
+};
 const openCreateModal = () => {
   isEditing.value = false;
   form.value.title = '';
@@ -278,7 +270,7 @@ const deleteTopic = (id) => {
   if (confirm('Are you absolutely sure you want to delete this discussion topic?')) {
     topics.value = topics.value.filter(t => t.id !== id);
   }
->>>>>>> 58d3bd8 (afew changes on the looks of our pages)
+
 };
 
 // FIXED: Now correctly reads `props.group.id` rather than a missing global variable
