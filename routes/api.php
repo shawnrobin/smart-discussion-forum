@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\QuizController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\NotificationController;
 
+
 // Health check (no auth needed)
 Route::get('/health', function () {
     return response()->json(['status' => 'ok', 'time' => now()]);
@@ -77,4 +78,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/quizzes/{quiz}', [QuizController::class, 'update']);
         Route::delete('/quizzes/{quiz}', [QuizController::class, 'destroy']);
     });
+
+    
+
 });
