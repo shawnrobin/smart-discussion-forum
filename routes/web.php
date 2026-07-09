@@ -64,7 +64,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings', function () {
         return Inertia::render('Settings/Edit'); // Placeholder for your settings route
     })->name('settings.edit');
-
+    Route::middleware(['auth', 'is_admin'])->group(function () {
+    Route::get('/admin', function () {
+        return Inertia::render('Admin/Dashboard');
+    });
+    });
     // Logout
     Route::post('/logout', [\App\Http\Controllers\AuthController::class, 'logout'])->name('logout');
 });
