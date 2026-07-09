@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -7,7 +8,7 @@ const LOGIN_ROUTE = '/login';
 
 // Home route - redirect to dashboard if authenticated, login if guest
 Route::get('/', function () {
-    return auth()->check() ? redirect('/dashboard') : redirect('/login');
+    return Auth::check() ? redirect('/dashboard') : redirect('/login');
 });
 
 // Public routes (Guests only)
@@ -20,8 +21,8 @@ Route::middleware('guest')->group(function () {
         return Inertia::render('Auth/Register');
     })->name('register');
 
-    Route::post('/register', [\App\Http\Controllers\AuthController::class, 'store'])->name('register.store');
-    Route::post(LOGIN_ROUTE, [\App\Http\Controllers\AuthController::class, 'login'])->name('login.store');
+Route::post('/register', [\App\Http\Controllers\AuthController::class, 'register'])->name('register.store');
+Route::post(LOGIN_ROUTE, [\App\Http\Controllers\AuthController::class, 'login'])->name('login.store');
 });
 
 // Protected routes (Authenticated users only)
@@ -31,7 +32,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', function () {
         return Inertia::render('Dashboard', [
             'auth' => [
-                'user' => auth()->user()
+                'user' => Auth::user()
             ]
         ]);
     })->name('dashboard');
