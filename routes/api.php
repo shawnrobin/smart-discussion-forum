@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\QuizController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\NotificationController;
 
+
 // Health check (no auth needed)
 Route::get('/health', function () {
     return response()->json(['status' => 'ok', 'time' => now()]);
@@ -67,14 +68,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/participation-score', [AuthController::class, 'getParticipationScore']);
 
     // ============ ADMIN ROUTES ============
-    Route::middleware('can:manage-users')->group(function () {
+    Route::middleware('is_admin')->group(function () {
+        // Dashboard & Statistics
         Route::get('/admin/dashboard', [AdminController::class, 'dashboard']);
         Route::get('/admin/statistics', [AdminController::class, 'statistics']);
+        
+        // User Management
         Route::get('/admin/inactive-users', [AdminController::class, 'getInactiveUsers']);
         Route::post('/admin/warn-user/{user}', [AdminController::class, 'warnUser']);
         Route::post('/admin/blacklist-user/{user}', [AdminController::class, 'blacklistUser']);
-        Route::post('/quizzes', [QuizController::class, 'store']);
-        Route::put('/quizzes/{quiz}', [QuizController::class, 'update']);
-        Route::delete('/quizzes/{quiz}', [QuizController::class, 'destroy']);
+        
+        // Content Moderation
+        Route::get('/admin/flagged-content', [AdminController::class, 'getFlaggedContent']);
+        Route::post('/admin/flag-content', [AdminController::class, 'flagContent']);
+        Route::post('/admin/remove-content', [AdminController::class, 'removeContent']);
     });
 });
+
+    
+
+

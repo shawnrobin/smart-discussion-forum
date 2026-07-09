@@ -21,8 +21,8 @@ Route::middleware('guest')->group(function () {
         return Inertia::render('Auth/Register');
     })->name('register');
 
-    Route::post('/register', [\App\Http\Controllers\AuthController::class, 'store'])->name('register.store');
-    Route::post(LOGIN_ROUTE, [\App\Http\Controllers\AuthController::class, 'login'])->name('login.store');
+Route::post('/register', [\App\Http\Controllers\AuthController::class, 'register'])->name('register.store');
+Route::post(LOGIN_ROUTE, [\App\Http\Controllers\AuthController::class, 'login'])->name('login.store');
 });
 
 // Protected routes (Authenticated users only)
@@ -64,7 +64,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/settings', function () {
         return Inertia::render('Settings/Edit'); // Placeholder for your settings route
     })->name('settings.edit');
-
+    Route::middleware(['auth', 'is_admin'])->group(function () {
+    Route::get('/admin', function () {
+        return Inertia::render('Admin/Dashboard');
+    });
+    });
     // Logout
     Route::post('/logout', [\App\Http\Controllers\AuthController::class, 'logout'])->name('logout');
 });
