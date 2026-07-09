@@ -58,8 +58,15 @@
 </template>
 
 <script setup>
+
 import { ref, computed } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
+
+
+
+import { Heart, ShoppingCart, Search } from 'lucide-vue-next'
+
+
 
 // If your alias @ fails, replace these paths with relative ones (e.g., '../../Components/TextInput.vue')
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';

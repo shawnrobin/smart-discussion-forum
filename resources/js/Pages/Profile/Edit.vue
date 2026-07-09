@@ -1,127 +1,223 @@
-<script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head } from '@inertiajs/vue3';
-import { ref } from 'vue';
+<template>
+  <Head title="Profile & Settings" />
 
-// Placeholder/dummy data — will come from backend later
-const name = ref('John Doe');
-const email = ref('john@example.com');
+  <AuthenticatedLayout page-title="Profile & Settings">
+    <div class="py-10 bg-gray-50/30">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+
+        <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
+          
+          <div class="flex items-center gap-4 border-b md:border-b-0 md:border-r border-gray-100 pb-4 md:pb-0 md:pr-4">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center text-white font-black text-2xl shadow-md shrink-0">
+              {{ name.substring(0, 2).toUpperCase() }}
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-gray-900 leading-tight">{{ name }}</h3>
+              <p class="text-sm text-gray-400 mt-0.5">{{ email }}</p>
+              <span class="inline-flex items-center gap-1 mt-2 px-2 py-0.5 bg-orange-100 text-orange-800 text-xs font-semibold rounded-full">
+                <AwardIcon class="w-3 h-3" /> Gold Contributor
+              </span>
+            </div>
+          </div>
+
+          <div class="space-y-2 border-b md:border-b-0 md:border-r border-gray-100 pb-4 md:pb-0 md:pr-4">
+            <div class="flex justify-between items-end">
+              <div>
+                <p class="text-xs text-gray-400 font-medium uppercase tracking-wider">Total Score</p>
+                <p class="text-3xl font-black text-gray-900 tracking-tight mt-0.5">
+                  {{ gamification.totalPoints }} <span class="text-sm font-medium text-orange-600">XP</span>
+                </p>
+              </div>
+              <span class="text-xs text-gray-500 font-medium bg-gray-50 px-2 py-1 rounded border border-gray-100">
+                Level {{ gamification.level }}
+              </span>
+            </div>
+            
+            <div>
+              <div class="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                <div class="bg-gradient-to-r from-orange-500 to-amber-500 h-full transition-all duration-500" style="width: 75%"></div>
+              </div>
+              <p class="text-[11px] text-gray-400 mt-1 text-right font-medium">250 XP remaining to Level 6</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-gray-50/60 border border-gray-100 p-3 rounded-xl text-center">
+              <div class="text-orange-600 font-bold text-lg leading-none">{{ gamification.verifiedAnswers }}</div>
+              <div class="text-[11px] text-gray-500 font-medium mt-1">Solutions Provided</div>
+            </div>
+            <div class="bg-gray-50/60 border border-gray-100 p-3 rounded-xl text-center">
+              <div class="text-amber-600 font-bold text-lg leading-none">+{{ gamification.weeklyStreak }}d</div>
+              <div class="text-[11px] text-gray-500 font-medium mt-1">Daily Streak</div>
+            </div>
+          </div>
+
+        </div>
+
+        <div class="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+          <div class="flex items-center gap-2 mb-4">
+            <div class="p-1.5 bg-orange-50 text-orange-600 rounded-lg">
+              <GraduationCapIcon class="w-5 h-5" />
+            </div>
+            <div>
+              <h2 class="text-lg font-bold text-gray-900">Academic & Quiz Performance</h2>
+              <p class="text-xs text-gray-400">Review your automated module grading evaluations.</p>
+            </div>
+          </div>
+
+          <div class="overflow-hidden border border-gray-100 rounded-xl">
+            <table class="min-w-full divide-y divide-gray-100 text-left text-sm">
+              <thead class="bg-gray-50 font-semibold text-gray-700">
+                <tr>
+                  <th class="px-4 py-3">Evaluation Element</th>
+                  <th class="px-4 py-3">Completed</th>
+                  <th class="px-4 py-3 text-right">Resulting Score</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100 text-gray-600">
+                <tr v-for="exam in exams" :key="exam.id" class="hover:bg-gray-50/50 transition">
+                  <td class="px-4 py-3 font-medium text-gray-900">{{ exam.title }}</td>
+                  <td class="px-4 py-3 text-xs text-gray-400">{{ exam.date }}</td>
+                  <td class="px-4 py-3 text-right font-bold">
+                    <span :class="exam.score >= 75 ? 'text-emerald-600' : 'text-amber-600'">
+                      {{ exam.score }}%
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          <div class="p-6 bg-white border border-gray-100 rounded-2xl shadow-sm space-y-4">
+            <div>
+              <h2 class="text-lg font-bold text-gray-900">Profile Details</h2>
+              <p class="text-xs text-gray-400">Update your primary identity variables.</p>
+            </div>
+
+            <form class="space-y-4" @submit.prevent="updateProfile">
+              <div>
+                <label class="block text-xs font-semibold uppercase text-gray-500 tracking-wider">Full Name</label>
+                <input
+                  type="text"
+                  v-model="name"
+                  class="mt-1 block w-full rounded-lg border-gray-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50 text-sm"
+                />
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold uppercase text-gray-500 tracking-wider">Email Address</label>
+                <input
+                  type="email"
+                  v-model="email"
+                  class="mt-1 block w-full rounded-lg border-gray-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50 text-sm"
+                />
+              </div>
+
+              <button
+                type="submit"
+                class="w-full sm:w-auto px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-medium text-sm transition shadow-sm"
+              >
+                Save Profile Changes
+              </button>
+            </form>
+          </div>
+
+          <div class="p-6 bg-white border border-gray-100 rounded-2xl shadow-sm space-y-4">
+            <div>
+              <h2 class="text-lg font-bold text-gray-900">Update Password</h2>
+              <p class="text-xs text-gray-400">Keep security metrics aligned using continuous hashing upgrades.</p>
+            </div>
+
+            <form class="space-y-4" @submit.prevent="updatePassword">
+              <div>
+                <label class="block text-xs font-semibold uppercase text-gray-500 tracking-wider">Current Password</label>
+                <input
+                  type="password"
+                  v-model="currentPassword"
+                  class="mt-1 block w-full rounded-lg border-gray-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50 text-sm"
+                />
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold uppercase text-gray-500 tracking-wider">New Password</label>
+                <input
+                  type="password"
+                  v-model="newPassword"
+                  class="mt-1 block w-full rounded-lg border-gray-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50 text-sm"
+                />
+              </div>
+
+              <div>
+                <label class="block text-xs font-semibold uppercase text-gray-500 tracking-wider">Confirm Password</label>
+                <input
+                  type="password"
+                  v-model="confirmPassword"
+                  class="mt-1 block w-full rounded-lg border-gray-200 shadow-sm focus:border-orange-500 focus:ring-orange-500 bg-gray-50/50 text-sm"
+                />
+              </div>
+
+              <button
+                type="submit"
+                class="w-full sm:w-auto px-4 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg font-medium text-sm transition shadow-sm"
+              >
+                Update Security Credentials
+              </button>
+            </form>
+          </div>
+
+        </div>
+
+        <div class="p-6 bg-red-50/30 border border-red-100 rounded-2xl shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <h2 class="text-base font-bold text-red-900">Deactivate Forum Account</h2>
+            <p class="text-xs text-red-600/70 mt-0.5">This removes all accrued participation points and past submissions permanently.</p>
+          </div>
+          <button class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-semibold rounded-lg transition shadow-sm shrink-0">
+            Delete Account
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </AuthenticatedLayout>
+</template>
+
+<script setup>
+import { ref } from 'vue';
+import { Head } from '@inertiajs/vue3';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import { Award as AwardIcon, GraduationCap as GraduationCapIcon } from 'lucide-vue-next';
+
+// Profile identity state fields
+const name = ref('Petra Doe');
+const email = ref('petra@example.com');
 const currentPassword = ref('');
 const newPassword = ref('');
 const confirmPassword = ref('');
+
+// Gamification mock data structure
+const gamification = ref({
+  level: 5,
+  totalPoints: 1250,
+  verifiedAnswers: 14,
+  weeklyStreak: 6
+});
+
+// Exams evaluation table data array 
+const exams = ref([
+  { id: 1, title: 'Introduction to Algorithms Quiz', date: 'July 01, 2026', score: 92 },
+  { id: 2, title: 'Data Structures Mid-Term Assignment', date: 'June 24, 2026', score: 88 },
+  { id: 3, title: 'Object-Oriented Programming Assessment', date: 'May 18, 2026', score: 68 }
+]);
+
+const updateProfile = () => {
+  console.log('Syncing structural identity profile updates...');
+};
+
+const updatePassword = () => {
+  console.log('Processing security parameter updates...');
+};
 </script>
-
-<template>
-    <Head title="Profile & Settings" />
-
-    <AuthenticatedLayout>
-        <template #header>
-            <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Profile & Settings
-            </h2>
-        </template>
-
-        <div class="py-12">
-            <div class="max-w-3xl mx-auto sm:px-6 lg:px-8 space-y-6">
-
-                <!-- Profile Information -->
-                <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                    <h2 class="text-lg font-medium text-gray-900">Profile Information</h2>
-                    <p class="mt-1 text-sm text-gray-600">
-                        Update your account's profile information.
-                    </p>
-
-                    <form class="mt-6 space-y-6" @submit.prevent>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Name</label>
-                            <input
-                                type="text"
-                                v-model="name"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Email</label>
-                            <input
-                                type="email"
-                                v-model="email"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
-                        </div>
-
-                        <div class="flex items-center gap-4">
-                            <button
-                                type="submit"
-                                class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700"
-                            >
-                                Save
-                            </button>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Update Password -->
-                <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                    <h2 class="text-lg font-medium text-gray-900">Update Password</h2>
-                    <p class="mt-1 text-sm text-gray-600">
-                        Ensure your account is using a long, random password.
-                    </p>
-
-                    <form class="mt-6 space-y-6" @submit.prevent>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Current Password</label>
-                            <input
-                                type="password"
-                                v-model="currentPassword"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">New Password</label>
-                            <input
-                                type="password"
-                                v-model="newPassword"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
-                        </div>
-
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Confirm Password</label>
-                            <input
-                                type="password"
-                                v-model="confirmPassword"
-                                class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
-                            />
-                        </div>
-
-                        <div class="flex items-center gap-4">
-                            <button
-                                type="submit"
-                                class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700"
-                            >
-                                Save
-                            </button>
-                        </div>
-                    </form>
-                </div>
-
-                <!-- Delete Account -->
-                <div class="p-4 sm:p-8 bg-white shadow sm:rounded-lg">
-                    <h2 class="text-lg font-medium text-gray-900">Delete Account</h2>
-                    <p class="mt-1 text-sm text-gray-600">
-                        Once your account is deleted, all its data will be permanently removed.
-                    </p>
-
-                    <button
-                        class="mt-4 inline-flex items-center px-4 py-2 bg-red-600 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-red-500"
-                    >
-                        Delete Account
-                    </button>
-                </div>
-
-            </div>
-        </div>
-    </AuthenticatedLayout>
-</template>

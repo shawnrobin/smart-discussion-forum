@@ -1,34 +1,77 @@
 <?php
+
 namespace App\Models;
-use Laravel\Sanctum\HasApiTokens;
 
-
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Database\Factories\UserFactory;
-use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
+use App\Models\Group;
 
-#[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
-    use HasFactory, Notifiable;
-      use HasApiTokens;
+    use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
+    protected $fillable = [
+        'name',
+        'email',
+        'username',
+        'password',
+        'role',
+        'status',
+    ];
+
+    protected $hidden = [
+        'password',
+    ];
+
+    // Relationships
+    public function groups()
     {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+        return $this->belongsToMany(Group::class, 'group_user');
+    }
+
+    public function topics()
+    {
+        return $this->hasMany(Topic::class);
+    }
+
+    public function messages()
+    {
+        return $this->hasMany(Message::class);
+    }
+
+    public function exclusions()
+    {
+        return $this->hasMany(UserExclusion::class, 'excluded_user_id');
+    }
+
+    public function createdGroups()
+    {
+        return $this->hasMany(Group::class, 'created_by');
+    }
+
+    public function participationScores()
+    {
+        return $this->hasMany(ParticipationScore::class);
+    }
+
+    // Check if user is admin
+    public function isAdmin()
+    {
+        return in_array($this->role, ['system_admin', 'group_admin']);
+    }
+
+    // Check if user is lecturer
+    public function isLecturer()
+    {
+        return $this->role === 'lecturer';
+    }
+
+    // Check if user is blacklisted
+    public function isBlacklisted()
+    {
+        return $this->status === 'blacklisted';
     }
 }
+
