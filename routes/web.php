@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -7,7 +8,7 @@ const LOGIN_ROUTE = '/login';
 
 // Home route - redirect to dashboard if authenticated, login if guest
 Route::get('/', function () {
-    return auth()->check() ? redirect('/dashboard') : redirect('/login');
+    return Auth::check() ? redirect('/dashboard') : redirect('/login');
 });
 
 // Public routes (Guests only)
@@ -31,7 +32,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', function () {
         return Inertia::render('Dashboard', [
             'auth' => [
-                'user' => auth()->user()
+                'user' => Auth::user()
             ]
         ]);
     })->name('dashboard');

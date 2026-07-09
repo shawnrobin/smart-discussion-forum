@@ -97,6 +97,8 @@ defineProps({
   userName: String
 });
 
+
+
 // FIXED: We now use standard Laravel named route configurations instead of hardcoded paths
 const navLinks = computed(() => [
   { id: 1, label: 'Dashboard', href: route('dashboard'),    matchUrl: '/dashboard', icon: LayoutDashboardIcon },
@@ -105,6 +107,7 @@ const navLinks = computed(() => [
   { id: 4, label: 'Quizzes',   href: route('quizzes.index'),matchUrl: '/quizzes',   icon: AwardIcon },
   { id: 5, label: 'Profile',   href: route('profile.edit'), matchUrl: '/profile',   icon: UserIcon },
   { id: 6, label: 'Settings',  href: route('settings.edit'),matchUrl: '/settings',  icon: SettingsIcon }
+
 ]);
 
 const logout = () => {
