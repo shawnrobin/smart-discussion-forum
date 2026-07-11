@@ -87,7 +87,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     
 
-});
+
 
 // Quizzes (authenticated routes)
 Route::middleware('auth:sanctum')->group(function () {
