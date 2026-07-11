@@ -28,6 +28,12 @@
           placeholder="your@email.com"
           :error="form.errors.email"
         />
+        <TextInput
+           v-model="form.username"
+           label="Username"
+           placeholder="Choose a username"
+           :error="form.errors.username"
+/>
 
         <!-- Password Input -->
         <PasswordInput
@@ -49,7 +55,7 @@
         <!-- Agree to Terms -->
         <div class="flex items-start gap-2">
           <input
-            v-model="form.agree"
+            v-model="form.agreed_to_rules"
             type="checkbox"
             class="w-4 h-4 text-blue-600 rounded mt-1"
           />
@@ -95,9 +101,11 @@ import { Link, useForm } from '@inertiajs/vue3';
 const form = useForm({
   name: '',
   email: '',
+  username: '',
   password: '',
   password_confirmation: '',
-  agree: false
+  agreed_to_rules: false,
+  rules_version: 1,
 });
 
 const submit = () => {
