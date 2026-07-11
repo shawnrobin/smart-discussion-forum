@@ -87,4 +87,18 @@ Route::middleware('auth:sanctum')->group(function () {
 
     
 
+});
 
+// Quizzes (authenticated routes)
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/quizzes', [QuizController::class, 'index']);
+    Route::get('/quizzes/{quiz}', [QuizController::class, 'show']);
+    Route::post('/quizzes/{quiz}/attempt', [QuizController::class, 'startAttempt']);
+    Route::post('/quiz-attempts/{attempt}/submit', [QuizController::class, 'submitAttempt']);
+    Route::get('/quiz-attempts/{attempt}/results', [QuizController::class, 'getResults']);
+    
+    // Create quiz (lecturer only)
+    Route::middleware('is_admin')->group(function () {
+        Route::post('/groups/{group}/quizzes', [QuizController::class, 'store']);
+    });
+});
