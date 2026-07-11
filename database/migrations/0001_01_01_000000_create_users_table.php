@@ -93,6 +93,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->integer('rules_version');
             $table->timestamp('agreed_at');
+            $table->timestamps();
         });
 
         // MODERATION LOGS TABLE (Requirement #4: Warnings and blacklist)
