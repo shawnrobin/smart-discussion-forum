@@ -2,92 +2,55 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Http\Controllers\Controller;
 use App\Models\Notification;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 
-class NotificationController
+class NotificationController extends Controller
 {
-    /**
-     * Get user notifications
-     */
-    public function index(Request $request)
+    public function index(Request $request): JsonResponse
     {
-        $notifications = Notification::where('user_id', auth()->id())
-            ->latest()
-            ->paginate(20);
+        $notifications = Notification::where('user_id', $request->user()->id)
+            ->orderByDesc('created_at')
+            ->get();
 
-        return response()->json([
-            'success' => true,
-            'notifications' => $notifications
-        ]);
+        return response()->json($notifications);
     }
 
-    /**
-     * Mark notification as read
-     */
-    public function markAsRead(Request $request, Notification $notification)
+    public function show(Request $request, Notification $notification): JsonResponse
     {
-        if ($notification->user_id !== auth()->id()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized'
-            ], 403);
-        }
-
-        $notification->update(['read' => true]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Notification marked as read'
-        ]);
+        $this->authorizeOwner($request, $notification);
+        return response()->json($notification);
     }
 
-    /**
-     * Mark all notifications as read
-     */
-    public function markAllAsRead(Request $request)
+    public function markAsRead(Request $request, Notification $notification): JsonResponse
     {
-        Notification::where('user_id', auth()->id())
-            ->update(['read' => true]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'All notifications marked as read'
-        ]);
+        $this->authorizeOwner($request, $notification);
+        $notification->update(['is_read' => true]);
+        return response()->json($notification);
     }
 
-    /**
-     * Delete notification
-     */
-    public function destroy(Notification $notification)
+    public function markAllAsRead(Request $request): JsonResponse
     {
-        if ($notification->user_id !== auth()->id()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized'
-            ], 403);
-        }
+        Notification::where('user_id', $request->user()->id)
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
 
+        return response()->json(['message' => 'All notifications marked as read']);
+    }
+
+    public function destroy(Request $request, Notification $notification): JsonResponse
+    {
+        $this->authorizeOwner($request, $notification);
         $notification->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Notification deleted'
-        ]);
+        return response()->json(['message' => 'Notification deleted']);
     }
 
-    /**
-     * Helper: Send notification to user
-     */
-    public static function sendNotification($userId, $type, $title, $message, $relatedEntityId = null, $relatedEntityType = null)
+    private function authorizeOwner(Request $request, Notification $notification): void
     {
-        return Notification::create([
-            'user_id' => $userId,
-            'type' => $type,
-            'title' => $title,
-            'message' => $message,
-            'related_entity_id' => $relatedEntityId,
-            'related_entity_type' => $relatedEntityType
-        ]);
+        if ($notification->user_id !== $request->user()->id) {
+            abort(403, 'Unauthorized');
+        }
     }
 }
