@@ -20,15 +20,21 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'name',
-        'email',
-        'username',
-        'password',
-        'role',
-        'status',
-        'last_login',
-        'remember_token',
-    ];
+    'name',
+    'email',
+    'username',
+    'password',
+    'role',
+    'status',
+    'last_login',
+    'remember_token',
+    'avatar',
+    'bio',
+    'course',
+    'faculty',
+    'year_of_study',
+    'phone_number',
+];
 
     /**
      * The attributes that should be hidden for serialization.
@@ -170,5 +176,9 @@ class User extends Authenticatable
     public function recommendations(): HasMany
     {
         return $this->hasMany(TopicRecommendation::class);
+    }
+    public function settings()
+    {
+        return $this->hasOne(UserSetting::class);
     }
 }
