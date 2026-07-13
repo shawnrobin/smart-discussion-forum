@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Controllers\SettingsController;
 
 const LOGIN_ROUTE = '/login';
 
@@ -62,8 +63,8 @@ Route::middleware('auth')->group(function () {
     })->name('profile.edit');
 
     Route::get('/settings', function () {
-        return Inertia::render('Settings/Edit'); // Placeholder for your settings route
-    })->name('settings.edit');
+    return Inertia::render('Settings/Edit'); // Placeholder for your settings route
+})->name('settings.edit');
     Route::middleware(['auth', 'is_admin'])->group(function () {
     Route::get('/admin', function () {
         return Inertia::render('Admin/Dashboard');
@@ -71,4 +72,11 @@ Route::middleware('auth')->group(function () {
     });
     // Logout
     Route::post('/logout', [\App\Http\Controllers\AuthController::class, 'logout'])->name('logout');
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+Route::put('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
+Route::put('/settings/account', [SettingsController::class, 'updateAccount'])->name('settings.account');
+Route::put('/settings', [SettingsController::class, 'updateSettings'])->name('settings.update');
+Route::put('/settings/deactivate', [SettingsController::class, 'deactivateAccount'])->name('settings.deactivate');
+Route::delete('/settings/delete', [SettingsController::class, 'deleteAccount'])->name('settings.delete');
+
 });
