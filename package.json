@@ -21,7 +21,9 @@
     },
     "dependencies": {
         "bootstrap": "^5.3.8",
+        "laravel-echo": "^2.4.0",
         "lucide-vue-next": "^1.0.0",
+        "pusher-js": "^8.5.0",
         "vue-router": "^5.1.0"
     }
 }
