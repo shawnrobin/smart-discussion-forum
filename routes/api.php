@@ -8,7 +8,9 @@ use App\Http\Controllers\Api\MessageController;
 use App\Http\Controllers\Api\QuizController;
 use App\Http\Controllers\Api\AdminController;
 use App\Http\Controllers\Api\NotificationController;
-
+use App\Http\Controllers\Api\ShareController;
+use App\Http\Controllers\Api\ParticipationController;
+use App\Http\Controllers\Api\RecommendationController;
 
 // Health check (no auth needed)
 Route::get('/health', function () {
@@ -102,3 +104,20 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/groups/{group}/quizzes', [QuizController::class, 'store']);
     });
 });
+
+// PDF Export
+Route::post('/topics/{topic}/export-pdf', [TopicController::class, 'exportPdf']);
+
+// Notifications
+Route::get('/notifications', [NotificationController::class, 'index']);
+Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
+Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead']);
+
+// Sharing
+Route::post('/topics/{topic}/share', [ShareController::class, 'shareTopic']);
+
+// Participation scores
+Route::get('/participation-scores', [ParticipationController::class, 'getScores']);
+
+// Recommendations
+Route::get('/recommendations', [RecommendationController::class, 'getRecommendations']);
