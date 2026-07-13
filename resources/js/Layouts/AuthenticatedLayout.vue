@@ -106,7 +106,7 @@ const navLinks = computed(() => [
   { id: 3, label: 'Groups',    href: route('groups.index'), matchUrl: '/groups',    icon: UsersIcon },
   { id: 4, label: 'Quizzes',   href: route('quizzes.index'),matchUrl: '/quizzes',   icon: AwardIcon },
   { id: 5, label: 'Profile',   href: route('profile.edit'), matchUrl: '/profile',   icon: UserIcon },
-  { id: 6, label: 'Settings',  href: route('settings.edit'),matchUrl: '/settings',  icon: SettingsIcon }
+  { id: 6, label: 'Settings',  href: route('settings.index'),matchUrl: '/settings',  icon: SettingsIcon }
 
 ]);
 
