@@ -38,10 +38,13 @@ Route::middleware('auth')->group(function () {
         ]);
     })->name('dashboard');
 
-    // Topics Index
-    Route::get('/topics', function () {
-        return Inertia::render('Topics/Show'); // Adjust to 'Topics/Index' later if you make a full list view!
-    })->name('topics.index');
+    // Topic detail page, nested under its group
+Route::get('/groups/{group}/topics/{topic}', function ($group, $topic) {
+    return Inertia::render('Topics/Show', [
+        'group' => ['id' => $group, 'name' => 'Data Structures'],
+        'topic' => null,
+    ]);
+})->name('topics.show');
 
     // Groups
     Route::get('/groups/{id}', function ($id) {
