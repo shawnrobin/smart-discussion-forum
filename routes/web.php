@@ -38,19 +38,23 @@ Route::middleware('auth')->group(function () {
         ]);
     })->name('dashboard');
 
-    // Topics Index
-    Route::get('/topics', function () {
-        return Inertia::render('Topics/Show'); // Adjust to 'Topics/Index' later if you make a full list view!
-    })->name('topics.index');
+    // Topic detail page, nested under its group
+Route::get('/groups/{group}/topics/{topic}', function ($group, $topic) {
+    return Inertia::render('Topics/Show', [
+        'group' => ['id' => $group, 'name' => 'Data Structures'],
+        'topic' => null,
+    ]);
+})->name('topics.show');
 
     // Groups
     Route::get('/groups/{id}', function ($id) {
         return Inertia::render('Groups/Show');
     })->name('groups.show');
 
-    Route::get('/groups', function () {
-        return Inertia::render('GroupList/Index');
-    })->name('groups.index');
+    Route::get('/groups', [\App\Http\Controllers\GroupController::class, 'index'])->name('groups.index');
+    Route::post('/groups', [\App\Http\Controllers\GroupController::class, 'store'])->name('groups.store');
+    Route::post('/groups/{group}/join', [\App\Http\Controllers\GroupController::class, 'join'])->name('groups.join');
+    Route::post('/groups/{group}/leave', [\App\Http\Controllers\GroupController::class, 'leave'])->name('groups.leave');
 
     // Quizzes
     Route::get('/quizzes', function () {
