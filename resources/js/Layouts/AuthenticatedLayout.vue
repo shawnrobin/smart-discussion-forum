@@ -2,16 +2,18 @@
   <div class="flex h-screen bg-gray-50 text-gray-800 antialiased">
     
     <nav class="w-64 bg-white border-r border-gray-100 flex flex-col justify-between shrink-0 shadow-sm">
-      <div>
-        <div class="p-6 border-b border-gray-100 flex items-center gap-2">
-          <div class="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center text-white font-black text-lg shadow-sm">
-            S
-          </div>
-          <h2 class="text-xl font-bold tracking-tight text-gray-900">
-            Smart<span class="text-orange-600">Forum</span>
-          </h2>
-        </div>
+      <Link
+    :href="route('dashboard')"
+    class="p-6 border-b border-gray-100 flex items-center gap-2 hover:bg-gray-50 transition"
+>
+    <div class="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center text-white font-black text-lg shadow-sm">
+        S
+    </div>
 
+    <h2 class="text-xl font-bold tracking-tight text-gray-900">
+        Smart<span class="text-orange-600">Forum</span>
+    </h2>
+</Link>
         <div class="p-4 space-y-1">
           <Link
             v-for="link in navLinks"
@@ -34,8 +36,6 @@
             <span class="block opacity-100 visible text-current">{{ link.label }}</span>
           </Link>
         </div>
-      </div>
-
       <div class="p-4 border-t border-gray-100 bg-white">
         <button
           @click="logout"
@@ -63,9 +63,12 @@
           
           <div class="h-4 w-px bg-gray-200"></div>
           
-          <span class="text-sm font-medium text-gray-700 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">
-            {{ userName ?? 'Guest Account' }}
-          </span>
+          <Link
+    :href="route('settings.index')"
+    class="text-sm font-medium text-gray-700 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100 hover:bg-orange-50 hover:text-orange-600 transition"
+>
+    {{ userName ?? 'Guest Account' }}
+</Link>
         </div>
       </header>
 
