@@ -51,9 +51,10 @@ Route::get('/groups/{group}/topics/{topic}', function ($group, $topic) {
         return Inertia::render('Groups/Show');
     })->name('groups.show');
 
-    Route::get('/groups', function () {
-        return Inertia::render('GroupList/Index');
-    })->name('groups.index');
+    Route::get('/groups', [\App\Http\Controllers\GroupController::class, 'index'])->name('groups.index');
+    Route::post('/groups', [\App\Http\Controllers\GroupController::class, 'store'])->name('groups.store');
+    Route::post('/groups/{group}/join', [\App\Http\Controllers\GroupController::class, 'join'])->name('groups.join');
+    Route::post('/groups/{group}/leave', [\App\Http\Controllers\GroupController::class, 'leave'])->name('groups.leave');
 
     // Quizzes
     Route::get('/quizzes', function () {
