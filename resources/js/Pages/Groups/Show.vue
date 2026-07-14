@@ -72,10 +72,10 @@
                 </div>
                 
                 <div class="flex gap-2 shrink-0">
-                  <button @click="openEditModal(topic)" class="flex items-center gap-1 text-xs text-amber-700 hover:bg-amber-100 px-2 py-1 bg-amber-50 rounded transition font-medium">
+                  <button @click.stop="openEditModal(topic)" class="flex items-center gap-1 text-xs text-amber-700 hover:bg-amber-100 px-2 py-1 bg-amber-50 rounded transition font-medium">
                     <Edit2Icon class="w-3 h-3" /> Edit
                   </button>
-                  <button @click="deleteTopic(topic.id)" class="flex items-center gap-1 text-xs text-rose-700 hover:bg-rose-100 px-2 py-1 bg-rose-50 rounded transition font-medium">
+                  <button @click.stop="deleteTopic(topic.id)" class="flex items-center gap-1 text-xs text-rose-700 hover:bg-rose-100 px-2 py-1 bg-rose-50 rounded transition font-medium">
                     <Trash2Icon class="w-3 h-3" /> Delete
                   </button>
 
@@ -116,6 +116,60 @@
         </button>
       </div>
     </div>
+
+    <!-- Create/Edit Topic Modal -->
+      <div v-if="showModal || showCreateTopic" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" @click.self="closeModal(); showCreateTopic = false">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+          <h3 class="text-lg font-bold text-gray-900 mb-4">{{ isEditing ? 'Edit Topic' : 'New Topic' }}</h3>
+
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+              <TextInput v-model="form.title" class="w-full" />
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Body</label>
+              <textarea v-model="form.body" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg"></textarea>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-3 mt-6">
+            <button @click="closeModal(); showCreateTopic = false" class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">
+              Cancel
+            </button>
+            <PrimaryButton @click="saveTopic(); showCreateTopic = false">
+              {{ isEditing ? 'Save Changes' : 'Create Topic' }}
+            </PrimaryButton>
+          </div>
+        </div>
+      </div>
+
+    <!-- Delete Confirmation Modal -->
+      <div v-if="showDeleteModal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" @click.self="cancelDeleteTopic">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
+          <div class="flex items-start gap-3">
+            <div class="shrink-0 w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center">
+              <Trash2Icon class="w-5 h-5 text-rose-600" />
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-gray-900">Delete this topic?</h3>
+              <p class="text-sm text-gray-600 mt-1">
+                This will permanently remove "{{ topicToDeleteTitle }}" and its replies. This can't be undone.
+              </p>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-3 mt-6">
+            <button @click="cancelDeleteTopic" class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">
+              Cancel
+            </button>
+            <button @click="deleteTopic" class="px-4 py-2 text-sm bg-rose-600 text-white rounded-lg hover:bg-rose-700 font-medium">
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+
   </AuthenticatedLayout>
 </template>
 
@@ -200,8 +254,7 @@ const topics = ref([
 
 
 
-const SearchQuery = ref('');
-const FilterBy = ref('recent');
+
 
 const showModal = ref(false);
 const isEditing = ref(false);
@@ -213,17 +266,17 @@ const form = ref({
 
 const filteredTopics = computed(() => {
   return topics.value
-    .filter(t => t.title.toLowerCase().includes(SearchQuery.value.toLowerCase()))
+    .filter(t => t.title.toLowerCase().includes(searchQuery.value.toLowerCase()))
     .sort((a, b) => {
-      if (FilterBy.value === 'popular') return b.replies - a.replies;
-      if (FilterBy.value === 'unanswered') return a.replies - b.replies;
+      if (filterBy.value === 'popular') return b.replies - a.replies;
+      if (filterBy.value === 'unanswered') return a.replies - b.replies;
       return 0;
     });
 });
 
 
 const GoToTopic = (topicId) => {
-  router.visit(`/groups/${group.value.id}/topics/${topicId}`);
+  router.visit(route('topics.show',{group: props.group.id,topic: topicId}));
 };
 const openCreateModal = () => {
   isEditing.value = false;
@@ -266,15 +319,33 @@ const saveTopic = () => {
   closeModal();
 };
 
-const deleteTopic = (id) => {
-  if (confirm('Are you absolutely sure you want to delete this discussion topic?')) {
-    topics.value = topics.value.filter(t => t.id !== id);
-  }
+// Custom delete-confirmation modal state (replaces the native confirm() popup)
+const showDeleteModal = ref(false);
+const topicToDeleteId = ref(null);
+const topicToDeleteTitle = ref('');
 
+const confirmDeleteTopic = (id) => {
+  const topic = topics.value.find(t => t.id === id);
+  topicToDeleteId.value = id;
+  topicToDeleteTitle.value = topic ? topic.title : 'this topic';
+  showDeleteModal.value = true;
+};
+
+const cancelDeleteTopic = () => {
+  showDeleteModal.value = false;
+  topicToDeleteId.value = null;
+  topicToDeleteTitle.value = '';
+};
+
+const deleteTopic = () => {
+  topics.value = topics.value.filter(t => t.id !== topicToDeleteId.value);
+  showDeleteModal.value = false;
+  topicToDeleteId.value = null;
+  topicToDeleteTitle.value = '';
 };
 
 // FIXED: Now correctly reads `props.group.id` rather than a missing global variable
 const goToTopic = (topicId) => {
-  router.visit(`/groups/${props.group.id}/topics/${topicId}`);
+  router.visit(route('topics.show',{ group: props.group.id, topic: topicId}));
 };
 </script>

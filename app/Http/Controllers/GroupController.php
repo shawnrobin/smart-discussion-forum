@@ -10,10 +10,26 @@ use Inertia\Response;
 
 class GroupController extends Controller
 {
-    public function index(): Response
+    public function index(Request $request): Response
     {
-        $groups = Group::with('creator')->withCount('users', 'topics')->get();
-        return Inertia::render('Groups/Index', ['groups' => $groups]);
+        $userId = $request->user()->id;
+
+        $groups = Group::with('creator')
+            ->withCount([
+                'users',
+                'topics',
+                'users as joined_count' => function ($query) use ($userId) {
+                    $query->where('user_id', $userId);
+                },
+            ])
+            ->get()
+            ->map(function ($group) {
+                $group->joined = $group->joined_count > 0;
+                unset($group->joined_count);
+                return $group;
+            });
+
+        return Inertia::render('GroupList/Index', ['groups' => $groups]);
     }
 
     public function create(): Response
@@ -38,7 +54,7 @@ class GroupController extends Controller
             'joined_at' => now(),
         ]);
 
-        return redirect()->route('groups.show', $group)
+        return redirect()->route('groups.index')
             ->with('success', 'Group created successfully.');
     }
 

@@ -2,13 +2,27 @@
   <div class="flex h-screen bg-gray-50 text-gray-800 antialiased">
     
     <nav class="w-64 bg-white border-r border-gray-100 flex flex-col justify-between shrink-0 shadow-sm">
+<<<<<<< HEAD
       
       <div>
         <div class="p-6 border-b border-gray-100 flex items-center gap-2">
           <div class="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center text-white font-black text-lg shadow-sm">S</div>
           <h2 class="text-xl font-bold tracking-tight text-gray-900">Smart<span class="text-orange-600">Forum</span></h2>
         </div>
+=======
+      <Link
+    :href="route('dashboard')"
+    class="p-6 border-b border-gray-100 flex items-center gap-2 hover:bg-gray-50 transition"
+>
+    <div class="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center text-white font-black text-lg shadow-sm">
+        S
+    </div>
+>>>>>>> 48ceb19e08c75d6d5a3d74d1f9d037c8235d644e
 
+    <h2 class="text-xl font-bold tracking-tight text-gray-900">
+        Smart<span class="text-orange-600">Forum</span>
+    </h2>
+</Link>
         <div class="p-4 space-y-1">
           <Link
             v-for="link in generalLinks"
@@ -25,6 +39,7 @@
             <span>{{ link.label }}</span>
           </Link>
         </div>
+<<<<<<< HEAD
       </div>
 
       <div class="border-t border-gray-100 bg-white">
@@ -54,6 +69,16 @@
             <span>Logout</span>
           </button>
         </div>
+=======
+      <div class="p-4 border-t border-gray-100 bg-white">
+        <button
+          @click="logout"
+          class="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-rose-600 hover:bg-rose-50 rounded-xl transition-all duration-150"
+        >
+          <LogOutIcon class="w-4 h-4 shrink-0" />
+          <span>Logout</span>
+        </button>
+>>>>>>> 48ceb19e08c75d6d5a3d74d1f9d037c8235d644e
       </div>
     </nav>
 
@@ -62,6 +87,7 @@
         <h1 class="text-xl font-bold text-gray-900 tracking-tight">{{ pageTitle || 'Overview' }}</h1>
         
         <div class="flex items-center gap-4">
+<<<<<<< HEAD
             <div class="relative">
                 <button @click="showNotifications = !showNotifications" 
                         class="relative p-2 text-amber-400 hover:text-amber-500 transition text-2xl">
@@ -85,6 +111,20 @@
             </div>
 
             <span class="text-sm font-medium text-gray-700 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">{{ user?.name ?? 'Guest' }}</span>
+=======
+          <div class="p-2 text-gray-400 hover:text-orange-600 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+            <NotificationBell />
+          </div>
+          
+          <div class="h-4 w-px bg-gray-200"></div>
+          
+          <Link
+    :href="route('settings.index')"
+    class="text-sm font-medium text-gray-700 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100 hover:bg-orange-50 hover:text-orange-600 transition"
+>
+    {{ userName ?? 'Guest Account' }}
+</Link>
+>>>>>>> 48ceb19e08c75d6d5a3d74d1f9d037c8235d644e
         </div>
       </header>
       <main class="flex-1 overflow-auto bg-gray-50/50">
@@ -122,6 +162,7 @@ onMounted(() => {
     }, 5000); 
 });
 
+<<<<<<< HEAD
 const generalLinks = [
   { id: 1, label: 'Dashboard', href: route('dashboard'), matchUrl: '/dashboard', icon: LayoutDashboard },
   { id: 2, label: 'Topics',    href: route('topics.index'), matchUrl: '/topics', icon: BookOpen },
@@ -130,6 +171,19 @@ const generalLinks = [
   { id: 5, label: 'Profile',   href: route('profile.edit'), matchUrl: '/profile', icon: User },
   { id: 6, label: 'Settings',  href: route('settings.edit'), matchUrl: '/settings', icon: Settings }
 ];
+=======
+
+
+// FIXED: We now use standard Laravel named route configurations instead of hardcoded paths
+const navLinks = computed(() => [
+  { id: 1, label: 'Dashboard', href: route('dashboard'),    matchUrl: '/dashboard', icon: LayoutDashboardIcon },
+  { id: 3, label: 'Groups',    href: route('groups.index'), matchUrl: '/groups',    icon: UsersIcon },
+  { id: 4, label: 'Quizzes',   href: route('quizzes.index'),matchUrl: '/quizzes',   icon: AwardIcon },
+  { id: 5, label: 'Profile',   href: route('profile.edit'), matchUrl: '/profile',   icon: UserIcon },
+  { id: 6, label: 'Settings',  href: route('settings.index'),matchUrl: '/settings',  icon: SettingsIcon }
+
+]);
+>>>>>>> 48ceb19e08c75d6d5a3d74d1f9d037c8235d644e
 
 const logout = () => {
   router.post(route('logout'), {}, {
