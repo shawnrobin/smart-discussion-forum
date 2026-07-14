@@ -10,6 +10,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\Api\GroupController;
 
+use App\Http\Controllers\QuizController;
 const LOGIN_ROUTE = '/login';
 
 Route::get('/', function () {
@@ -32,6 +33,7 @@ Route::middleware('auth')->group(function () {
     // Notifications
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
 
+
     // Groups & Topics (Managed under groups)
     Route::get('/groups', [GroupController::class, 'index'])->name('groups.index');
     Route::post('/groups', [GroupController::class, 'store'])->name('groups.store');
@@ -42,6 +44,26 @@ Route::middleware('auth')->group(function () {
     Route::get('/groups/{group}/topics/{topic}', function ($group, $topic) {
         return Inertia::render('Topics/Show', ['group' => ['id' => $group], 'topic' => null]);
     })->name('topics.show');
+
+   // Quizzes
+Route::get('/quizzes', [QuizController::class, 'index'])
+    ->name('quizzes.index');
+
+
+// Take quiz
+Route::get('/quizzes/{quiz}/take', [QuizController::class, 'start'])
+    ->name('quizzes.start');
+
+
+// Submit quiz
+Route::post('/quiz-attempts/{attempt}/submit', [QuizController::class, 'submit'])
+    ->name('quizzes.submit');
+
+
+// Results
+Route::get('/quiz-attempts/{attempt}/results', [QuizController::class, 'results'])
+    ->name('quizzes.results');
+
 
     // Quizzes & Profile
     Route::get('/quizzes', function () { return Inertia::render('Quizzes/Index'); })->name('quizzes.index');

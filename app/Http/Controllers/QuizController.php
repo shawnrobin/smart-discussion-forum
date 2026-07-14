@@ -17,20 +17,47 @@ class QuizController extends Controller
      * Display all quizzes.
      */
     public function index()
-    {
-        $quizzes = Quiz::with(['creator', 'group'])
-            ->where('published', true)
-            ->latest()
-            ->get()
-            ->map(function ($quiz) {
-                $quiz->status = $this->getQuizStatus($quiz);
-                return $quiz;
-            });
+{
+    $quizzes = Quiz::with([
+            'creator',
+            'group',
+            'attempts' => function ($query) {
+                $query->where('user_id', auth()->id());
+            }
+        ])
+        ->where('published', true)
+        ->latest()
+        ->get()
+        ->map(function ($quiz) {
 
-        return Inertia::render('Quizzes/Index', [
-            'quizzes' => $quizzes
-        ]);
-    }
+            // Get the logged-in student's attempt
+            $attempt = $quiz->attempts->first();
+
+
+            // If student already submitted
+            if ($attempt && $attempt->submitted_at) {
+
+                $quiz->status = 'completed';
+                $quiz->score = $attempt->score;
+
+            } 
+            else {
+
+                // Otherwise use normal quiz status
+                $quiz->status = $this->getQuizStatus($quiz);
+
+            }
+
+
+            return $quiz;
+
+        });
+
+
+    return Inertia::render('Quizzes/Index', [
+        'quizzes' => $quizzes
+    ]);
+}
 
     /**
      * Show quiz details.
@@ -208,14 +235,15 @@ class QuizController extends Controller
         $score = ($earnedPoints / max($totalPoints, 1)) * 100;
 
         $attempt->update([
-            'submitted_at' => now(),
-            'score' => $score,
-            'time_taken_seconds' => now()->diffInSeconds($attempt->started_at),
-        ]);
+    'submitted_at' => now(),
+    'score' => $score,
+    'time_taken_seconds' => now()->diffInSeconds($attempt->started_at),
+]);
 
-        return redirect()->route('quizzes.results', $attempt);
-    }
-
+return redirect()
+    ->route('quizzes.index')
+    ->with('success', 'Quiz submitted successfully!');}
+    
     /**
      * Show quiz results.
      */

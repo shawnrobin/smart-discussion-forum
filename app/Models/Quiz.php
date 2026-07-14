@@ -15,42 +15,38 @@ class Quiz extends Model
         'description',
         'start_time',
         'end_time',
-        'time_limit_minutes',
-        'status',
+        'duration_minutes',
+        'shuffle_questions',
+        'show_results_after',
+        'published',
     ];
 
     protected $casts = [
         'start_time' => 'datetime',
         'end_time' => 'datetime',
+        'shuffle_questions' => 'boolean',
+        'published' => 'boolean',
     ];
 
-    /**
-     * Group that owns the quiz.
-     */
+
     public function group(): BelongsTo
     {
         return $this->belongsTo(Group::class);
     }
 
-    /**
-     * User who created the quiz.
-     */
+
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    /**
-     * Quiz questions.
-     */
+
     public function questions(): HasMany
     {
         return $this->hasMany(QuizQuestion::class);
     }
 
-    /**
-     * Student attempts.
-     */
+
     public function attempts(): HasMany
     {
         return $this->hasMany(QuizAttempt::class);
