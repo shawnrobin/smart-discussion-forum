@@ -73,13 +73,13 @@
           <button @click="showCreateModal = false" class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">
             Cancel
           </button>
-          <PrimaryButton @click="createGroup" :disabled="creating">
-            {{ creating ? 'Creating...' : 'Create Group' }}
+          <PrimaryButton @click="createGroup">
+            Create Group
           </PrimaryButton>
         </div>
       </div>
     </div>
-
+    
   </AuthenticatedLayout>
 </template>
 

@@ -75,7 +75,7 @@
                   <button @click.stop="openEditModal(topic)" class="flex items-center gap-1 text-xs text-amber-700 hover:bg-amber-100 px-2 py-1 bg-amber-50 rounded transition font-medium">
                     <Edit2Icon class="w-3 h-3" /> Edit
                   </button>
-                  <button @click.stop="confirmDeleteTopic(topic.id)" class="flex items-center gap-1 text-xs text-rose-700 hover:bg-rose-100 px-2 py-1 bg-rose-50 rounded transition font-medium">
+                  <button @click.stop="deleteTopic(topic.id)" class="flex items-center gap-1 text-xs text-rose-700 hover:bg-rose-100 px-2 py-1 bg-rose-50 rounded transition font-medium">
                     <Trash2Icon class="w-3 h-3" /> Delete
                   </button>
 
