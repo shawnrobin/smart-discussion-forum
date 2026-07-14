@@ -14,7 +14,7 @@ class QuizAttempt extends Model
         'started_at',
         'submitted_at',
         'score',
-        'status',
+        'time_taken_seconds',
     ];
 
     protected $casts = [
@@ -22,6 +22,7 @@ class QuizAttempt extends Model
         'submitted_at' => 'datetime',
         'score' => 'decimal:2',
     ];
+
 
     /**
      * Quiz being attempted.
@@ -31,6 +32,7 @@ class QuizAttempt extends Model
         return $this->belongsTo(Quiz::class);
     }
 
+
     /**
      * Student attempting the quiz.
      */
@@ -39,11 +41,12 @@ class QuizAttempt extends Model
         return $this->belongsTo(User::class);
     }
 
+
     /**
      * Answers submitted.
      */
     public function answers(): HasMany
     {
-        return $this->hasMany(QuizAnswer::class);
+        return $this->hasMany(QuizAnswer::class, 'attempt_id');
     }
 }

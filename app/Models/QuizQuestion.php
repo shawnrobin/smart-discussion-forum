@@ -9,15 +9,18 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class QuizQuestion extends Model
 {
     protected $fillable = [
-        'quiz_id',
-        'question',
-        'option_a',
-        'option_b',
-        'option_c',
-        'option_d',
-        'correct_answer',
-        'marks',
-    ];
+    'quiz_id',
+    'question_text',
+    'question_type',
+    'options',
+    'correct_answer',
+    'points',
+    'order_index',
+];
+
+protected $casts = [
+    'options' => 'array',
+];
 
     /**
      * Quiz containing this question.

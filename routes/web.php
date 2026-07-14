@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\SettingsController;
-
+use App\Http\Controllers\QuizController;
 const LOGIN_ROUTE = '/login';
 
 // Home route - redirect to dashboard if authenticated, login if guest
@@ -56,10 +56,24 @@ Route::get('/groups/{group}/topics/{topic}', function ($group, $topic) {
     Route::post('/groups/{group}/join', [\App\Http\Controllers\GroupController::class, 'join'])->name('groups.join');
     Route::post('/groups/{group}/leave', [\App\Http\Controllers\GroupController::class, 'leave'])->name('groups.leave');
 
-    // Quizzes
-    Route::get('/quizzes', function () {
-        return Inertia::render('Quizzes/Index');
-    })->name('quizzes.index');
+   // Quizzes
+Route::get('/quizzes', [QuizController::class, 'index'])
+    ->name('quizzes.index');
+
+
+// Take quiz
+Route::get('/quizzes/{quiz}/take', [QuizController::class, 'start'])
+    ->name('quizzes.start');
+
+
+// Submit quiz
+Route::post('/quiz-attempts/{attempt}/submit', [QuizController::class, 'submit'])
+    ->name('quizzes.submit');
+
+
+// Results
+Route::get('/quiz-attempts/{attempt}/results', [QuizController::class, 'results'])
+    ->name('quizzes.results');
 
     // Profile & Settings
     Route::get('/profile', function () {
