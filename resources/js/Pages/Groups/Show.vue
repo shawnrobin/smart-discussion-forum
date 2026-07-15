@@ -138,6 +138,32 @@
         </div>
       </div>
 
+    <!-- Delete Confirmation Modal -->
+      <div v-if="showDeleteModal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" @click.self="cancelDeleteTopic">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
+          <div class="flex items-start gap-3">
+            <div class="shrink-0 w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center">
+              <Trash2Icon class="w-5 h-5 text-rose-600" />
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-gray-900">Delete this topic?</h3>
+              <p class="text-sm text-gray-600 mt-1">
+                This will permanently remove "{{ topicToDeleteTitle }}" and its replies. This can't be undone.
+              </p>
+            </div>
+          </div>
+
+          <div class="flex justify-end gap-3 mt-6">
+            <button @click="cancelDeleteTopic" class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">
+              Cancel
+            </button>
+            <button @click="deleteTopic" class="px-4 py-2 text-sm bg-rose-600 text-white rounded-lg hover:bg-rose-700 font-medium">
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+
   </AuthenticatedLayout>
 </template>
 

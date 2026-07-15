@@ -33,23 +33,22 @@
             <span>👥 {{ group.members }} members</span>
             <span>💬 {{ group.discussions }} discussions</span>
           </div>
-          
-          <div class="mt-4" @click.stop>
+
+          <div class="mt-4 flex gap-2" @click.stop>
             <button
-              v-if="!group.joined"
               @click="joinGroup(group.id)"
-              class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              :disabled="group.joined || loadingId === group.id"
+              class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Join
             </button>
             <button
-              v-else
               @click="leaveGroup(group.id)"
-              class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              :disabled="!group.joined || loadingId === group.id"
+              class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               Leave
             </button>
-         
           </div>
         </div>
       </div>
@@ -96,39 +95,41 @@ import PrimaryButton from '@/Components/PrimaryButton.vue';
 const page = usePage();
 const auth = computed(() => page.props.auth);
 
+// Real groups data passed from GroupController@index (includes users_count,
+// topics_count, and a "joined" boolean for the current user)
+const groups = computed(() => page.props.groups || []);
+
 const searchQuery = ref('');
 const sortBy = ref('recent');
 const showCreateModal = ref(false);
+const creating = ref(false);
+const loadingId = ref(null); // disables buttons on the group currently being joined/left
 
 const newGroup = ref({ name: '', description: '' });
 
 const createGroup = () => {
-  const newId = groups.value.length ? Math.max(...groups.value.map(g => g.id)) + 1 : 1;
-  groups.value.unshift({
-    id: newId,
+  if (!newGroup.value.name.trim()) return;
+  creating.value = true;
+
+  router.post('/groups', {
     name: newGroup.value.name,
     description: newGroup.value.description,
-    members: 1,
-    discussions: 0,
-    joined: true,
+  }, {
+    preserveScroll: true,
+    onSuccess: () => {
+      newGroup.value = { name: '', description: '' };
+      showCreateModal.value = false;
+    },
+    onFinish: () => {
+      creating.value = false;
+    },
   });
-  newGroup.value = { name: '', description: '' };
-  showCreateModal.value = false;
 };
-
-const groups = ref([
-  { id: 1, name: 'Data Structures', description: 'Learn about arrays, linked lists, trees, and graphs', members: 18, discussions: 45, joined: true },
-  { id: 2, name: 'Web Development', description: 'Frontend and backend web development', members: 25, discussions: 62, joined: true },
-  { id: 3, name: 'Database Design', description: 'SQL, NoSQL, and database design patterns', members: 12, discussions: 28, joined: false },
-  { id: 4, name: 'OOP Concepts', description: 'Object-Oriented Programming in Java and C++', members: 20, discussions: 38, joined: true },
-  { id: 5, name: 'UI/UX Discussion', description: 'User interface and user experience design', members: 15, discussions: 21, joined: false },
-  { id: 6, name: 'Machine Learning', description: 'Introduction to ML algorithms and frameworks', members: 22, discussions: 55, joined: true }
-]);
 
 const filteredGroups = computed(() => {
   return groups.value.filter(group =>
     group.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    group.description.toLowerCase().includes(searchQuery.value.toLowerCase())
+    (group.description || '').toLowerCase().includes(searchQuery.value.toLowerCase())
   );
 });
 
@@ -137,12 +138,46 @@ const goToGroup = (groupId) => {
 };
 
 const joinGroup = (groupId) => {
+  loadingId.value = groupId;
+
   const group = groups.value.find(g => g.id === groupId);
   if (group) group.joined = true;
+
+  router.post(`/groups/${groupId}/join`, {}, {
+    preserveScroll: true,
+    onError: () => {
+      if (group) group.joined = false;
+    },
+    onFinish: () => {
+      loadingId.value = null;
+    },
+  });
 };
 
 const leaveGroup = (groupId) => {
+  loadingId.value = groupId;
+
   const group = groups.value.find(g => g.id === groupId);
   if (group) group.joined = false;
+
+  router.post(`/groups/${groupId}/leave`, {}, {
+    preserveScroll: true,
+    onError: () => {
+      if (group) group.joined = true;
+    },
+    onFinish: () => {
+      loadingId.value = null;
+    },
+  });
+};
+
+const leaveGroup = (groupId) => {
+  loadingId.value = groupId;
+  router.post(`/groups/${groupId}/leave`, {}, {
+    preserveScroll: true,
+    onFinish: () => {
+      loadingId.value = null;
+    },
+  });
 };
 </script>

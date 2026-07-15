@@ -5,17 +5,40 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Group;
 use Illuminate\Http\Request;
-use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
+use Inertia\Inertia;
+use Inertia\Response;
 
 class GroupController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): Response
     {
-        $groups = Group::with('creator')->withCount('users', 'topics')->get();
-        return response()->json($groups);
+        $userId = $request->user()->id;
+
+        $groups = Group::with('creator')
+            ->withCount([
+                'users',
+                'topics',
+                'users as joined_count' => function ($query) use ($userId) {
+                    $query->where('user_id', $userId);
+                },
+            ])
+            ->get()
+            ->map(function ($group) {
+                $group->joined = $group->joined_count > 0;
+                unset($group->joined_count);
+                return $group;
+            });
+
+        return Inertia::render('GroupList/Index', ['groups' => $groups]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function create(): Response
+    {
+        return Inertia::render('Groups/Create');
+    }
+
+    public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -32,16 +55,22 @@ class GroupController extends Controller
             'joined_at' => now(),
         ]);
 
-        return response()->json($group->load('creator'), 201);
+        return redirect()->route('groups.index')
+            ->with('success', 'Group created successfully.');
     }
 
-    public function show(Group $group): JsonResponse
+    public function show(Group $group): Response
     {
         $group->load(['creator', 'users', 'topics']);
-        return response()->json($group);
+        return Inertia::render('Groups/Show', ['group' => $group]);
     }
 
-    public function update(Request $request, Group $group): JsonResponse
+    public function edit(Group $group): Response
+    {
+        return Inertia::render('Groups/Edit', ['group' => $group]);
+    }
+
+    public function update(Request $request, Group $group): RedirectResponse
     {
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
@@ -50,31 +79,34 @@ class GroupController extends Controller
         ]);
 
         $group->update($validated);
-        return response()->json($group);
+
+        return redirect()->route('groups.show', $group)
+            ->with('success', 'Group updated successfully.');
     }
 
-    public function destroy(Group $group): JsonResponse
+    public function destroy(Group $group): RedirectResponse
     {
         $group->delete();
-        return response()->json(['message' => 'Group deleted successfully']);
+        return redirect()->route('groups.index')
+            ->with('success', 'Group deleted successfully.');
     }
 
-    public function join(Request $request, Group $group): JsonResponse
+    public function join(Request $request, Group $group): RedirectResponse
     {
         if ($group->users()->where('user_id', $request->user()->id)->exists()) {
-            return response()->json(['message' => 'Already a member of this group'], 409);
+            return back()->with('error', 'Already a member of this group.');
         }
 
         $group->users()->attach($request->user()->id, [
             'joined_at' => now(),
         ]);
 
-        return response()->json(['message' => 'Joined group successfully']);
+        return back()->with('success', 'Joined group successfully.');
     }
 
-    public function leave(Request $request, Group $group): JsonResponse
+    public function leave(Request $request, Group $group): RedirectResponse
     {
         $group->users()->detach($request->user()->id);
-        return response()->json(['message' => 'Left group successfully']);
+        return back()->with('success', 'Left group successfully.');
     }
 }
