@@ -6,7 +6,7 @@
     <div class="space-y-6">
       <!-- Welcome Section -->
       <Card title="Welcome Back!">
-        <p class="text-gray-700">
+        <p class="text-gray-700 dark:text-gray-300">
           Hello {{ auth.user.name }}, welcome to Smart Discussion Forum.
         </p>
       </Card>
@@ -38,11 +38,11 @@
           <div
             v-for="group in groups"
             :key="group.id"
-            class="p-4 border border-gray-200 rounded-lg hover:shadow-md cursor-pointer transition"
+            class="p-4 border border-gray-200 dark:border-gray-600 rounded-lg hover:shadow-md cursor-pointer transition"
           >
-            <h3 class="font-semibold text-gray-900">{{ group.name }}</h3>
-            <p class="text-sm text-gray-600 mt-1">{{ group.members }} members</p>
-            <p class="text-xs text-gray-500 mt-2">Last activity: {{ group.lastActivity }}</p>
+            <h3 class="font-semibold text-gray-900 dark:text-white">{{ group.name }}</h3>
+            <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">{{ group.members }} members</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">Last activity: {{ group.lastActivity }}</p>
           </div>
         </div>
       </Card>
@@ -53,10 +53,10 @@
           <div
             v-for="activity in activities"
             :key="activity.id"
-            class="p-3 bg-gray-50 rounded-lg"
+            class="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg"
           >
-            <p class="text-sm text-gray-900">{{ activity.message }}</p>
-            <p class="text-xs text-gray-500 mt-1">{{ activity.time }}</p>
+            <p class="text-sm text-gray-900 dark:text-white">{{ activity.message }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">{{ activity.time }}</p>
           </div>
         </div>
       </Card>
@@ -93,6 +93,5 @@ const activities = ref([
 
 const search = () => {
   console.log('Searching for:', searchQuery.value);
-  // Will implement search functionality later
 };
 </script>
