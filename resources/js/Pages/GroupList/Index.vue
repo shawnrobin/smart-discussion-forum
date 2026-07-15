@@ -2,7 +2,7 @@
   <AuthenticatedLayout page-title="Groups" :user-name="auth?.user?.name || 'User'">
     <div class="space-y-6">
       <div class="flex justify-between items-center">
-        <h2 class="text-xl font-semibold">All Discussion Groups</h2>
+        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">All Discussion Groups</h2>
         <PrimaryButton @click="showCreateModal = true">
           + Create Group
         </PrimaryButton>
@@ -14,7 +14,7 @@
           placeholder="Search groups..."
           class="flex-1"
         />
-        <select v-model="sortBy" class="px-4 py-2 border border-gray-300 rounded-lg bg-white">
+        <select v-model="sortBy" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
           <option value="recent">Recent</option>
           <option value="members">Most Members</option>
           <option value="active">Most Active</option>
@@ -25,13 +25,13 @@
           v-for="group in filteredGroups"
           :key="group.id"
           @click="goToGroup(group.id)"
-          class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg cursor-pointer transition hover:translate-y-[-2px]"
+          class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg cursor-pointer transition hover:translate-y-[-2px] border border-transparent dark:border-gray-700"
         >
-          <h3 class="text-lg font-semibold text-gray-900">{{ group.name }}</h3>
-          <p class="text-sm text-gray-600 mt-2">{{ group.description }}</p>
-          <div class="mt-4 flex justify-between text-sm text-gray-500">
-            <span>👥 {{ group.users_count ?? 0 }} members</span>
-            <span>💬 {{ group.topics_count ?? 0 }} discussions</span>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ group.name }}</h3>
+          <p class="text-sm text-gray-600 dark:text-gray-300 mt-2">{{ group.description }}</p>
+          <div class="mt-4 flex justify-between text-sm text-gray-500 dark:text-gray-400">
+            <span>👥 {{ group.members }} members</span>
+            <span>💬 {{ group.discussions }} discussions</span>
           </div>
 
           <div class="mt-4 flex gap-2" @click.stop>
@@ -55,22 +55,22 @@
 
       <!-- Create Group Modal -->
     <div v-if="showCreateModal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" @click.self="showCreateModal = false">
-      <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-        <h3 class="text-lg font-bold text-gray-900 mb-4">Create Group</h3>
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md">
+        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Create Group</h3>
 
         <div class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Group Name</label>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Group Name</label>
             <TextInput v-model="newGroup.name" class="w-full" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
-            <textarea v-model="newGroup.description" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg"></textarea>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+            <textarea v-model="newGroup.description" rows="3" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"></textarea>
           </div>
         </div>
 
         <div class="flex justify-end gap-3 mt-6">
-          <button @click="showCreateModal = false" class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">
+          <button @click="showCreateModal = false" class="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
             Cancel
           </button>
           <PrimaryButton @click="createGroup">
@@ -84,18 +84,14 @@
 </template>
 
 <script setup>
-
 import { ref, computed } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
-
 import { Heart, ShoppingCart, Search } from 'lucide-vue-next'
 
-// If your alias @ fails, replace these paths with relative ones (e.g., '../../Components/TextInput.vue')
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import TextInput from '@/Components/TextInput.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 
-// Safely extract props using a computed property or direct hook assignment
 const page = usePage();
 const auth = computed(() => page.props.auth);
 
@@ -143,8 +139,32 @@ const goToGroup = (groupId) => {
 
 const joinGroup = (groupId) => {
   loadingId.value = groupId;
+
+  const group = groups.value.find(g => g.id === groupId);
+  if (group) group.joined = true;
+
   router.post(`/groups/${groupId}/join`, {}, {
     preserveScroll: true,
+    onError: () => {
+      if (group) group.joined = false;
+    },
+    onFinish: () => {
+      loadingId.value = null;
+    },
+  });
+};
+
+const leaveGroup = (groupId) => {
+  loadingId.value = groupId;
+
+  const group = groups.value.find(g => g.id === groupId);
+  if (group) group.joined = false;
+
+  router.post(`/groups/${groupId}/leave`, {}, {
+    preserveScroll: true,
+    onError: () => {
+      if (group) group.joined = true;
+    },
     onFinish: () => {
       loadingId.value = null;
     },

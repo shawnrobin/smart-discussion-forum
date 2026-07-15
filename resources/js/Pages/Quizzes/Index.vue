@@ -5,40 +5,23 @@
 
       <!-- Statistics Cards -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-        <!-- Active -->
-        <div class="bg-green-50 border border-green-200 rounded-lg p-6">
-          <h3 class="text-lg font-semibold text-green-900">
-            Active
-          </h3>
-
-          <p class="text-3xl font-bold text-green-600 mt-2">
-            {{ activeQuizzes.length }}
-          </p>
+        <!-- Active Quizzes -->
+        <div class="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-6">
+          <h3 class="text-lg font-semibold text-green-900 dark:text-green-300">Active</h3>
+          <p class="text-3xl font-bold text-green-600 dark:text-green-400 mt-2">{{ activeQuizzes.length }}</p>
         </div>
 
 
         <!-- Upcoming -->
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 class="text-lg font-semibold text-blue-900">
-            Upcoming
-          </h3>
-
-          <p class="text-3xl font-bold text-blue-600 mt-2">
-            {{ upcomingQuizzes.length }}
-          </p>
+        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-6">
+          <h3 class="text-lg font-semibold text-blue-900 dark:text-blue-300">Upcoming</h3>
+          <p class="text-3xl font-bold text-blue-600 dark:text-blue-400 mt-2">{{ upcomingQuizzes.length }}</p>
         </div>
 
-
-        <!-- Closed -->
-        <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
-          <h3 class="text-lg font-semibold text-gray-900">
-            Completed
-          </h3>
-
-          <p class="text-3xl font-bold text-gray-600 mt-2">
-            {{ completedQuizzes.length }}
-          </p>
+        <!-- Completed -->
+        <div class="bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg p-6">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">Completed</h3>
+          <p class="text-3xl font-bold text-gray-600 dark:text-gray-300 mt-2">{{ completedQuizzes.length }}</p>
         </div>
 
       </div>
@@ -55,35 +38,20 @@
           <div
             v-for="quiz in activeQuizzes"
             :key="quiz.id"
-            class="p-6 border border-green-200 bg-green-50 rounded-lg"
+            class="p-6 border border-green-200 dark:border-green-800 bg-green-50 dark:bg-green-900/20 rounded-lg"
           >
 
             <div class="flex justify-between items-start">
 
 
               <div>
-
-                <h3 class="text-lg font-semibold text-gray-900">
-                  {{ quiz.title }}
-                </h3>
-
-
-                <p class="text-sm text-gray-600 mt-1">
-                  By:
-                  {{ quiz.creator?.name ?? 'Unknown' }}
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ quiz.title }}</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">by {{ quiz.instructor }}</p>
+                <p class="text-sm text-gray-600 dark:text-gray-300 mt-2">
+                  ⏱️ {{ quiz.duration }} minutes | 📋 {{ quiz.questions }} questions
                 </p>
-
-
-                <p class="text-sm text-gray-600 mt-2">
-                  ⏱️ {{ quiz.duration_minutes }} minutes
-                  |
-                  📋 {{ quiz.questions?.length ?? 0 }} questions
-                </p>
-
-
-                <p class="text-xs text-red-600 mt-2">
-                  ⏰ Closes:
-                  {{ formatDate(quiz.end_time) }}
+                <p class="text-xs text-red-600 dark:text-red-400 mt-2">
+                  ⏰ Closes: {{ quiz.closesAt }}
                 </p>
 
               </div>

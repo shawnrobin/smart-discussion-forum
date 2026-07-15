@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Api\GroupController;
 
 use App\Http\Controllers\QuizController;
@@ -41,9 +42,24 @@ Route::middleware('auth')->group(function () {
     Route::post('/groups/{group}/join', [GroupController::class, 'join'])->name('groups.join');
     Route::post('/groups/{group}/leave', [GroupController::class, 'leave'])->name('groups.leave');
     
+    Route::get('/dashboard', function () {
+        return Inertia::render('Dashboard', ['auth' => ['user' => Auth::user()]]);
+    })->name('dashboard');
+
     Route::get('/groups/{group}/topics/{topic}', function ($group, $topic) {
-        return Inertia::render('Topics/Show', ['group' => ['id' => $group], 'topic' => null]);
+        return Inertia::render('Topics/Show', ['group' => ['id' => $group, 'name' => 'Data Structures'], 'topic' => null]);
     })->name('topics.show');
+
+    Route::get('/groups/{id}', function ($id) { return Inertia::render('Groups/Show'); })->name('groups.show');
+    Route::get('/groups', function () { return Inertia::render('GroupList/Index'); })->name('groups.index');
+    Route::get('/quizzes', function () { return Inertia::render('Quizzes/Index'); })->name('quizzes.index');
+
+    // Settings & Profile
+    Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+    Route::get('/settings/profile', function () { return Inertia::render('Settings/Profile'); })->name('settings.profile.show');
+    
+    Route::put('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile.update');
+   
 
    // Quizzes
 Route::get('/quizzes', [QuizController::class, 'index'])
@@ -67,15 +83,18 @@ Route::get('/quiz-attempts/{attempt}/results', [QuizController::class, 'results'
 
     // Quizzes & Profile
     Route::get('/quizzes', function () { return Inertia::render('Quizzes/Index'); })->name('quizzes.index');
-    Route::get('/profile', function () { return Inertia::render('Profile/Edit'); })->name('profile.edit');
-
-    // Settings
-    Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
-    Route::put('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile');
+    Route::get('/profile', function () { return Inertia::render('Profile/Edit'); })->name('profile.edit')
+   
     Route::put('/settings/account', [SettingsController::class, 'updateAccount'])->name('settings.account');
     Route::put('/settings', [SettingsController::class, 'updateSettings'])->name('settings.update');
     Route::put('/settings/deactivate', [SettingsController::class, 'deactivateAccount'])->name('settings.deactivate');
     Route::delete('/settings/delete', [SettingsController::class, 'deleteAccount'])->name('settings.delete');
+
+    Route::middleware(['is_admin'])->group(function () {
+        Route::get('/admin', function () { return Inertia::render('Admin/Dashboard'); });
+    });
+
+    Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
 
 // Admin Routes
