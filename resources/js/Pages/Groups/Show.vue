@@ -2,14 +2,12 @@
   <AuthenticatedLayout :page-title="group.name" :user-name="auth.user.name">
     <div class="space-y-6">
       <!-- Group Info & Create Button -->
-      <div class="bg-white rounded-lg shadow-md p-6">
+      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
         <div class="flex justify-between items-start">
           <div>
-
-
-            <h2 class="text-2xl font-bold text-gray-900">{{ group?.name || 'Data Structures & Algorithms' }}</h2>
-            <p class="text-gray-600 mt-2">{{ group?.description || 'Discussion forum for mastering core engineering concepts.' }}</p>
-            <div class="flex items-center gap-4 text-sm text-gray-500 mt-4">
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-white">{{ group?.name || 'Data Structures & Algorithms' }}</h2>
+            <p class="text-gray-600 dark:text-gray-300 mt-2">{{ group?.description || 'Discussion forum for mastering core engineering concepts.' }}</p>
+            <div class="flex items-center gap-4 text-sm text-gray-500 dark:text-gray-400 mt-4">
               <span class="flex items-center gap-1">
                 <UsersIcon class="w-4 h-4 text-orange-500" /> 18 members
               </span>
@@ -17,7 +15,6 @@
                 <MessageSquareIcon class="w-4 h-4 text-orange-500" /> {{ topics.length }} topics
               </span>
             </div>
-
           </div>
           <PrimaryButton @click="showCreateTopic = true">
             + New Topic
@@ -34,7 +31,7 @@
         />
         <div class="flex items-center">
           <label for="filterBy" class="sr-only">Filter topics</label>
-          <select id="filterBy" v-model="filterBy" class="px-4 py-2 border border-gray-300 rounded-lg">
+          <select id="filterBy" v-model="filterBy" class="px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg">
             <option value="recent">Recent</option>
             <option value="popular">Most Replied</option>
             <option value="unanswered">Unanswered</option>
@@ -48,7 +45,7 @@
           v-for="topic in filteredTopics"
           :key="topic.id"
           @click="goToTopic(topic.id)"
-          class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg cursor-pointer transition"
+          class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg cursor-pointer transition"
         >
           <div class="flex gap-4">
             <!-- Author Avatar -->
@@ -60,42 +57,39 @@
             <div class="flex-1">
               <div class="flex items-start justify-between">
                 <div>
-
-
                   <h3 
                     @click="goToTopic(topic.id)" 
-                    class="text-lg font-semibold text-gray-900 hover:text-orange-600 transition cursor-pointer"
+                    class="text-lg font-semibold text-gray-900 dark:text-white hover:text-orange-600 dark:hover:text-orange-400 transition cursor-pointer"
                   >
                     {{ topic.title }}
                   </h3>
-                  <p class="text-gray-600 mt-1 text-sm whitespace-pre-line">{{ topic.body }}</p>
+                  <p class="text-gray-600 dark:text-gray-300 mt-1 text-sm whitespace-pre-line">{{ topic.body }}</p>
                 </div>
                 
                 <div class="flex gap-2 shrink-0">
-                  <button @click.stop="openEditModal(topic)" class="flex items-center gap-1 text-xs text-amber-700 hover:bg-amber-100 px-2 py-1 bg-amber-50 rounded transition font-medium">
+                  <button @click.stop="openEditModal(topic)" class="flex items-center gap-1 text-xs text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-900/30 px-2 py-1 bg-amber-50 dark:bg-amber-900/20 rounded transition font-medium">
                     <Edit2Icon class="w-3 h-3" /> Edit
                   </button>
-                  <button @click.stop="deleteTopic(topic.id)" class="flex items-center gap-1 text-xs text-rose-700 hover:bg-rose-100 px-2 py-1 bg-rose-50 rounded transition font-medium">
+                  <button @click.stop="deleteTopic(topic.id)" class="flex items-center gap-1 text-xs text-rose-700 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-900/30 px-2 py-1 bg-rose-50 dark:bg-rose-900/20 rounded transition font-medium">
                     <Trash2Icon class="w-3 h-3" /> Delete
                   </button>
-
                 </div>
                 <span
                   v-if="topic.status === 'answered'"
-                  class="px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full"
+                  class="px-3 py-1 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 text-xs font-medium rounded-full"
                 >
                   ✓ Answered
                 </span>
                 <span
                   v-else
-                  class="px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full"
+                  class="px-3 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 text-xs font-medium rounded-full"
                 >
                   ? Unanswered
                 </span>
               </div>
 
               <!-- Meta -->
-              <div class="mt-4 flex justify-between text-sm text-gray-500">
+              <div class="mt-4 flex justify-between text-sm text-gray-500 dark:text-gray-400">
                 <span>by {{ topic.author.name }} • {{ topic.createdAt }}</span>
                 <span>💬 {{ topic.replies }} replies • 👁️ {{ topic.views }} views</span>
               </div>
@@ -106,12 +100,12 @@
 
       <!-- Pagination -->
       <div class="flex justify-center gap-2">
-        <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+        <button class="px-4 py-2 border border-gray-300 dark:border-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
           Previous
         </button>
         <button class="px-4 py-2 bg-blue-600 text-white rounded-lg">1</button>
-        <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">2</button>
-        <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
+        <button class="px-4 py-2 border border-gray-300 dark:border-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">2</button>
+        <button class="px-4 py-2 border border-gray-300 dark:border-gray-600 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700">
           Next
         </button>
       </div>
@@ -119,22 +113,22 @@
 
     <!-- Create/Edit Topic Modal -->
       <div v-if="showModal || showCreateTopic" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" @click.self="closeModal(); showCreateTopic = false">
-        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-          <h3 class="text-lg font-bold text-gray-900 mb-4">{{ isEditing ? 'Edit Topic' : 'New Topic' }}</h3>
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md">
+          <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">{{ isEditing ? 'Edit Topic' : 'New Topic' }}</h3>
 
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Title</label>
               <TextInput v-model="form.title" class="w-full" />
             </div>
             <div>
-              <label class="block text-sm font-medium text-gray-700 mb-1">Body</label>
-              <textarea v-model="form.body" rows="4" class="w-full px-4 py-2 border border-gray-300 rounded-lg"></textarea>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Body</label>
+              <textarea v-model="form.body" rows="4" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"></textarea>
             </div>
           </div>
 
           <div class="flex justify-end gap-3 mt-6">
-            <button @click="closeModal(); showCreateTopic = false" class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">
+            <button @click="closeModal(); showCreateTopic = false" class="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
               Cancel
             </button>
             <PrimaryButton @click="saveTopic(); showCreateTopic = false">
@@ -180,7 +174,6 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import TextInput from '@/Components/TextInput.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 
-
 const Auth = usePage().props.auth;
 const group = ref({
   id: 1,
@@ -199,7 +192,6 @@ import {
   SlidersHorizontal as SlidersHorizontalIcon
 } from 'lucide-vue-next';
 
-// FIXED: Define the group prop passed down from Laravel Inertia
 const props = defineProps({
   group: {
     type: Object,
@@ -212,7 +204,6 @@ const auth = ref({
     name: 'Developer Mode',
     email: 'dev@forum.com'
   }
-
 });
 
 const searchQuery = ref('');
@@ -252,10 +243,6 @@ const topics = ref([
   }
 ]);
 
-
-
-
-
 const showModal = ref(false);
 const isEditing = ref(false);
 const currentTopicId = ref(null);
@@ -274,10 +261,6 @@ const filteredTopics = computed(() => {
     });
 });
 
-
-const GoToTopic = (topicId) => {
-  router.visit(route('topics.show',{group: props.group.id,topic: topicId}));
-};
 const openCreateModal = () => {
   isEditing.value = false;
   form.value.title = '';
@@ -319,33 +302,13 @@ const saveTopic = () => {
   closeModal();
 };
 
-// Custom delete-confirmation modal state (replaces the native confirm() popup)
-const showDeleteModal = ref(false);
-const topicToDeleteId = ref(null);
-const topicToDeleteTitle = ref('');
-
-const confirmDeleteTopic = (id) => {
-  const topic = topics.value.find(t => t.id === id);
-  topicToDeleteId.value = id;
-  topicToDeleteTitle.value = topic ? topic.title : 'this topic';
-  showDeleteModal.value = true;
+const deleteTopic = (id) => {
+  if (confirm('Are you absolutely sure you want to delete this discussion topic?')) {
+    topics.value = topics.value.filter(t => t.id !== id);
+  }
 };
 
-const cancelDeleteTopic = () => {
-  showDeleteModal.value = false;
-  topicToDeleteId.value = null;
-  topicToDeleteTitle.value = '';
-};
-
-const deleteTopic = () => {
-  topics.value = topics.value.filter(t => t.id !== topicToDeleteId.value);
-  showDeleteModal.value = false;
-  topicToDeleteId.value = null;
-  topicToDeleteTitle.value = '';
-};
-
-// FIXED: Now correctly reads `props.group.id` rather than a missing global variable
 const goToTopic = (topicId) => {
-  router.visit(route('topics.show',{ group: props.group.id, topic: topicId}));
+  router.visit(route('topics.show', { group: props.group.id, topic: topicId }));
 };
 </script>

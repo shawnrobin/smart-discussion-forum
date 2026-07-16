@@ -78,22 +78,10 @@
 
 
               <div>
-
-                <h3 class="text-lg font-semibold text-gray-900">
-                  {{ quiz.title }}
-                </h3>
-
-
-                <p class="text-sm text-gray-600 mt-1">
-                  By:
-                  {{ quiz.creator?.name ?? 'Unknown' }}
-                </p>
-
-
-                <p class="text-sm text-gray-600 mt-2">
-                  ⏱️ {{ quiz.duration_minutes }} minutes
-                  |
-                  📋 {{ quiz.questions?.length ?? 0 }} questions
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ quiz.title }}</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">by {{ quiz.instructor }}</p>
+                <p class="text-sm text-gray-600 dark:text-gray-300 mt-2">
+                  ⏱️ {{ quiz.duration }} minutes | 📋 {{ quiz.questions }} questions
                 </p>
                 <!-- Active quizzes -->
 <p
