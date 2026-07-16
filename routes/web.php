@@ -32,13 +32,14 @@ Route::middleware('auth')->group(function () {
     // Notifications
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
 
-    // Groups & Topics (Managed under groups)
+    // Groups
     Route::get('/groups', [GeneralGroupController::class, 'index'])->name('groups.index');
     Route::post('/groups', [GeneralGroupController::class, 'store'])->name('groups.store');
     Route::get('/groups/{id}', function ($id) { return Inertia::render('Groups/Show'); })->name('groups.show');
     Route::post('/groups/{group}/join', [GeneralGroupController::class, 'join'])->name('groups.join');
     Route::post('/groups/{group}/leave', [GeneralGroupController::class, 'leave'])->name('groups.leave');
 
+    // Topics
     Route::get('/groups/{group}/topics/{topic}', function ($group, $topic) {
         return Inertia::render('Topics/Show', ['group' => ['id' => $group], 'topic' => null]);
     })->name('topics.show');
@@ -52,6 +53,11 @@ Route::middleware('auth')->group(function () {
     // Profile & Settings
     Route::get('/profile', function () { return Inertia::render('Profile/Edit'); })->name('profile.edit');
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
+    Route::put('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile.update');
+    Route::put('/settings/account', [SettingsController::class, 'updateAccount'])->name('settings.account');
+    Route::put('/settings', [SettingsController::class, 'updateSettings'])->name('settings.update');
+    Route::put('/settings/deactivate', [SettingsController::class, 'deactivateAccount'])->name('settings.deactivate');
+    Route::delete('/settings/delete', [SettingsController::class, 'deleteAccount'])->name('settings.delete');
 });
 
 // 4. Admin Routes
