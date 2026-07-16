@@ -8,7 +8,7 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // USERS TABLE
+        // 1. Create Base Tables
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -17,12 +17,24 @@ return new class extends Migration
             $table->string('password');
             $table->enum('role', ['student', 'lecturer', 'group_admin', 'system_admin'])->default('student');
             $table->enum('status', ['active', 'inactive', 'blacklisted'])->default('active');
+            $table->boolean('blacklisted')->default(false); // Added missing column
+            $table->boolean('is_admin')->default(false);    // Added missing column
             $table->timestamp('last_login')->nullable();
             $table->integer('inactive_warnings')->default(0);
             $table->timestamps();
         });
 
-        // GROUPS TABLE (Discussion groups)
+        // 2. Add extra profile fields to users
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('avatar')->nullable();
+            $table->text('bio')->nullable();
+            $table->string('course')->nullable();
+            $table->string('faculty')->nullable();
+            $table->integer('year_of_study')->nullable();
+            $table->string('phone_number')->nullable();
+        });
+
+        // ... Keep all other Schema::create blocks exactly as they were
         Schema::create('groups', function (Blueprint $table) {
             $table->id();
             $table->string('name');
@@ -32,7 +44,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // GROUP_USER PIVOT TABLE (Who is in which group)
         Schema::create('group_user', function (Blueprint $table) {
             $table->id();
             $table->foreignId('group_id')->constrained('groups')->onDelete('cascade');
@@ -41,7 +52,6 @@ return new class extends Migration
             $table->unique(['group_id', 'user_id']);
         });
 
-        // TOPICS TABLE (Discussion threads)
         Schema::create('topics', function (Blueprint $table) {
             $table->id();
             $table->string('title', 500);
@@ -55,7 +65,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // MESSAGES TABLE (Replies/Comments)
         Schema::create('messages', function (Blueprint $table) {
             $table->id();
             $table->text('content');
@@ -68,17 +77,15 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // USER EXCLUSIONS TABLE (Requirement #3: Exclude users)
         Schema::create('user_exclusions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('excluded_user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('message_id')->nullable()->constrained('messages')->onDelete('cascade');
             $table->timestamps();
-            $table->unique(['user_id', 'excluded_user_id', 'message_id']);
+            $table->unique(['user_id', 'excluded_user_id', 'message_id'], 'unique_exclusion');
         });
 
-        // ONBOARDING RULES TABLE (Requirement #5)
         Schema::create('onboarding_rules', function (Blueprint $table) {
             $table->id();
             $table->string('title');
@@ -87,7 +94,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // USER ONBOARDING TABLE (Track who agreed to rules)
         Schema::create('user_onboarding', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
@@ -96,7 +102,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // MODERATION LOGS TABLE (Requirement #4: Warnings and blacklist)
         Schema::create('moderation_logs', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
@@ -107,7 +112,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // PARTICIPATION SCORES TABLE (Requirement #9)
         Schema::create('participation_scores', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
@@ -120,7 +124,6 @@ return new class extends Migration
             $table->unique(['user_id', 'group_id']);
         });
 
-        // QUIZZES TABLE (Requirement #10)
         Schema::create('quizzes', function (Blueprint $table) {
             $table->id();
             $table->string('title');
@@ -136,7 +139,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // QUIZ QUESTIONS TABLE
         Schema::create('quiz_questions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('quiz_id')->constrained('quizzes')->onDelete('cascade');
@@ -149,7 +151,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // QUIZ ATTEMPTS TABLE (When someone takes a quiz)
         Schema::create('quiz_attempts', function (Blueprint $table) {
             $table->id();
             $table->foreignId('quiz_id')->constrained('quizzes')->onDelete('cascade');
@@ -161,7 +162,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // QUIZ ANSWERS TABLE (Individual answers during attempt)
         Schema::create('quiz_answers', function (Blueprint $table) {
             $table->id();
             $table->foreignId('attempt_id')->constrained('quiz_attempts')->onDelete('cascade');
@@ -172,7 +172,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // NOTIFICATIONS TABLE
         Schema::create('notifications', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
@@ -185,7 +184,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // SYNC QUEUE TABLE (For offline desktop app - Requirement #8)
         Schema::create('sync_queue', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
@@ -197,24 +195,6 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // TOPIC RECOMMENDATIONS TABLE (Requirement #11: ML recommendations)
-        Schema::create('topic_recommendations', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('topic_id')->constrained('topics')->onDelete('cascade');
-            $table->decimal('score', 5, 2);
-            $table->string('reason')->nullable();
-            $table->timestamps();
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('avatar')->nullable();
-            $table->text('bio')->nullable();
-            $table->string('course')->nullable();
-            $table->string('faculty')->nullable();
-            $table->integer('year_of_study')->nullable();
-            $table->string('phone_number')->nullable();
-        });
-
-        // TOPIC RECOMMENDATIONS TABLE (Requirement #11: ML recommendations)
         Schema::create('topic_recommendations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
@@ -244,8 +224,5 @@ return new class extends Migration
         Schema::dropIfExists('group_user');
         Schema::dropIfExists('groups');
         Schema::dropIfExists('users');
-        Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['avatar', 'bio', 'course', 'faculty', 'year_of_study', 'phone_number']);
-        });
     }
 };

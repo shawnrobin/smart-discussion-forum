@@ -10,7 +10,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
-use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -27,20 +26,28 @@ class RegisteredUserController extends Controller
     /**
      * Handle an incoming registration request.
      *
-     * @throws ValidationException
+     * @throws \Illuminate\Validation\ValidationException
      */
     public function store(Request $request): RedirectResponse
     {
+        // 1. Validation: Added 'username' and 'agreed_to_rules'
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+            'username' => 'required|string|max:255|unique:'.User::class,
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+            'agreed_to_rules' => 'required|accepted',
         ]);
 
+        // 2. Creating the user: Added 'username', 'role', 'agreed_to_rules', and 'rules_version'
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
+            'username' => $request->username,
             'password' => Hash::make($request->password),
+            'role' => 'student', // Default role
+            'agreed_to_rules' => $request->boolean('agreed_to_rules'),
+            'rules_version' => $request->rules_version ?? 1,
         ]);
 
         event(new Registered($user));

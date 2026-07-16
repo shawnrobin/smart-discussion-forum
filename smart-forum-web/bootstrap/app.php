@@ -21,6 +21,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // Explicitly register the middleware string key mapping here
         $middleware->alias([
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
+            'isLecturer' => \App\Http\Middleware\EnsureIsLecturer::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

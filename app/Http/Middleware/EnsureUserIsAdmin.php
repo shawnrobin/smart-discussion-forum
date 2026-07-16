@@ -13,12 +13,15 @@ class EnsureUserIsAdmin
      */
     public function handle(Request $request, Closure $next): Response
     {
-        // This checks if the user is logged in AND has is_admin set to true
-        if ($request->user() && $request->user()->is_admin) {
+        // Define the roles allowed to access admin/quiz-creation features
+        $authorizedRoles = ['system_admin', 'group_admin', 'lecturer'];
+
+        // Check if the user is logged in and their role exists in our authorized list
+        if ($request->user() && in_array($request->user()->role, $authorizedRoles)) {
             return $next($request);
         }
 
-        // If they are not an admin, send them back to the home page
-        return redirect('/');
+        // If they don't have the role, block them
+        abort(403, 'Unauthorized access: You do not have the required permissions.');
     }
 }

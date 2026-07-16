@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
 use App\Models\Group;
 use App\Models\Quiz;
 use App\Models\QuizAttempt;
@@ -10,6 +9,7 @@ use App\Models\QuizAnswer;
 use App\Models\QuizQuestion;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
 
 class QuizController extends Controller
 {
@@ -17,63 +17,36 @@ class QuizController extends Controller
      * Display all quizzes.
      */
     public function index()
-{
-    $quizzes = Quiz::with([
+    {
+        $quizzes = Quiz::with([
             'creator',
             'group',
             'attempts' => function ($query) {
                 $query->where('user_id', auth()->id());
             }
         ])
-        ->where('published', true)
-        ->latest()
-        ->get()
-        ->map(function ($quiz) {
+            ->where('published', true)
+            ->latest()
+            ->get()
+            ->map(function ($quiz) {
 
-            // Get the logged-in student's attempt
-            $attempt = $quiz->attempts->first();
+                // Get the logged-in student's attempt
+                $attempt = $quiz->attempts->first();
 
+                // If student already submitted
+                if ($attempt && $attempt->submitted_at) {
+                    $quiz->status = 'completed';
+                    $quiz->score = $attempt->score;
+                } else {
+                    // Otherwise use normal quiz status
+                    $quiz->status = $this->getQuizStatus($quiz);
+                }
 
-            // If student already submitted
-            if ($attempt && $attempt->submitted_at) {
+                return $quiz;
+            });
 
-                $quiz->status = 'completed';
-                $quiz->score = $attempt->score;
-
-            } 
-            else {
-
-                // Otherwise use normal quiz status
-                $quiz->status = $this->getQuizStatus($quiz);
-
-            }
-
-
-            return $quiz;
-
-        });
-
-
-    return Inertia::render('Quizzes/Index', [
-        'quizzes' => $quizzes
-    ]);
-}
-
-    /**
-     * Show quiz details.
-     */
-    public function show(Quiz $quiz)
-    {
-        $quiz->load('questions');
-
-        // Hide answers before the attempt
-        $quiz->questions->each(function ($question) {
-            unset($question->correct_answer);
-        });
-
-        return Inertia::render('Quizzes/Show', [
-            'quiz' => $quiz,
-            'status' => $this->getQuizStatus($quiz)
+        return Inertia::render('Quizzes/Index', [
+            'quizzes' => $quizzes
         ]);
     }
 
@@ -82,16 +55,38 @@ class QuizController extends Controller
      */
     public function create(Group $group)
     {
-        if (!in_array(auth()->user()->role, [
-            'lecturer',
-            'group_admin',
-            'system_admin'
-        ])) {
-            abort(403);
-        }
-
         return Inertia::render('Quizzes/Create', [
             'group' => $group
+        ]);
+    }
+
+    /**
+     * Show quiz details — routes to Announcement, Show, or Results based on status.
+     */
+    public function show(Quiz $quiz)
+    {
+        $status = $this->getQuizStatus($quiz);
+
+        if ($status === 'upcoming') {
+            return Inertia::render('Quizzes/Announcement', ['quiz' => $quiz]);
+        }
+
+        if ($status === 'closed') {
+            $attempt = $quiz->attempts()->where('user_id', Auth::id())->first();
+            return $attempt
+                ? redirect()->route('quizzes.results', $attempt)
+                : redirect()->route('quizzes.index');
+        }
+
+        // Active — hide answers before attempt
+        $quiz->load('questions');
+        $quiz->questions->each(function ($question) {
+            unset($question->correct_answer);
+        });
+
+        return Inertia::render('Quizzes/Show', [
+            'quiz' => $quiz,
+            'status' => $status
         ]);
     }
 
@@ -100,14 +95,6 @@ class QuizController extends Controller
      */
     public function store(Request $request, Group $group)
     {
-        if (!in_array(auth()->user()->role, [
-            'lecturer',
-            'group_admin',
-            'system_admin'
-        ])) {
-            abort(403);
-        }
-
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
@@ -128,7 +115,7 @@ class QuizController extends Controller
             'title' => $validated['title'],
             'description' => $validated['description'] ?? null,
             'group_id' => $group->id,
-            'created_by' => auth()->id(),
+            'created_by' => Auth::id(),
             'start_time' => $validated['start_time'],
             'end_time' => $validated['end_time'],
             'duration_minutes' => $validated['duration_minutes'],
@@ -149,9 +136,7 @@ class QuizController extends Controller
             ]);
         }
 
-        return redirect()
-            ->route('quizzes.show', $quiz)
-            ->with('success', 'Quiz created successfully.');
+        return redirect()->route('quizzes.show', $quiz);
     }
 
     /**
@@ -160,8 +145,7 @@ class QuizController extends Controller
     public function start(Quiz $quiz)
     {
         if ($this->getQuizStatus($quiz) !== 'active') {
-            return redirect()->back()
-                ->with('error', 'Quiz is not currently available.');
+            return redirect()->back()->with('error', 'Quiz is not currently available.');
         }
 
         $attempt = QuizAttempt::firstOrCreate(
@@ -170,9 +154,7 @@ class QuizController extends Controller
                 'user_id' => auth()->id(),
                 'submitted_at' => null,
             ],
-            [
-                'started_at' => now(),
-            ]
+            ['started_at' => now()]
         );
 
         $quiz->load('questions');
@@ -188,7 +170,7 @@ class QuizController extends Controller
             unset($question->correct_answer);
         });
 
-        return Inertia::render('Quizzes/Take', [
+        return Inertia::render('Quizzes/ActiveQuiz', [
             'quiz' => $quiz,
             'attempt' => $attempt,
             'duration' => $quiz->duration_minutes,
@@ -212,7 +194,6 @@ class QuizController extends Controller
         $earnedPoints = 0;
 
         foreach ($validated['answers'] as $answerData) {
-
             $question = QuizQuestion::findOrFail($answerData['question_id']);
 
             $correct = strtolower(trim($answerData['user_answer'])) ==
@@ -235,24 +216,22 @@ class QuizController extends Controller
         $score = ($earnedPoints / max($totalPoints, 1)) * 100;
 
         $attempt->update([
-    'submitted_at' => now(),
-    'score' => $score,
-    'time_taken_seconds' => now()->diffInSeconds($attempt->started_at),
-]);
+            'submitted_at' => now(),
+            'score' => $score,
+            'time_taken_seconds' => now()->diffInSeconds($attempt->started_at),
+        ]);
 
-return redirect()
-    ->route('quizzes.index')
-    ->with('success', 'Quiz submitted successfully!');}
-    
+        return redirect()
+            ->route('quizzes.index')
+            ->with('success', 'Quiz submitted successfully!');
+    }
+
     /**
-     * Show quiz results.
+     * Results report.
      */
     public function results(QuizAttempt $attempt)
     {
-        if (
-            $attempt->user_id !== auth()->id() &&
-            !auth()->user()->isAdmin()
-        ) {
+        if ($attempt->user_id !== auth()->id() && !auth()->user()->isAdmin()) {
             abort(403);
         }
 
@@ -267,7 +246,7 @@ return redirect()
     }
 
     /**
-     * Helper.
+     * Helper: get quiz status.
      */
     private function getQuizStatus($quiz)
     {

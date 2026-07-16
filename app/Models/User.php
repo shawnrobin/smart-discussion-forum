@@ -3,6 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -12,40 +15,37 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $fillable = [
-        
-   
-    'name',
-    'email',
-    'username',
-    'password',
-    'role',
-    'status',
-    'last_login',
-    'remember_token',
-    'avatar',
-    'bio',
-    'course',
-    'faculty',
-    'year_of_study',
-    'phone_number',
-   'blacklisted',
-   ];
-
-
+        'name',
+        'email',
+        'username',
+        'password',
+        'role',
+        'status',
+        'last_login',
+        'avatar',
+        'bio',
+        'course',
+        'faculty',
+        'year_of_study',
+        'phone_number',
+        'agreed_to_rules', // Added for registration
+        'rules_version',   // Added for registration
+    ];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
         'last_login' => 'datetime',
         'password' => 'hashed',
-        'blacklisted' => 'boolean',
-        'is_admin'=> 'boolean',
+        'agreed_to_rules' => 'boolean', // Cast for registration
     ];
 
-    public function warnings()
-{
-    return $this->hasMany(Warning::class);
-}
-
+    /**
+     * Moderation Warnings
+     */
+    public function warnings(): HasMany
+    {
+        return $this->hasMany(Warning::class);
+    }
 
     /**
      * Groups created by this user.
@@ -81,95 +81,65 @@ class User extends Authenticatable
     }
 
     /**
-     * Users excluded by this user.
+     * User exclusions.
      */
     public function exclusions(): HasMany
     {
         return $this->hasMany(UserExclusion::class);
     }
 
-    /**
-     * Exclusions where this user was excluded.
-     */
     public function excludedBy(): HasMany
     {
         return $this->hasMany(UserExclusion::class, 'excluded_user_id');
     }
 
-    /**
-     * User onboarding record.
-     */
     public function onboarding(): HasOne
     {
         return $this->hasOne(UserOnboarding::class);
     }
 
-    /**
-     * Moderation logs affecting this user.
-     */
     public function moderationLogs(): HasMany
     {
         return $this->hasMany(ModerationLog::class);
     }
 
-    /**
-     * Moderation actions performed by this user as admin.
-     */
     public function moderationActions(): HasMany
     {
         return $this->hasMany(ModerationLog::class, 'admin_id');
     }
 
-    /**
-     * Participation scores.
-     */
     public function participationScores(): HasMany
     {
         return $this->hasMany(ParticipationScore::class);
     }
 
-    /**
-     * Quizzes created by this user.
-     */
     public function quizzesCreated(): HasMany
     {
         return $this->hasMany(Quiz::class, 'created_by');
     }
 
-    /**
-     * Quiz attempts.
-     */
     public function quizAttempts(): HasMany
     {
         return $this->hasMany(QuizAttempt::class);
     }
 
-    /**
-     * Notifications.
-     */
     public function notifications(): HasMany
     {
         return $this->hasMany(Notification::class);
     }
 
-    /**
-     * Offline synchronization queue.
-     */
     public function syncQueue(): HasMany
     {
         return $this->hasMany(SyncQueue::class);
     }
 
-    /**
-     * Topic recommendations.
-     */
     public function recommendations(): HasMany
     {
         return $this->hasMany(TopicRecommendation::class);
     }
-    public function settings()
+
+    public function settings(): HasOne
     {
         return $this->hasOne(UserSetting::class);
     }
-
 }
