@@ -170,14 +170,4 @@ const leaveGroup = (groupId) => {
     },
   });
 };
-
-const leaveGroup = (groupId) => {
-  loadingId.value = groupId;
-  router.post(`/groups/${groupId}/leave`, {}, {
-    preserveScroll: true,
-    onFinish: () => {
-      loadingId.value = null;
-    },
-  });
-};
 </script>

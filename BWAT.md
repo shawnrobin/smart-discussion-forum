@@ -57,9 +57,8 @@ This file provides guidance to Bwat when working with code in this repository.
 - `composer test` — runs `config:clear` then `php artisan test`
 
 ## Gotchas
-- **Duplicate project folder**: There are two copies of the project — files at root level AND inside `smart-forum-web/` subdirectory. The root-level `composer.json`, `package.json`, `routes/`, `resources/`, `app/` appear to be the active ones. Do not edit or create files in `smart-forum-web/` unless the user explicitly confirms that's where they're working.
 - **PrimaryButton hover color bug**: `PrimaryButton.vue` has `bg-blue-600` but `hover:bg-red-700` — likely a bug (hover should be a darker blue, not red). Don't propagate this pattern to new buttons.
 - **NotificationBell.vue uses hardcoded mock data**, not the shared Inertia `notifications` prop from `HandleInertiaRequests`. Any new notification component should use the server-shared prop.
-- **Database default is SQLite** per `.env.example` (`.env.example` lives only in `smart-forum-web/`). If switching to MySQL, set `DB_CONNECTION=mysql` and update `config/database.php` `'engine' => 'InnoDB'` to avoid key-length errors on migrations.
+- **Database default is SQLite** per `.env.example`. If switching to MySQL, set `DB_CONNECTION=mysql` and update `config/database.php` `'engine' => 'InnoDB'` to avoid key-length errors on migrations.
 - **Session & queue drivers**: Both use `database` driver by default. Requires sessions table migration to have run before any page render.
 - **Bootstrap 5 listed as a dep** in `package.json` alongside Tailwind. It's not imported anywhere in the current Vue components or CSS — likely vestigial. Don't assume Bootstrap classes are available.

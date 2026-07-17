@@ -19,6 +19,9 @@ class AuthController extends Controller
             'password' => 'required|string|min:8|confirmed',
         ]);
 
+        // Trim whitespace
+        $validated['email'] = trim($validated['email']);
+
         $user = User::create([
             'name' => $validated['name'],
             'email' => $validated['email'],
@@ -40,14 +43,21 @@ class AuthController extends Controller
             'password' => 'required|string',
         ]);
 
-        if (!Auth::attempt($credentials)) {
-            throw ValidationException::withMessages(['email' => ['Invalid credentials.']]);
+        // Trim whitespace from email to avoid subtle mismatches
+        $credentials['email'] = trim($credentials['email']);
+
+        if (!Auth::attempt($credentials, $request->boolean('remember'))) {
+            throw ValidationException::withMessages([
+                'email' => ['Invalid email or password. Please try again.']
+            ]);
         }
 
         $user = Auth::user();
-        if ($user->blacklisted) {
+
+        if ($user->status === 'blacklisted' || $user->blacklisted) {
             Auth::logout();
-            return back()->withErrors(['email' => 'Account is blacklisted.']);
+            $request->session()->invalidate();
+            return back()->withErrors(['email' => 'Your account has been blacklisted. Contact administrator.']);
         }
 
         return redirect()->intended('/dashboard');

@@ -7,13 +7,13 @@
       
       <nav class="flex flex-col flex-1 p-4 space-y-1">
         <Link 
-          href="/admin/dashboard" 
+          :href="route('admin.dashboard')" 
           :class="[$page.url === '/admin/dashboard' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white', 'block px-4 py-2.5 rounded-lg transition-colors font-medium']"
         >
           Dashboard
         </Link>
         <Link 
-          href="/admin/users" 
+          :href="route('admin.users.index')" 
           :class="[$page.url.startsWith('/admin/users') ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white', 'block px-4 py-2.5 rounded-lg transition-colors font-medium']"
         >
           User Management

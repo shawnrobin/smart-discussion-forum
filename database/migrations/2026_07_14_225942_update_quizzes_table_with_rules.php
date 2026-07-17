@@ -12,11 +12,21 @@ return new class extends Migration
     public function up(): void
 {
     Schema::table('quizzes', function (Blueprint $table) {
-        $table->timestamp('start_time')->nullable();
-        $table->timestamp('end_time')->nullable();
-        $table->integer('duration_minutes');
-        $table->string('target_category'); // e.g., 'Year 1', 'Section B'
-        $table->boolean('is_published')->default(false);
+        if (!Schema::hasColumn('quizzes', 'start_time')) {
+            $table->timestamp('start_time')->nullable();
+        }
+        if (!Schema::hasColumn('quizzes', 'end_time')) {
+            $table->timestamp('end_time')->nullable();
+        }
+        if (!Schema::hasColumn('quizzes', 'duration_minutes')) {
+            $table->integer('duration_minutes')->nullable();
+        }
+        if (!Schema::hasColumn('quizzes', 'target_category')) {
+            $table->string('target_category')->nullable();
+        }
+        if (!Schema::hasColumn('quizzes', 'is_published')) {
+            $table->boolean('is_published')->default(false);
+        }
     });
 }
 

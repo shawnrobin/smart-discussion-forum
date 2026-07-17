@@ -8,6 +8,7 @@
           <p class="text-gray-500 mt-1">Created on {{ new Date(group.created_at).toLocaleDateString() }}</p>
         </div>
         <div class="flex gap-3">
+          <Link :href="route('quizzes.create', group.id)" class="px-4 py-2 text-sm font-bold text-white bg-orange-600 rounded-xl hover:bg-orange-700 transition">Create Quiz</Link>
           <button class="px-4 py-2 text-sm font-bold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition">Edit Group</button>
           <button 
             @click="deleteGroup" 
@@ -42,7 +43,7 @@
 
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { useForm } from '@inertiajs/vue3';
+import { Link, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({ 
   group: Object 
