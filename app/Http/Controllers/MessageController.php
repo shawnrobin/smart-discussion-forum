@@ -88,13 +88,13 @@ class MessageController
             ],
             [
                 'topics_created' => 0,
-                'messages_posted' => 0,
+                'topics_replied' => 0,
                 'answers_provided' => 0,
                 'total_score' => 0,
             ]
         );
 
-        $score->increment('messages_posted');
+        $score->increment('topics_replied');
         $score->increment('total_score', 5);
 
         return back()->with(
@@ -135,7 +135,7 @@ class MessageController
             ],
             [
                 'topics_created' => 0,
-                'messages_posted' => 0,
+                'topics_replied' => 0,
                 'answers_provided' => 0,
                 'total_score' => 0,
             ]
