@@ -1,75 +1,76 @@
 <template>
 <div class="flex h-screen bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 antialiased">
-    <nav class="w-64 bg-white dark:bg-gray-800 border-r border-gray-100 dark:border-gray-700 flex flex-col justify-between shrink-0 shadow-sm">
-      <div>
-        <Link
-          :href="route('dashboard')"
-          class="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-        >
-          <div class="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center text-white font-black text-lg shadow-sm">
-            S
-          </div>
+  <nav class="w-64 bg-white dark:bg-gray-800 border-r border-gray-100 dark:border-gray-700 flex flex-col justify-between shrink-0 shadow-sm">
+    <div>
+      <Link
+        :href="route('dashboard')"
+        class="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+      >
+        <div class="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center text-white font-black text-lg shadow-sm">
+          S
+        </div>
 
-          <h2 class="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
-            Smart<span class="text-orange-600">Forum</span>
-          </h2>
-        </Link>
+        <h2 class="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
+          Smart<span class="text-orange-600">Forum</span>
+        </h2>
+      </Link>
 
         <div class="p-4 space-y-1">
-          <Link
-            v-for="link in navLinks"
-            :key="link.id"
-            :href="link.href"
-            :class="[
-              $page.url === link.matchUrl || $page.url.startsWith(link.matchUrl + '/')
-                ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-300 font-semibold'
-                : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white',
-              'flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 group'
-            ]"
-          >
-            <component
-              :is="link.icon"
-              :class="[
-                $page.url === link.matchUrl || $page.url.startsWith(link.matchUrl + '/')
-                  ? 'text-orange-600 dark:text-orange-300'
-                  : 'text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300',
-                'w-4 h-4 transition-colors shrink-0'
-              ]"
-            />
-            <span class="block opacity-100 visible text-current">{{ link.label }}</span>
+         <Link
+  v-for="link in navLinks"
+  :key="link.id"
+  :href="link.href"
+  :class="[
+    $page.url === link.matchUrl || $page.url.startsWith(link.matchUrl + '/')
+      ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-300 font-semibold'
+      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white',
+    'flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-150 group'
+  ]"
+>
+  <component
+    :is="link.icon"
+    :class="[
+      $page.url === link.matchUrl || $page.url.startsWith(link.matchUrl + '/')
+        ? 'text-orange-600 dark:text-orange-300'
+        : 'text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300',
+      'w-4 h-4 transition-colors shrink-0'
+    ]"
+  />
+  <span class="block opacity-100 visible text-current">
+    {{ link.label }}
+  </span>
+</Link>
+        </div>
+
+      <div class="border-t border-gray-100 bg-white">
+        <div v-if="isAdmin" class="p-4 border-b border-gray-100 space-y-1">
+          <div class="px-4 pb-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Admin</div>
+          <Link :href="route('admin.dashboard')" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-orange-50 hover:text-orange-600">
+            <ShieldIcon class="w-4 h-4 text-orange-500" /> <span>Admin Panel</span>
           </Link>
         </div>
 
-        <div class="border-t border-gray-100 bg-white">
-          <div v-if="isAdmin" class="p-4 border-b border-gray-100 space-y-1">
-            <div class="px-4 pb-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Admin</div>
-            <Link :href="route('admin.dashboard')" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-orange-50 hover:text-orange-600">
-              <ShieldIcon class="w-4 h-4 text-orange-500" /> <span>Admin Panel</span>
-            </Link>
-          </div>
+        <div v-if="isLecturer" class="p-4 border-b border-gray-100 space-y-1">
+          <div class="px-4 pb-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Lecturer</div>
+          <Link :href="route('lecturer.dashboard')" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-orange-50 hover:text-orange-600">
+            <BookOpenIcon class="w-4 h-4 text-orange-500" /> <span>Lecturer View</span>
+          </Link>
+          <Link :href="route('lecturer.groups.index')" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-orange-50 hover:text-orange-600">
+            <Users class="w-4 h-4 text-orange-500" /> <span>Manage Groups</span>
+          </Link>
+          <Link :href="route('lecturer.moderation.index')" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-orange-50 hover:text-orange-600">
+            <AlertTriangleIcon class="w-4 h-4 text-orange-500" /> <span>Moderation</span>
+          </Link>
+        </div>
 
-          <div v-if="isLecturer" class="p-4 border-b border-gray-100 space-y-1">
-            <div class="px-4 pb-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Lecturer</div>
-            <Link :href="route('lecturer.dashboard')" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-orange-50 hover:text-orange-600">
-              <BookOpenIcon class="w-4 h-4 text-orange-500" /> <span>Lecturer View</span>
-            </Link>
-            <Link :href="route('lecturer.groups.index')" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-orange-50 hover:text-orange-600">
-              <Users class="w-4 h-4 text-orange-500" /> <span>Manage Groups</span>
-            </Link>
-            <Link :href="route('lecturer.moderation.index')" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 hover:bg-orange-50 hover:text-orange-600">
-              <AlertTriangleIcon class="w-4 h-4 text-orange-500" /> <span>Moderation</span>
-            </Link>
-          </div>
-
-          <div class="p-4 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
-            <button
-              @click="logout"
-              class="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all duration-150"
-            >
-              <LogOutIcon class="w-4 h-4 shrink-0" />
-              <span>Logout</span>
-            </button>
-          </div>
+        <div class="p-4 border-t border-gray-100 dark:border-gray-700 bg-white dark:bg-gray-800">
+          <button
+            @click="logout"
+            class="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all duration-150"
+          >
+            <LogOutIcon class="w-4 h-4 shrink-0" />
+            <span>Logout</span>
+          </button>
         </div>
       </div>
     </nav>

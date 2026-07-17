@@ -43,7 +43,11 @@
 
 <script setup>
 import { usePage } from '@inertiajs/vue3';
-import { computed, ref } from 'vue';
+import {computed } from 'vue';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
+import ProfileHeader from '@/Components/ProfileHeader.vue';
+import UpdateProfileInformationForm from '@/Pages/Profile/Partials/UpdateProfileInformationForm.vue';
+import{ computed ,ref } from 'vue';
 
 // Data
 const user = usePage().props.auth.user;

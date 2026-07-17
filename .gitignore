@@ -27,6 +27,3 @@ Homestead.yaml
 Thumbs.db
 npm-debug.log
 yarn-error.log
-# Bwat per-workspace permission allowlist
-.bwat/
-smart-forum-web/.npmrc

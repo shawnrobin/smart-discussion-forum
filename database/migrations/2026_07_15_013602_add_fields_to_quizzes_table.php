@@ -12,12 +12,8 @@ return new class extends Migration
     public function up()
 {
     Schema::table('quizzes', function (Blueprint $table) {
-        if (!Schema::hasColumn('quizzes', 'duration_minutes')) {
-            $table->integer('duration_minutes')->nullable();
-        }
-        if (!Schema::hasColumn('quizzes', 'published')) {
-            $table->boolean('published')->default(true);
-        }
+        $table->integer('duration_minutes')->nullable();
+        $table->boolean('published')->default(true);
     });
 }
 

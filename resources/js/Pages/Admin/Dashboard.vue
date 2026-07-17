@@ -8,7 +8,7 @@
             <p class="text-sm text-gray-500 mt-1">Overview of system health and activity.</p>
         </div>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             <div class="p-6 bg-white rounded-xl shadow-sm border border-gray-200">
                 <span class="text-xs font-semibold uppercase text-gray-400">Total Users</span>
                 <h3 class="text-3xl font-bold text-gray-900 mt-2">{{ stats.users }}</h3>
@@ -18,42 +18,18 @@
                 <h3 class="text-3xl font-bold text-gray-900 mt-2">{{ stats.discussions }}</h3>
             </div>
             <div class="p-6 bg-white rounded-xl shadow-sm border border-gray-200">
-                <span class="text-xs font-semibold uppercase text-gray-400">Messages</span>
-                <h3 class="text-3xl font-bold text-blue-600 mt-2">{{ stats.messages }}</h3>
-            </div>
-            <div class="p-6 bg-white rounded-xl shadow-sm border border-gray-200">
-                <span class="text-xs font-semibold uppercase text-gray-400">Groups</span>
-                <h3 class="text-3xl font-bold text-gray-900 mt-2">{{ stats.groups }}</h3>
-            </div>
-            <div class="p-6 bg-white rounded-xl shadow-sm border border-gray-200">
-                <span class="text-xs font-semibold uppercase text-gray-400">Flagged</span>
-                <h3 class="text-3xl font-bold text-amber-600 mt-2">{{ stats.flagged }}</h3>
+                <span class="text-xs font-semibold uppercase text-gray-400">Pending Reports</span>
+                <h3 class="text-3xl font-bold text-red-600 mt-2">{{ stats.reports }}</h3>
             </div>
             <div class="p-6 bg-white rounded-xl shadow-sm border border-gray-200">
                 <span class="text-xs font-semibold uppercase text-gray-400">Blacklisted</span>
-                <h3 class="text-3xl font-bold text-red-600 mt-2">{{ stats.blacklisted }}</h3>
+                <h3 class="text-3xl font-bold text-gray-900 mt-2">{{ stats.blacklisted }}</h3>
             </div>
         </div>
 
         <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-            <h2 class="text-lg font-bold text-gray-800 mb-4">System Activity (7 days)</h2>
+            <h2 class="text-lg font-bold text-gray-800 mb-4">System Activity</h2>
             <div class="h-64"><Line :data="mappedChartData" :options="chartOptions" /></div>
-        </div>
-
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mt-6" v-if="recentLogs && recentLogs.length > 0">
-            <h2 class="text-lg font-bold text-gray-800 mb-4">Recent Moderation Logs</h2>
-            <div class="space-y-3">
-                <div v-for="log in recentLogs" :key="log.id" class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                        <p class="text-sm font-medium text-gray-900">{{ log.action }}</p>
-                        <p class="text-xs text-gray-500">{{ log.reason }}</p>
-                        <p class="text-xs text-gray-400">{{ log.created_at }}</p>
-                    </div>
-                    <div class="text-xs text-gray-400">
-                        by {{ log.admin?.name || 'System' }}
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
   </AdminLayout>

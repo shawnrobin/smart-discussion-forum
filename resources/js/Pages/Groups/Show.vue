@@ -174,28 +174,47 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import TextInput from '@/Components/TextInput.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 
+const Auth = usePage().props.auth;
+const group = ref({
+  id: 1,
+  name: 'Data Structures',
+  description: 'Learn about arrays, linked lists, trees, graphs, and more!',
+  members: 18,
+  topics: 45
+});
+import { 
+  Search as SearchIcon, 
+  Plus as PlusIcon, 
+  MessageSquare as MessageSquareIcon, 
+  Users as UsersIcon, 
+  Edit2 as Edit2Icon, 
+  Trash2 as Trash2Icon,
+  SlidersHorizontal as SlidersHorizontalIcon
+} from 'lucide-vue-next';
+
 const props = defineProps({
   group: {
     type: Object,
     default: () => ({ id: 1, name: 'Data Structures & Algorithms' })
-  },
-  topics: {
-    type: Array,
-    default: () => []
   }
 });
 
-const auth = usePage().props.auth;
+const auth = ref({
+  user: {
+    name: 'Developer Mode',
+    email: 'dev@forum.com'
+  }
+});
 
 const searchQuery = ref('');
 const filterBy = ref('recent');
 const showCreateTopic = ref(false);
 
-const topics = ref(props.topics.length > 0 ? props.topics : [
+const topics = ref([
   {
     id: 1,
     title: 'Understanding Recursion',
-    body: 'I\'m struggling to understand how recursion works.',
+    excerpt: 'I\'m struggling to understand how recursion works. Can someone explain with examples?',
     author: { name: 'John Doe', initials: 'JD' },
     createdAt: '2 days ago',
     replies: 8,
@@ -205,7 +224,7 @@ const topics = ref(props.topics.length > 0 ? props.topics : [
   {
     id: 2,
     title: 'Binary Search Trees Implementation',
-    body: 'How do I implement a BST efficiently?',
+    excerpt: 'How do I implement a BST efficiently in Java?',
     author: { name: 'Jane Smith', initials: 'JS' },
     createdAt: '1 day ago',
     replies: 12,
@@ -215,7 +234,7 @@ const topics = ref(props.topics.length > 0 ? props.topics : [
   {
     id: 3,
     title: 'Sorting Algorithm Comparison',
-    body: 'What\'s the difference between Quick Sort and Merge Sort?',
+    excerpt: 'What\'s the difference between Quick Sort and Merge Sort?',
     author: { name: 'Bob Wilson', initials: 'BW' },
     createdAt: '6 hours ago',
     replies: 0,

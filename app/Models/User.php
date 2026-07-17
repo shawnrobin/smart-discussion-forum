@@ -35,16 +35,9 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'last_login' => 'datetime',
+        'password' => 'hashed',
         'agreed_to_rules' => 'boolean', // Cast for registration
     ];
-
-    /**
-     * Check if user is system admin or has admin privileges.
-     */
-    public function isAdmin(): bool
-    {
-        return $this->role === 'system_admin' || $this->is_admin;
-    }
 
     /**
      * Moderation Warnings

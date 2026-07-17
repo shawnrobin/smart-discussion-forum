@@ -42,12 +42,6 @@ class QuizController extends Controller
                     $quiz->status = $this->getQuizStatus($quiz);
                 }
 
-                // Add display fields
-                $quiz->instructor = $quiz->creator->name ?? 'Unknown';
-                $quiz->duration = $quiz->duration_minutes;
-                $quiz->questions_count = $quiz->questions()->count();
-                $quiz->attempted = $attempt && !$attempt->submitted_at;
-
                 return $quiz;
             });
 
@@ -59,16 +53,8 @@ class QuizController extends Controller
     /**
      * Show quiz creation form.
      */
-    /**
-     * Create a new quiz.
-     */
     public function create(Group $group)
     {
-        // Only lecturers and admins can create quizzes
-        if (!in_array(auth()->user()->role, ['lecturer', 'system_admin', 'group_admin'])) {
-            return redirect()->back()->with('error', 'Only lecturers can create quizzes.');
-        }
-
         return Inertia::render('Quizzes/Create', [
             'group' => $group
         ]);
@@ -109,11 +95,6 @@ class QuizController extends Controller
      */
     public function store(Request $request, Group $group)
     {
-        // Only lecturers and admins can create quizzes
-        if (!in_array(auth()->user()->role, ['lecturer', 'system_admin', 'group_admin'])) {
-            return redirect()->back()->with('error', 'Only lecturers can create quizzes.');
-        }
-
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
@@ -178,12 +159,6 @@ class QuizController extends Controller
 
         $quiz->load('questions');
 
-        // Calculate remaining time for late joiners
-        $quizEnd = $quiz->end_time;
-        $now = now();
-        $remainingSeconds = max(0, $now->diffInSeconds($quizEnd, false));
-        $durationMinutes = min($quiz->duration_minutes, ceil($remainingSeconds / 60));
-
         if ($quiz->shuffle_questions) {
             $quiz->setRelation(
                 'questions',
@@ -198,7 +173,7 @@ class QuizController extends Controller
         return Inertia::render('Quizzes/ActiveQuiz', [
             'quiz' => $quiz,
             'attempt' => $attempt,
-            'duration' => $durationMinutes,
+            'duration' => $quiz->duration_minutes,
         ]);
     }
 
@@ -210,7 +185,7 @@ class QuizController extends Controller
         $validated = $request->validate([
             'answers' => 'required|array',
             'answers.*.question_id' => 'required|exists:quiz_questions,id',
-            'answers.*.user_answer' => 'nullable|string',
+            'answers.*.user_answer' => 'required|string',
         ]);
 
         $quiz = $attempt->quiz;
@@ -221,12 +196,8 @@ class QuizController extends Controller
         foreach ($validated['answers'] as $answerData) {
             $question = QuizQuestion::findOrFail($answerData['question_id']);
 
-            $userAnswer = trim($answerData['user_answer'] ?? '');
-            $correctAnswer = trim($question->correct_answer ?? '');
-
-            // Grade: case-insensitive comparison for short answer,
-            // exact match for multiple choice / true-false
-            $correct = strtolower($userAnswer) === strtolower($correctAnswer);
+            $correct = strtolower(trim($answerData['user_answer'])) ==
+                       strtolower(trim($question->correct_answer));
 
             $points = $correct ? $question->points : 0;
 
@@ -236,13 +207,13 @@ class QuizController extends Controller
             QuizAnswer::create([
                 'attempt_id' => $attempt->id,
                 'question_id' => $question->id,
-                'user_answer' => $userAnswer ?: '(no answer)',
+                'user_answer' => $answerData['user_answer'],
                 'is_correct' => $correct,
                 'points_earned' => $points,
             ]);
         }
 
-        $score = $totalPoints > 0 ? round(($earnedPoints / $totalPoints) * 100, 1) : 0;
+        $score = ($earnedPoints / max($totalPoints, 1)) * 100;
 
         $attempt->update([
             'submitted_at' => now(),
@@ -251,74 +222,26 @@ class QuizController extends Controller
         ]);
 
         return redirect()
-            ->route('quizzes.results', $attempt)
+            ->route('quizzes.index')
             ->with('success', 'Quiz submitted successfully!');
     }
 
     /**
-     * Results report — visible to the attempt owner and all group members.
+     * Results report.
      */
     public function results(QuizAttempt $attempt)
     {
-        $quiz = $attempt->quiz;
-        $group = $quiz->group;
-
-        // Allow: attempt owner, group members, admins
-        $isOwner = $attempt->user_id === auth()->id();
-        $isGroupMember = $group->users()->where('user_id', auth()->id())->exists();
-        $isAdmin = auth()->user()->isAdmin();
-
-        if (!$isOwner && !$isGroupMember && !$isAdmin) {
+        if ($attempt->user_id !== auth()->id() && !auth()->user()->isAdmin()) {
             abort(403);
         }
 
         $attempt->load([
-            'quiz.questions',
+            'quiz',
             'answers.question'
         ]);
 
         return Inertia::render('Quizzes/Results', [
-            'attempt' => $attempt,
-        ]);
-    }
-
-    /**
-     * Performance report — aggregate scores for all members of the group.
-     * Visible to ALL group members after the quiz closes, or immediately
-     * to anyone who has already submitted.
-     */
-    public function performance(Quiz $quiz)
-    {
-        $group = $quiz->group;
-
-        // All attempts for this quiz, with user info
-        $attempts = QuizAttempt::where('quiz_id', $quiz->id)
-            ->with('user')
-            ->whereNotNull('submitted_at')
-            ->orderByDesc('score')
-            ->get()
-            ->map(function ($a) {
-                return [
-                    'user_name' => $a->user->name ?? 'Unknown',
-                    'score' => $a->score,
-                    'time_taken' => $a->time_taken_seconds,
-                    'submitted_at' => $a->submitted_at,
-                ];
-            });
-
-        $totalStudents = $group ? $group->users()->count() : 0;
-        $participated = $attempts->count();
-        $averageScore = $participated > 0 ? round($attempts->avg('score'), 1) : 0;
-
-        return Inertia::render('Quizzes/Performance', [
-            'quiz' => $quiz,
-            'group' => $group,
-            'attempts' => $attempts,
-            'stats' => [
-                'total_students' => $totalStudents,
-                'participated' => $participated,
-                'average_score' => $averageScore,
-            ],
+            'attempt' => $attempt
         ]);
     }
 

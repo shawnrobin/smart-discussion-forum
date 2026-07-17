@@ -4,9 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Models\Topic;
-use App\Models\Message;
-use App\Models\Group;
+use App\Models\Discussion;
+use App\Models\Report;
 use App\Models\ModerationLog;
 use Carbon\Carbon;
 use Inertia\Inertia;
@@ -18,18 +17,17 @@ class DashboardController extends Controller
      */
     public function index()
     {
-        // 1. Compile Statistics from existing tables
+        // 1. Compile Statistics
         $stats = [
             'users'       => User::count(),
-            'discussions' => Topic::count(),
-            'messages'    => Message::count(),
-            'groups'      => Group::count(),
-            'blacklisted' => User::where('blacklisted', true)->count(),
-            'flagged'     => Topic::where('flagged_status', 'flagged')->count(),
+            'discussions' => class_exists(Discussion::class) ? Discussion::count() : 0,
+            'reports'     => class_exists(Report::class) ? Report::where('status', 'pending')->count() : 0,
+            'blacklisted' => User::where('blacklisted', true)->count()
         ];
 
         // 2. Fetch Recent Moderation Logs
-        $recentLogs = ModerationLog::with(['user', 'admin'])
+        // Ensure user and admin relationships are defined in ModerationLog model
+        $recentLogs = ModerationLog::with(['user:id,name', 'admin:id,name'])
             ->latest()
             ->take(10)
             ->get();

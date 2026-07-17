@@ -43,23 +43,11 @@ class GroupController extends Controller
     {
         $group_ids = auth()->user()->createdGroups()->pluck('id');
         
-        $flagged_topics = Topic::whereIn('group_id', $group_ids)
-                                 ->where('flagged_status', 'flagged')
-                                 ->with(['user', 'group'])
-                                 ->get();
-
-        $reports = $flagged_topics->map(function ($topic) {
-            return [
-                'id' => $topic->id,
-                'user' => ['name' => $topic->user?->name ?? 'Anonymous'],
-                'reason' => 'Flagged topic: ' . $topic->title,
-                'type' => 'topic',
-                'created_at' => $topic->created_at,
-            ];
-        });
-
-        return Inertia::render('Lecturer/Moderation', [
-            'reports' => $reports
+        return Inertia::render('Lecturer/Groups/Moderation', [
+            'flagged_topics' => Topic::whereIn('group_id', $group_ids)
+                                     ->where('flagged_status', 'flagged')
+                                     ->with(['user', 'group'])
+                                     ->get()
         ]);
     }
 
