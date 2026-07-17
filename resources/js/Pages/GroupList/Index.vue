@@ -1,116 +1,177 @@
 <template>
-  <AuthenticatedLayout page-title="Groups" :user-name="auth?.user?.name || 'User'">
+  <AuthenticatedLayout page-title="Groups" :user-name="auth?.user?.name ?? ''">
     <div class="space-y-6">
-      <div class="flex justify-between items-center">
-        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">All Discussion Groups</h2>
-        <PrimaryButton @click="showCreateModal = true">
+      <!-- Header -->
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">Discussion Groups</h1>
+          <p class="text-sm text-gray-500 mt-1">Browse and join discussion groups</p>
+        </div>
+        <PrimaryButton v-if="canCreateGroups" @click="showCreateModal = true">
           + Create Group
         </PrimaryButton>
       </div>
 
-      <div class="flex gap-4">
-        <TextInput
-          v-model="searchQuery"
-          placeholder="Search groups..."
-          class="flex-1"
-        />
-        <select v-model="sortBy" class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white">
-          <option value="recent">Recent</option>
+      <!-- Search & Sort -->
+      <div class="flex flex-col sm:flex-row gap-4">
+        <div class="relative flex-1">
+          <SearchIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            v-model="searchQuery"
+            type="text"
+            placeholder="Search groups..."
+            class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
+          />
+        </div>
+        <select
+          v-model="sortBy"
+          class="px-4 py-2.5 border border-gray-300 rounded-lg text-sm bg-white text-gray-700 focus:ring-2 focus:ring-orange-500 outline-none"
+        >
+          <option value="recent">Most Recent</option>
           <option value="members">Most Members</option>
           <option value="active">Most Active</option>
         </select>
       </div>
 
-     <div
+      <!-- Groups Grid -->
+      <div v-if="filteredGroups.length === 0" class="text-center py-16 text-gray-400">
+        <UsersIcon class="w-12 h-12 mx-auto mb-3 text-gray-300" />
+        <p class="text-sm">No groups found</p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div
           v-for="group in filteredGroups"
           :key="group.id"
+          class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 hover:shadow-md transition-all duration-200 hover:border-orange-200 cursor-pointer flex flex-col"
           @click="goToGroup(group.id)"
-          class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 hover:shadow-lg cursor-pointer transition hover:translate-y-[-2px] border border-transparent dark:border-gray-700"
         >
-          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ group.name }}</h3>
-          <p class="text-sm text-gray-600 dark:text-gray-300 mt-2">{{ group.description }}</p>
-          <div class="mt-4 flex justify-between text-sm text-gray-500 dark:text-gray-400">
-            <span>👥 {{ group.members }} members</span>
-            <span>💬 {{ group.discussions }} discussions</span>
+          <div class="flex-1">
+            <h3 class="text-lg font-bold text-gray-900 group-hover:text-orange-600">{{ group.name }}</h3>
+            <p class="text-sm text-gray-500 mt-2 line-clamp-2">{{ group.description }}</p>
+          </div>
+
+          <div class="mt-4 flex items-center justify-between text-xs text-gray-400">
+            <div class="flex items-center gap-4">
+              <span class="flex items-center gap-1.5">
+                <UsersIcon class="w-3.5 h-3.5 text-orange-500" />
+                {{ group.users_count ?? 0 }} members
+              </span>
+              <span class="flex items-center gap-1.5">
+                <MessageSquareIcon class="w-3.5 h-3.5 text-orange-500" />
+                {{ group.topics_count ?? 0 }} topics
+              </span>
+            </div>
+            <span class="text-[10px] text-gray-300">{{ group.created_at ? new Date(group.created_at).toLocaleDateString() : '' }}</span>
           </div>
 
           <div class="mt-4 flex gap-2" @click.stop>
             <button
+              v-if="!group.joined"
               @click="joinGroup(group.id)"
-              :disabled="group.joined || loadingId === group.id"
-              class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
+              :disabled="loadingId === group.id"
+              class="flex-1 px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 disabled:opacity-40 transition"
             >
-              Join
+              {{ loadingId === group.id ? 'Joining...' : 'Join Group' }}
             </button>
             <button
+              v-else
               @click="leaveGroup(group.id)"
-              :disabled="!group.joined || loadingId === group.id"
-              class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed"
+              :disabled="loadingId === group.id"
+              class="flex-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 disabled:opacity-40 transition"
             >
-              Leave
+              {{ loadingId === group.id ? 'Leaving...' : 'Leave' }}
+            </button>
+            <button
+              v-if="group.joined"
+              @click="goToGroup(group.id)"
+              class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200 transition"
+            >
+              <ArrowRightIcon class="w-4 h-4" />
             </button>
           </div>
         </div>
       </div>
+    </div>
 
-      <!-- Create Group Modal -->
+    <!-- Create Group Modal -->
     <div v-if="showCreateModal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" @click.self="showCreateModal = false">
-      <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-6 w-full max-w-md">
-        <h3 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Create Group</h3>
+      <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-bold text-gray-900">Create New Group</h3>
+          <button @click="showCreateModal = false" class="text-gray-400 hover:text-gray-600 transition">
+            <XIcon class="w-5 h-5" />
+          </button>
+        </div>
 
         <div class="space-y-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Group Name</label>
-            <TextInput v-model="newGroup.name" class="w-full" />
+            <label class="block text-sm font-medium text-gray-700 mb-1">Group Name</label>
+            <input
+              v-model="newGroup.name"
+              type="text"
+              placeholder="Enter group name"
+              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
+            />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
-            <textarea v-model="newGroup.description" rows="3" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded-lg"></textarea>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+            <textarea
+              v-model="newGroup.description"
+              rows="3"
+              placeholder="What is this group about?"
+              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none resize-none"
+            ></textarea>
           </div>
         </div>
 
         <div class="flex justify-end gap-3 mt-6">
-          <button @click="showCreateModal = false" class="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg">
+          <button
+            @click="showCreateModal = false"
+            class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg transition"
+          >
             Cancel
           </button>
-          <PrimaryButton @click="createGroup">
-            Create Group
+          <PrimaryButton @click="createGroup" :disabled="creating || !newGroup.name.trim()">
+            {{ creating ? 'Creating...' : 'Create Group' }}
           </PrimaryButton>
         </div>
       </div>
     </div>
-    
   </AuthenticatedLayout>
 </template>
 
 <script setup>
 import { ref, computed } from 'vue';
 import { usePage, router } from '@inertiajs/vue3';
-import { Heart, ShoppingCart, Search } from 'lucide-vue-next'
+import { Search as SearchIcon, Users as UsersIcon, MessageSquare as MessageSquareIcon, ArrowRight as ArrowRightIcon, X as XIcon } from 'lucide-vue-next';
 
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import TextInput from '@/Components/TextInput.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 
 const page = usePage();
 const auth = computed(() => page.props.auth);
 
-// Real groups data passed from GroupController@index (includes users_count,
-// topics_count, and a "joined" boolean for the current user)
-const groups = computed(() => page.props.groups || []);
+const props = defineProps({
+  groups: { type: Array, default: () => [] },
+});
 
 const searchQuery = ref('');
 const sortBy = ref('recent');
 const showCreateModal = ref(false);
 const creating = ref(false);
-const loadingId = ref(null); // disables buttons on the group currently being joined/left
+const loadingId = ref(null);
 
 const newGroup = ref({ name: '', description: '' });
 
-const createGroup = () => {
-  if (!newGroup.value.name.trim()) return;
-  creating.value = true;
+const canCreateGroups = computed(() => {
+  const role = auth.value?.user?.role;
+  return role === 'lecturer' || role === 'system_admin';
+});
 
+const createGroup = () => {
+  if (!newGroup.value.name.trim() || creating.value) return;
+  creating.value = true;
   router.post('/groups', {
     name: newGroup.value.name,
     description: newGroup.value.description,
@@ -120,17 +181,25 @@ const createGroup = () => {
       newGroup.value = { name: '', description: '' };
       showCreateModal.value = false;
     },
-    onFinish: () => {
-      creating.value = false;
-    },
+    onFinish: () => { creating.value = false; },
   });
 };
 
 const filteredGroups = computed(() => {
-  return groups.value.filter(group =>
-    group.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-    (group.description || '').toLowerCase().includes(searchQuery.value.toLowerCase())
+  let list = props.groups.filter(g =>
+    g.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
+    (g.description || '').toLowerCase().includes(searchQuery.value.toLowerCase())
   );
+
+  if (sortBy.value === 'members') {
+    list = [...list].sort((a, b) => (b.users_count ?? 0) - (a.users_count ?? 0));
+  } else if (sortBy.value === 'active') {
+    list = [...list].sort((a, b) => (b.topics_count ?? 0) - (a.topics_count ?? 0));
+  } else {
+    list = [...list].sort((a, b) => new Date(b.created_at ?? 0) - new Date(a.created_at ?? 0));
+  }
+
+  return list;
 });
 
 const goToGroup = (groupId) => {
@@ -138,36 +207,26 @@ const goToGroup = (groupId) => {
 };
 
 const joinGroup = (groupId) => {
+  if (loadingId.value) return;
   loadingId.value = groupId;
-
-  const group = groups.value.find(g => g.id === groupId);
+  const group = props.groups.find(g => g.id === groupId);
   if (group) group.joined = true;
-
   router.post(`/groups/${groupId}/join`, {}, {
     preserveScroll: true,
-    onError: () => {
-      if (group) group.joined = false;
-    },
-    onFinish: () => {
-      loadingId.value = null;
-    },
+    onError: () => { if (group) group.joined = false; },
+    onFinish: () => { loadingId.value = null; },
   });
 };
 
 const leaveGroup = (groupId) => {
+  if (loadingId.value) return;
   loadingId.value = groupId;
-
-  const group = groups.value.find(g => g.id === groupId);
+  const group = props.groups.find(g => g.id === groupId);
   if (group) group.joined = false;
-
   router.post(`/groups/${groupId}/leave`, {}, {
     preserveScroll: true,
-    onError: () => {
-      if (group) group.joined = true;
-    },
-    onFinish: () => {
-      loadingId.value = null;
-    },
+    onError: () => { if (group) group.joined = true; },
+    onFinish: () => { loadingId.value = null; },
   });
 };
 </script>

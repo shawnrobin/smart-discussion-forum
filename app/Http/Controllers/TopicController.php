@@ -51,7 +51,7 @@ class TopicController
     {
         $validated = $request->validate([
             'title' => 'required|string|max:500',
-            'description' => 'required|string|min:10|max:5000',
+            'description' => 'required|string|min:2|max:5000',
             'is_question' => 'boolean',
         ]);
 
@@ -83,8 +83,8 @@ class TopicController
             ],
             [
                 'topics_created' => 0,
-                'messages_posted' => 0,
-                'answers_marked' => 0,
+                'topics_replied' => 0,
+                'answers_provided' => 0,
                 'total_score' => 0,
             ]
         );
