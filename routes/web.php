@@ -15,6 +15,8 @@ use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\Api\GroupController as GeneralGroupController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TopicController;
+use App\Http\Controllers\MessageController;
 
 // 1. Root
 Route::get('/', function () { return Auth::check() ? redirect('/dashboard') : redirect('/login'); });
@@ -129,9 +131,19 @@ Route::middleware('auth')->group(function () {
     // Topics
     Route::get('/groups/{group}/topics/{topic}', function ($group, $topicId) {
         $topicModel = \App\Models\Topic::with('user', 'messages.user')->findOrFail($topicId);
-        $groupModel = \App\Models\Group::findOrFail($group);
+        $groupModel = \App\Models\Group::with('users')->findOrFail($group);
 
-        $messages = $topicModel->messages->whereNull('parent_message_id')->values()->map(function ($msg) {
+        // Build threaded replies: compute depth for each message by walking parent chain
+        $allMessages = $topicModel->messages->keyBy('id');
+
+        $messages = $allMessages->map(function ($msg) use ($allMessages) {
+            $depth = 0;
+            $parent = $msg->parent_message_id ? $allMessages->get($msg->parent_message_id) : null;
+            while ($parent) {
+                $depth++;
+                $parent = $parent->parent_message_id ? $allMessages->get($parent->parent_message_id) : null;
+            }
+
             return [
                 'id' => $msg->id,
                 'author' => ['name' => $msg->user->name ?? 'Unknown', 'initials' => substr($msg->user->name ?? 'U', 0, 2)],
@@ -139,15 +151,22 @@ Route::middleware('auth')->group(function () {
                 'createdAt' => $msg->created_at->diffForHumans(),
                 'likes' => $msg->likes ?? 0,
                 'isAnswer' => $msg->is_answer ?? false,
-                'depth' => 0,
+                'depth' => $depth,
+                'user_id' => $msg->user_id,
+                'parent_message_id' => $msg->parent_message_id,
             ];
-        });
+        })->sortBy('createdAt')->values();
 
         $topic = [
             'id' => $topicModel->id,
             'title' => $topicModel->title,
             'content' => $topicModel->description ?? '',
-            'author' => ['name' => $topicModel->user->name ?? 'Unknown', 'initials' => substr($topicModel->user->name ?? 'U', 0, 2), 'role' => $topicModel->user->role ?? 'student'],
+            'author' => [
+                'name' => $topicModel->user->name ?? 'Unknown',
+                'initials' => substr($topicModel->user->name ?? 'U', 0, 2),
+                'role' => $topicModel->user->role ?? 'student',
+                'id' => $topicModel->user_id,
+            ],
             'createdAt' => $topicModel->created_at->diffForHumans(),
             'likes' => $topicModel->likes ?? 0,
             'replies' => $messages,
@@ -156,8 +175,20 @@ Route::middleware('auth')->group(function () {
         return Inertia::render('Topics/Show', [
             'topic' => $topic,
             'group' => ['id' => $groupModel->id, 'name' => $groupModel->name, 'description' => $groupModel->description ?? ''],
+            'groupMembers' => $groupModel->users->map(fn($u) => ['id' => $u->id, 'name' => $u->name]),
         ]);
     })->name('topics.show');
+
+    // Topic CRUD
+    Route::post('/groups/{group}/topics', [TopicController::class, 'store'])->name('topics.store');
+    Route::delete('/topics/{topic}', [TopicController::class, 'destroy'])->name('topics.destroy');
+
+    // Replies
+    Route::post('/groups/{group}/topics/{topic}/replies', [MessageController::class, 'store'])->name('replies.store');
+    Route::post('/messages/{message}/mark-answer', [MessageController::class, 'markAsAnswer'])->name('messages.mark-answer');
+
+    // PDF export
+    Route::post('/topics/{topic}/export-pdf', [TopicController::class, 'exportPdf'])->name('topics.export-pdf');
 
     // Quizzes
     Route::get('/quizzes', [QuizController::class, 'index'])->name('quizzes.index');

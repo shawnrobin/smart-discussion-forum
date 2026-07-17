@@ -10,11 +10,14 @@ class ParticipationScore extends Model
     protected $fillable = [
         'user_id',
         'group_id',
-        'score',
+        'topics_created',
+        'topics_replied',
+        'answers_provided',
+        'total_score',
     ];
 
     protected $casts = [
-        'score' => 'decimal:2',
+        'total_score' => 'decimal:2',
     ];
 
     /**
