@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use App\Models\Notification;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -32,8 +33,21 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => [
-                'user' => $request->user(),
+                'user' => $request->user() ? [
+                    'id' => $request->user()->id,
+                    'name' => $request->user()->name,
+                    'email' => $request->user()->email,
+                    'username' => $request->user()->username,
+                    'role' => $request->user()->role, // Updated to pass 'role'
+                ] : null,
             ],
+            // Updated to filter by 'read' (boolean) to match your migration/schema
+            'notifications' => fn () => $request->user() 
+                ? Notification::where('user_id', $request->user()->id)
+                    ->where('read', false) // Updated to 'read' column
+                    ->latest()
+                    ->get() 
+                : [],
         ];
     }
 }

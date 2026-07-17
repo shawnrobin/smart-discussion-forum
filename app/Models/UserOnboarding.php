@@ -9,6 +9,8 @@ class UserOnboarding extends Model
 {
     protected $table = 'user_onboarding';
 
+    public $timestamps = false;   // <-- Add this line
+
     protected $fillable = [
         'user_id',
         'rules_version',
@@ -19,17 +21,11 @@ class UserOnboarding extends Model
         'agreed_at' => 'datetime',
     ];
 
-    /**
-     * User who accepted the rules.
-     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * Rules version accepted.
-     */
     public function rules(): BelongsTo
     {
         return $this->belongsTo(
