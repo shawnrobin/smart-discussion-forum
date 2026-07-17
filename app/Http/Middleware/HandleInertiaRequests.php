@@ -37,13 +37,14 @@ class HandleInertiaRequests extends Middleware
                     'id' => $request->user()->id,
                     'name' => $request->user()->name,
                     'email' => $request->user()->email,
-                    'is_admin' => (bool) $request->user()->is_admin,
+                    'username' => $request->user()->username,
+                    'role' => $request->user()->role, // Updated to pass 'role'
                 ] : null,
             ],
-            // Updated to filter by 'is_read' boolean to match your controller
+            // Updated to filter by 'read' (boolean) to match your migration/schema
             'notifications' => fn () => $request->user() 
                 ? Notification::where('user_id', $request->user()->id)
-                    ->where('is_read', false)
+                    ->where('read', false) // Updated to 'read' column
                     ->latest()
                     ->get() 
                 : [],
