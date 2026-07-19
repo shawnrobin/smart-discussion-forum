@@ -92,9 +92,12 @@ class TopicController
         $score->increment('topics_created');
         $score->increment('total_score', 10);
 
-        return redirect()
-            ->route('topics.show', $topic)
-            ->with('success', 'Topic created successfully.');
+       return redirect()
+    ->route('topics.show', [
+        'group' => $group,
+        'topic' => $topic,
+    ])
+    ->with('success', 'Topic created successfully.');
     }
 
     /**
