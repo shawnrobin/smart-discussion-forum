@@ -7,7 +7,10 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 
         <!-- Active -->
-        <div class="bg-green-50 border border-green-200 rounded-lg p-6">
+        <div
+    @click="selectedFilter = 'active'"
+    class="bg-green-50 border border-green-200 rounded-lg p-6 cursor-pointer hover:bg-green-100"
+>
           <h3 class="text-lg font-semibold text-green-900">
             Active
           </h3>
@@ -19,7 +22,10 @@
 
 
         <!-- Upcoming -->
-        <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <div
+    @click="selectedFilter = 'upcoming'"
+    class="bg-blue-50 border border-blue-200 rounded-lg p-6 cursor-pointer hover:bg-blue-100"
+>
           <h3 class="text-lg font-semibold text-blue-900">
             Upcoming
           </h3>
@@ -31,7 +37,10 @@
 
 
         <!-- Closed -->
-        <div class="bg-gray-50 border border-gray-200 rounded-lg p-6">
+        <div
+    @click="selectedFilter = 'completed'"
+    class="bg-gray-50 border border-gray-200 rounded-lg p-6 cursor-pointer hover:bg-gray-100"
+>
           <h3 class="text-lg font-semibold text-gray-900">
             Completed
           </h3>
@@ -47,55 +56,93 @@
 
       <!-- Active Quizzes -->
 
-      <Card title="Active Quizzes">
+      <Card :title="`${selectedFilter.charAt(0).toUpperCase() + selectedFilter.slice(1)} Quizzes`">
 
         <div class="space-y-4">
 
 
           <div
-            v-for="quiz in activeQuizzes"
-            :key="quiz.id"
-            class="p-6 border border-green-200 bg-green-50 rounded-lg"
-          >
+    v-for="quiz in displayedQuizzes"
+    :key="quiz.id"
+    :class="[
+        'p-6 border rounded-lg',
+        selectedFilter === 'active'
+            ? 'border-green-200 bg-green-50'
+            : selectedFilter === 'upcoming'
+            ? 'border-blue-200 bg-blue-50'
+            : 'border-gray-200 bg-gray-50'
+    ]"
+>
 
             <div class="flex justify-between items-start">
 
 
               <div>
-
-                <h3 class="text-lg font-semibold text-gray-900">
-                  {{ quiz.title }}
-                </h3>
-
-
-                <p class="text-sm text-gray-600 mt-1">
-                  By:
-                  {{ quiz.creator?.name ?? 'Unknown' }}
+                <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ quiz.title }}</h3>
+                <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">by {{ quiz.instructor }}</p>
+                <p class="text-sm text-gray-600 dark:text-gray-300 mt-2">
+                  ⏱️ {{ quiz.duration }} minutes | 📋 {{ quiz.questions_count || 0 }} questions
                 </p>
+                <!-- Active quizzes -->
+<p
+    v-if="selectedFilter === 'active'"
+    class="text-xs text-red-600 mt-2"
+>
+    ⏰ Closes:
+    {{ formatDate(quiz.end_time) }}
+</p>
+
+<!-- Upcoming quizzes -->
+<p
+    v-else-if="selectedFilter === 'upcoming'"
+    class="text-xs text-blue-600 mt-2"
+>
+    📅 Starts:
+    {{ formatDate(quiz.start_time) }}
+</p>
+
+<!-- Completed quizzes -->
+<p
+    v-else
+    class="text-xs text-gray-600 mt-2"
+>
+    ✅ Closed:
+    {{ formatDate(quiz.end_time) }}
+</p>
 
 
-                <p class="text-sm text-gray-600 mt-2">
-                  ⏱️ {{ quiz.duration_minutes }} minutes
-                  |
-                  📋 {{ quiz.questions?.length ?? 0 }} questions
-                </p>
-
-
-                <p class="text-xs text-red-600 mt-2">
-                  ⏰ Closes:
-                  {{ formatDate(quiz.end_time) }}
-                </p>
+                
 
               </div>
 
 
-
               <PrimaryButton
-                @click="startQuiz(quiz.id)"
-              >
-                Take Quiz
-              </PrimaryButton>
+    v-if="selectedFilter === 'active'"
+    @click="startQuiz(quiz.id)"
+>
+    Take Quiz
+</PrimaryButton>
 
+<span
+    v-else-if="selectedFilter === 'completed'"
+    class="flex items-center gap-3"
+>
+    <span class="text-green-600 font-semibold text-sm">✓ {{ quiz.score ? Math.round(quiz.score) + '%' : 'Completed' }}</span>
+    <Link :href="route('quizzes.performance', quiz.id)" class="text-xs text-orange-600 hover:text-orange-700 font-bold hover:underline">
+        View Report
+    </Link>
+</span>
+
+<span
+    v-else
+    class="text-blue-600 font-semibold"
+>
+    📅 Upcoming
+</span>
+
+
+
+              
 
             </div>
 
@@ -104,11 +151,11 @@
 
 
           <p
-            v-if="activeQuizzes.length === 0"
-            class="text-gray-500"
-          >
-            No active quizzes available.
-          </p>
+    v-if="displayedQuizzes.length === 0"
+    class="text-gray-500"
+>
+    No {{ selectedFilter.charAt(0).toUpperCase() + selectedFilter.slice(1) }} quizzes available.
+</p>
 
 
         </div>
@@ -126,13 +173,12 @@
 
 <script setup>
 
-import { computed } from 'vue';
-import { usePage, router } from '@inertiajs/vue3';
+import { computed, ref, onMounted, onUnmounted } from 'vue';
+import { usePage, router, Link } from '@inertiajs/vue3';
 
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Card from '@/Components/Card.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
-
 
 
 const page = usePage();
@@ -140,6 +186,7 @@ const page = usePage();
 
 const auth = page.props.auth;
 
+const selectedFilter = ref('active');
 
 
 /*
@@ -155,6 +202,28 @@ const props = defineProps({
         default: () => []
     }
 
+});
+
+// Auto-popup: poll every 10s for newly active quizzes not yet attempted
+let pollTimer;
+
+const startAutoPopup = () => {
+    const notStartedActive = props.quizzes.filter(
+        q => q.status === 'active' && !q.attempted && !q.score
+    );
+    if (notStartedActive.length > 0) {
+        const nextQuiz = notStartedActive[0];
+        router.visit(route('quizzes.start', nextQuiz.id));
+    }
+};
+
+onMounted(() => {
+    startAutoPopup(); // Check immediately
+    pollTimer = setInterval(startAutoPopup, 10000); // Then every 10s
+});
+
+onUnmounted(() => {
+    if (pollTimer) clearInterval(pollTimer);
 });
 
 
@@ -187,7 +256,7 @@ const upcomingQuizzes = computed(() => {
 const completedQuizzes = computed(() => {
 
     return props.quizzes.filter(
-        quiz => quiz.status === 'closed'
+        quiz => quiz.status === 'completed'
     );
 
 });
@@ -230,5 +299,23 @@ const formatDate = (date) => {
 
 };
 
+
+const displayedQuizzes = computed(() => {
+
+    if (selectedFilter.value === 'active') {
+        return activeQuizzes.value;
+    }
+
+    if (selectedFilter.value === 'upcoming') {
+        return upcomingQuizzes.value;
+    }
+
+    if (selectedFilter.value === 'completed') {
+        return completedQuizzes.value;
+    }
+
+    return props.quizzes;
+
+});
 
 </script>
