@@ -1,5 +1,4 @@
 <template>
-<template>
 <div class="flex h-screen bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 antialiased">
     <nav class="w-64 bg-white dark:bg-gray-800 border-r border-gray-100 dark:border-gray-700 flex flex-col justify-between shrink-0 shadow-sm">
       <div>
