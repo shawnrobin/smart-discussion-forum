@@ -40,6 +40,11 @@ class GroupController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        // Only lecturers and system admins can create groups
+        if (!in_array($request->user()->role, ['lecturer', 'system_admin'])) {
+            return back()->with('error', 'Only lecturers and administrators can create groups.');
+        }
+
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',

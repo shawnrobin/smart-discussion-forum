@@ -195,7 +195,8 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        Schema::create('topic_recommendations', function (Blueprint $table) {
+	        // TOPIC RECOMMENDATIONS TABLE (Requirement #11: ML recommendations)
+	        Schema::create('topic_recommendations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('topic_id')->constrained('topics')->onDelete('cascade');
@@ -203,6 +204,7 @@ return new class extends Migration
             $table->string('reason')->nullable();
             $table->timestamps();
         });
+
     }
 
     public function down(): void
