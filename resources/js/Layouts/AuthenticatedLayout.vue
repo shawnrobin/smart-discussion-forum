@@ -73,8 +73,13 @@
               </div>
             </div>
           </div>
-          <span class="text-sm font-medium text-gray-700 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100">{{ user?.name ?? 'Guest' }}</span>
-        </div>
+          </div>
+          <Link
+    :href="route('settings.index')"
+    class="text-sm font-medium text-gray-700 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100 hover:bg-orange-50 hover:text-orange-600 transition"
+>
+    {{ userName ?? 'Guest' }}
+</Link>
       </header>
       <main class="flex-1 overflow-auto bg-gray-50/50">
         <slot></slot>

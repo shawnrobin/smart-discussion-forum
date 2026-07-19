@@ -23,6 +23,7 @@
         <div class="flex gap-2">
           <TextInput
             v-model="searchQuery"
+            @keyup.enter="search"
             placeholder="Search topics, posts, users..."
             class="flex-1"
           />
@@ -66,7 +67,7 @@
 
 <script setup>
 import { ref } from 'vue';
-import { usePage } from '@inertiajs/vue3';
+import { usePage, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Card from '@/Components/Card.vue';
 import StatsCard from '@/Components/Statscard.vue';
@@ -92,7 +93,19 @@ const activities = ref([
 ]);
 
 const search = () => {
-  console.log('Searching for:', searchQuery.value);
-  // Will implement search functionality later
+
+    router.get(
+        route('dashboard'),
+        {
+            search: searchQuery.value
+        },
+        {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true
+        }
+    );
+
 };
+  // Will implement search functionality later
 </script>
