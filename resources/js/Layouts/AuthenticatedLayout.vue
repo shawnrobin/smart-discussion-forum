@@ -135,14 +135,12 @@
               </div>
             </div>
           </div>
-
           <div class="h-4 w-px bg-gray-200 dark:bg-gray-600"></div>
-
-          <span
-            class="text-sm font-medium text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-700 px-3 py-1.5 rounded-lg border border-gray-100 dark:border-gray-600"
-          >
-            {{ user?.name ?? userName ?? 'Guest Account' }}
-          </span>
+          </div>
+          <Link
+            :href="route('settings.index')"
+            class="text-sm font-medium text-gray-700 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100 hover:bg-orange-50 hover:text-orange-600 transition"
+          >{{ user?.name ?? userName ?? 'Guest Account' }}</Link>
         </div>
       </header>
 
