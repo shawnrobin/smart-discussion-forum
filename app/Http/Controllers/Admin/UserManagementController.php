@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\ModerationLog;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -47,6 +48,13 @@ class UserManagementController extends Controller
             'reason' => $reason
         ]);
 
+        Notification::create([
+            'user_id' => $user->id,
+            'type' => 'moderation_warning',
+            'title' => 'Account warning',
+            'message' => $reason,
+        ]);
+
         return back()->with('message', "User {$user->name} has been warned.");
     }
 
@@ -62,6 +70,15 @@ class UserManagementController extends Controller
             'admin_id' => Auth::id(),
             'action' => 'blacklisted', 
             'reason' => 'Admin status update.'
+        ]);
+
+        Notification::create([
+            'user_id' => $user->id,
+            'type' => $user->blacklisted ? 'account_blacklisted' : 'account_restored',
+            'title' => $user->blacklisted ? 'Account blacklisted' : 'Account restored',
+            'message' => $user->blacklisted
+                ? 'Your account has been blacklisted by an administrator.'
+                : 'Your account is active again.',
         ]);
 
         return back();

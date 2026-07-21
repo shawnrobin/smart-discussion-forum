@@ -12,12 +12,19 @@ class Notification extends Model
         'title',
         'message',
         'type',
-        'is_read',
+        'related_entity_id',
+        'related_entity_type',
+        'read',
     ];
 
     protected $casts = [
-        'is_read' => 'boolean',
+        'read' => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        static::created(fn (Notification $notification) => event(new \App\Events\UserNotificationCreated($notification)));
+    }
 
     /**
      * User receiving notification.

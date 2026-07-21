@@ -78,6 +78,23 @@ class MessageController
             'last_inactivity_warning_at' => null,
         ]);
 
+        $recipientIds = collect([$topic->user_id, $message->parent?->user_id])
+            ->filter()
+            ->reject(fn ($id) => (int) $id === (int) Auth::id())
+            ->diff($excludedUsers)
+            ->unique();
+
+        foreach ($recipientIds as $recipientId) {
+            Notification::create([
+                'user_id' => $recipientId,
+                'type' => 'new_reply',
+                'title' => 'New reply in a discussion',
+                'message' => Auth::user()->name . " replied to: {$topic->title}",
+                'related_entity_id' => $topic->id,
+                'related_entity_type' => Topic::class,
+            ]);
+        }
+
         /*
         |--------------------------------------------------------------------------
         | Requirement #3

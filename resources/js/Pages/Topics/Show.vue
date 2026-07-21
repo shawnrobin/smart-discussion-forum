@@ -156,6 +156,7 @@
             rows="4"
             class="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none resize-none"
           ></textarea>
+          <p v-if="replyError" class="text-sm text-rose-600">{{ replyError }}</p>
 
           <div class="flex flex-col sm:flex-row sm:items-center gap-4">
             <div class="flex items-center gap-4">
@@ -311,6 +312,7 @@ const sortedReplies = computed(() => [...replies.value].sort((a, b) => Number(b.
 const replyForm = ref({ content: '', isAnswer: false });
 const replyTo = ref(null);
 const submitting = ref(false);
+const replyError = ref('');
 const excludedUserIds = ref([]);
 
 // Modals
@@ -331,6 +333,7 @@ const cancelReply = () => {
 const submitReply = () => {
   if (!replyForm.value.content.trim() || submitting.value) return;
   submitting.value = true;
+  replyError.value = '';
 
   const payload = {
     content: replyForm.value.content,
@@ -345,6 +348,9 @@ const submitReply = () => {
       replyForm.value = { content: '', isAnswer: false };
       excludedUserIds.value = [];
       replyTo.value = null;
+    },
+    onError: (errors) => {
+      replyError.value = errors.content || errors.group || errors.excluded_users || 'Your reply could not be posted. Please try again.';
     },
     onFinish: () => { submitting.value = false; },
   });

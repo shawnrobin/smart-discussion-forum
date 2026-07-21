@@ -152,7 +152,7 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { router, Link, usePage } from '@inertiajs/vue3';
 import { 
   LayoutDashboard, Users, Award, User, Settings, LogOut as LogOutIcon, 
@@ -168,6 +168,7 @@ const isLecturer = computed(() => user.value?.role === 'lecturer' || user.value?
 
 const showNotifications = ref(false);
 const notifications = ref(page.props.notifications || []);
+const notificationChannel = computed(() => user.value ? `App.Models.User.${user.value.id}` : null);
 
 const navLinks = computed(() => [
   { id: 1, label: 'Dashboard', href: route('dashboard'),     matchUrl: '/dashboard', icon: LayoutDashboard },
@@ -179,7 +180,21 @@ const navLinks = computed(() => [
 
 const logout = () => router.post(route('logout'));
 
-const markAsRead = (id) => {
-  router.post(route('notifications.markAsRead', id));
-};
+const markAsRead = (id) => router.post(route('notifications.markAsRead', id), {}, {
+  preserveScroll: true,
+  onSuccess: () => { notifications.value = notifications.value.filter(note => note.id !== id); },
+});
+
+onMounted(() => {
+  if (!notificationChannel.value || !window.Echo) return;
+
+  window.Echo.private(notificationChannel.value)
+    .listen('.notification.created', ({ notification }) => {
+      notifications.value = [notification, ...notifications.value.filter(note => note.id !== notification.id)];
+    });
+});
+
+onBeforeUnmount(() => {
+  if (notificationChannel.value && window.Echo) window.Echo.leave(notificationChannel.value);
+});
 </script>

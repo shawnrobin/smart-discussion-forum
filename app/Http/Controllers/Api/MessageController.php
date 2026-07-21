@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Message;
+use App\Models\Notification;
 use App\Models\Topic;
 use App\Models\Group;
 use App\Models\ParticipationScore;
@@ -76,6 +77,23 @@ class MessageController
             'inactive_warnings' => 0,
             'last_inactivity_warning_at' => null,
         ]);
+
+        $recipientIds = collect([$topic->user_id, $message->parent?->user_id])
+            ->filter()
+            ->reject(fn ($id) => (int) $id === (int) auth()->id())
+            ->diff($excludedUsers)
+            ->unique();
+
+        foreach ($recipientIds as $recipientId) {
+            Notification::create([
+                'user_id' => $recipientId,
+                'type' => 'new_reply',
+                'title' => 'New reply in a discussion',
+                'message' => $request->user()->name . " replied to: {$topic->title}",
+                'related_entity_id' => $topic->id,
+                'related_entity_type' => Topic::class,
+            ]);
+        }
 
         // Handle user exclusions (Requirement #3)
         if ($excludedUsers->isNotEmpty()) {
