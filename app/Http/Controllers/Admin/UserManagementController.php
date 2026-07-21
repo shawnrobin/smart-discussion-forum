@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Models\Warning;
 use App\Models\ModerationLog;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -38,19 +37,14 @@ class UserManagementController extends Controller
     public function warn(Request $request, $id)
     {
         $user = User::findOrFail($id);
-        $request->validate(['reason' => 'required|string|max:500']);
-
-        Warning::create([
-            'user_id' => $user->id,
-            'admin_id' => Auth::id(),
-            'reason' => $request->reason
-        ]);
+        $request->validate(['reason' => 'nullable|string|max:500']);
+        $reason = trim((string) $request->input('reason')) ?: 'No reason provided.';
 
         ModerationLog::create([
             'user_id' => $user->id,
             'admin_id' => Auth::id(),
-            'action' => 'warn',
-            'reason' => $request->reason
+            'action' => 'warning_issued',
+            'reason' => $reason
         ]);
 
         return back()->with('message', "User {$user->name} has been warned.");

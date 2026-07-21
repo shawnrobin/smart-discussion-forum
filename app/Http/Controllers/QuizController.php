@@ -55,6 +55,8 @@ class QuizController extends Controller
      */
     public function create(Group $group)
     {
+        $this->ensureCanManageGroup($group);
+
         return Inertia::render('Quizzes/Create', [
             'group' => $group
         ]);
@@ -95,6 +97,8 @@ class QuizController extends Controller
      */
     public function store(Request $request, Group $group)
     {
+        $this->ensureCanManageGroup($group);
+
         $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string|max:1000',
@@ -259,5 +263,15 @@ class QuizController extends Controller
         }
 
         return 'active';
+    }
+
+    private function ensureCanManageGroup(Group $group): void
+    {
+        $user = auth()->user();
+
+        abort_unless(
+            $user && ($user->role === 'system_admin' || (int) $group->created_by === (int) $user->id),
+            403
+        );
     }
 }

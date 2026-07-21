@@ -59,9 +59,9 @@
                     {{ u.is_admin ? 'Revoke Admin' : 'Make Admin' }}
                 </button>
 
-                <Link :href="`/admin/users/${u.id}/warn`" method="post" as="button" class="text-amber-600 hover:text-amber-800 font-bold text-xs flex items-center inline-flex">
+                <button @click="warnUser(u.id)" class="text-amber-600 hover:text-amber-800 font-bold text-xs flex items-center inline-flex">
                     <AlertTriangle class="w-3 h-3 mr-1" /> Warn
-                </Link>
+                </button>
                 <Link :href="`/admin/users/${u.id}/toggle-blacklist`" method="post" as="button" class="text-orange-600 hover:text-orange-800 font-bold text-xs flex items-center inline-flex">
                     <Ban class="w-3 h-3 mr-1" /> {{ u.blacklisted ? 'Unban' : 'Blacklist' }}
                 </Link>
@@ -96,6 +96,15 @@ watch(search, (value) => {
 
 const toggleAdmin = (id) => {
     router.post(route('admin.users.toggle-admin', id), {}, {
+        preserveScroll: true,
+    });
+};
+
+const warnUser = (id) => {
+    const reason = window.prompt('Reason for this warning:');
+    if (reason === null) return;
+
+    router.post(route('admin.users.warn', id), { reason }, {
         preserveScroll: true,
     });
 };
