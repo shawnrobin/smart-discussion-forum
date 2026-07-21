@@ -72,6 +72,12 @@ class TopicController
             'user_id' => Auth::id(),
         ]);
 
+        Auth::user()->update([
+            'last_communication_at' => now(),
+            'inactive_warnings' => 0,
+            'last_inactivity_warning_at' => null,
+        ]);
+
         /*
         |--------------------------------------------------------------------------
         | Requirement #9

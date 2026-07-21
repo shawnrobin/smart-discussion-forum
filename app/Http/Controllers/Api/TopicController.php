@@ -68,6 +68,12 @@ class TopicController
             'user_id' => auth()->id()
         ]);
 
+        $request->user()->update([
+            'last_communication_at' => now(),
+            'inactive_warnings' => 0,
+            'last_inactivity_warning_at' => null,
+        ]);
+
         // Update participation score (Requirement #9)
         $score = ParticipationScore::firstOrCreate(
             ['user_id' => auth()->id(), 'group_id' => $group->id]

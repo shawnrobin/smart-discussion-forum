@@ -248,6 +248,7 @@ Route::middleware('auth')->group(function () {
 Route::middleware(['auth', 'ensureIsAdmin'])->prefix('admin')->as('admin.')->group(function () {
     Route::get('/dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
     Route::get('/moderation', [AdminModerationController::class, 'index'])->name('moderation.index');
+    Route::put('/moderation/settings', [AdminModerationController::class, 'updateSettings'])->name('moderation.settings.update');
     Route::post('/moderation/reports/{report}/resolve', [AdminModerationController::class, 'resolve'])->name('moderation.resolve');
 
     // User Management

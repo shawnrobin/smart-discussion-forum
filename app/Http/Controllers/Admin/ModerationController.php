@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\ModerationLog;
+use App\Models\ModerationSetting;
 use App\Models\Report;
 use App\Models\Topic;
 use Illuminate\Http\Request;
@@ -17,7 +18,27 @@ class ModerationController extends Controller
             'reports' => Report::with(['user:id,name', 'reportable'])
                 ->latest()
                 ->paginate(30),
+            'moderationSettings' => ModerationSetting::firstOrCreate([], [
+                'inactivity_days' => 30,
+                'warning_grace_days' => 7,
+                'warnings_before_blacklist' => 2,
+                'blacklist_days' => 30,
+            ]),
         ]);
+    }
+
+    public function updateSettings(Request $request)
+    {
+        $validated = $request->validate([
+            'inactivity_days' => 'required|integer|min:1|max:365',
+            'warning_grace_days' => 'required|integer|min:1|max:90',
+            'warnings_before_blacklist' => 'required|integer|min:1|max:10',
+            'blacklist_days' => 'required|integer|min:1|max:365',
+        ]);
+
+        ModerationSetting::firstOrCreate()->update($validated);
+
+        return back()->with('success', 'Automatic inactivity moderation settings updated.');
     }
 
     public function reportTopic(Request $request, Topic $topic)

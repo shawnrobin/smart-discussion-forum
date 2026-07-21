@@ -21,7 +21,12 @@ class User extends Authenticatable
         'password',
         'role',
         'status',
+        'blacklisted',
+        'inactive_warnings',
         'last_login',
+        'last_communication_at',
+        'last_inactivity_warning_at',
+        'blacklisted_until',
         'avatar',
         'bio',
         'course',
@@ -35,6 +40,9 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'last_login' => 'datetime',
+        'last_communication_at' => 'datetime',
+        'last_inactivity_warning_at' => 'datetime',
+        'blacklisted_until' => 'datetime',
         'password' => 'hashed',
         'agreed_to_rules' => 'boolean', // Cast for registration
     ];

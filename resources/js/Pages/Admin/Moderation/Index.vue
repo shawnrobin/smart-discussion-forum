@@ -8,6 +8,28 @@
         <p class="text-sm text-slate-500 mt-1">Review member reports and take action on irrelevant or harmful content.</p>
       </div>
 
+      <section class="mb-8 bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <h2 class="text-lg font-bold text-slate-900">Automatic inactivity policy</h2>
+        <p class="text-sm text-slate-500 mt-1">The daily moderation task uses these values for student accounts.</p>
+        <form @submit.prevent="saveSettings" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-5">
+          <label class="text-sm font-medium text-slate-700">Inactive after (days)
+            <input v-model.number="settingsForm.inactivity_days" type="number" min="1" max="365" class="mt-1 w-full rounded-lg border-slate-300 focus:border-orange-500 focus:ring-orange-500" />
+          </label>
+          <label class="text-sm font-medium text-slate-700">Grace period (days)
+            <input v-model.number="settingsForm.warning_grace_days" type="number" min="1" max="90" class="mt-1 w-full rounded-lg border-slate-300 focus:border-orange-500 focus:ring-orange-500" />
+          </label>
+          <label class="text-sm font-medium text-slate-700">Warnings before blacklist
+            <input v-model.number="settingsForm.warnings_before_blacklist" type="number" min="1" max="10" class="mt-1 w-full rounded-lg border-slate-300 focus:border-orange-500 focus:ring-orange-500" />
+          </label>
+          <label class="text-sm font-medium text-slate-700">Blacklist duration (days)
+            <input v-model.number="settingsForm.blacklist_days" type="number" min="1" max="365" class="mt-1 w-full rounded-lg border-slate-300 focus:border-orange-500 focus:ring-orange-500" />
+          </label>
+          <div class="lg:col-span-4 flex justify-end">
+            <button type="submit" :disabled="settingsForm.processing" class="px-4 py-2 text-sm font-semibold rounded-lg bg-orange-600 text-white hover:bg-orange-700 disabled:opacity-50">{{ settingsForm.processing ? 'Saving...' : 'Save policy' }}</button>
+          </div>
+        </form>
+      </section>
+
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div v-if="reports.data.length" class="divide-y divide-slate-100">
           <article v-for="report in reports.data" :key="report.id" class="p-6">
@@ -38,11 +60,17 @@
 
 <script setup>
 import { ref } from 'vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, useForm } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 
-defineProps({ reports: { type: Object, required: true } });
+const props = defineProps({ reports: { type: Object, required: true }, moderationSettings: { type: Object, required: true } });
 const processing = ref(null);
+const settingsForm = useForm({
+  inactivity_days: props.moderationSettings.inactivity_days,
+  warning_grace_days: props.moderationSettings.warning_grace_days,
+  warnings_before_blacklist: props.moderationSettings.warnings_before_blacklist,
+  blacklist_days: props.moderationSettings.blacklist_days,
+});
 
 const resolve = (report, decision) => {
   processing.value = report.id;
@@ -51,6 +79,8 @@ const resolve = (report, decision) => {
     onFinish: () => { processing.value = null; },
   });
 };
+
+const saveSettings = () => settingsForm.put(route('admin.moderation.settings.update'), { preserveScroll: true });
 
 const contentType = (report) => report.reportable_type?.split('\\').pop() || 'Content';
 const contentTitle = (report) => report.reportable?.title || report.reportable?.content || 'Content is no longer available';

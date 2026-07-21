@@ -72,6 +72,12 @@ class MessageController
             'parent_message_id' => $validated['parent_message_id'] ?? null,
         ]);
 
+        Auth::user()->update([
+            'last_communication_at' => now(),
+            'inactive_warnings' => 0,
+            'last_inactivity_warning_at' => null,
+        ]);
+
         /*
         |--------------------------------------------------------------------------
         | Requirement #3

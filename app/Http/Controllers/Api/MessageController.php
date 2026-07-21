@@ -71,6 +71,12 @@ class MessageController
             'parent_message_id' => $validated['parent_message_id'] ?? null
         ]);
 
+        $request->user()->update([
+            'last_communication_at' => now(),
+            'inactive_warnings' => 0,
+            'last_inactivity_warning_at' => null,
+        ]);
+
         // Handle user exclusions (Requirement #3)
         if ($excludedUsers->isNotEmpty()) {
             foreach ($excludedUsers as $excluded_user_id) {
