@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Group;
+use App\Models\GroupOnboardingAcceptance;
+use App\Models\OnboardingRules;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -30,7 +32,10 @@ class GroupController extends Controller
                 return $group;
             });
 
-        return Inertia::render('GroupList/Index', ['groups' => $groups]);
+        return Inertia::render('GroupList/Index', [
+            'groups' => $groups,
+            'rules' => OnboardingRules::latest('version')->firstOrFail(),
+        ]);
     }
 
     public function create(): Response
@@ -40,14 +45,16 @@ class GroupController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        // Only lecturers and system admins can create groups
-        if (!in_array($request->user()->role, ['lecturer', 'system_admin'])) {
-            return back()->with('error', 'Only lecturers and administrators can create groups.');
+        // Groups are created by lecturers; students participate by joining them.
+        if ($request->user()->role !== 'lecturer') {
+            return back()->with('error', 'Only lecturers can create groups.');
         }
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
+            'topic_keywords' => 'nullable|array|max:20',
+            'topic_keywords.*' => 'string|max:50',
             'max_members' => 'nullable|integer|min:1',
         ]);
 
@@ -80,6 +87,8 @@ class GroupController extends Controller
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'description' => 'nullable|string',
+            'topic_keywords' => 'nullable|array|max:20',
+            'topic_keywords.*' => 'string|max:50',
             'max_members' => 'nullable|integer|min:1',
         ]);
 
@@ -101,6 +110,16 @@ class GroupController extends Controller
         if ($group->users()->where('user_id', $request->user()->id)->exists()) {
             return back()->with('error', 'Already a member of this group.');
         }
+
+        $validated = $request->validate([
+            'rules_version' => 'required|integer|exists:onboarding_rules,version',
+            'agreed_to_rules' => 'accepted',
+        ]);
+
+        GroupOnboardingAcceptance::updateOrCreate(
+            ['group_id' => $group->id, 'user_id' => $request->user()->id],
+            ['rules_version' => $validated['rules_version'], 'agreed_at' => now()],
+        );
 
         $group->users()->attach($request->user()->id, [
             'joined_at' => now(),

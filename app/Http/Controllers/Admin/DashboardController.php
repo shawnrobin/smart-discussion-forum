@@ -3,10 +3,11 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use App\Models\Topic;
-use App\Models\Message;
 use App\Models\Group;
+use App\Models\Message;
+use App\Models\Quiz;
+use App\Models\Topic;
+use App\Models\User;
 use App\Models\ModerationLog;
 use Carbon\Carbon;
 use Inertia\Inertia;
@@ -18,21 +19,44 @@ class DashboardController extends Controller
      */
     public function index()
     {
-        // 1. Compile Statistics from existing tables
+        // 1. Compile Statistics
         $stats = [
-            'users'       => User::count(),
-            'discussions' => Topic::count(),
-            'messages'    => Message::count(),
-            'groups'      => Group::count(),
-            'blacklisted' => User::where('blacklisted', true)->count(),
-            'flagged'     => Topic::where('flagged_status', 'flagged')->count(),
+            'users'          => User::count(),
+            'groups'         => Group::count(),
+            'topics'         => Topic::count(),
+            'messages'       => Message::count(),
+            'quizzes'        => Quiz::count(),
+            'flagged_topics' => Topic::where('flagged_status', 'flagged')->count(),
+            'blacklisted'    => User::where('blacklisted', true)->count(),
         ];
 
         // 2. Fetch Recent Moderation Logs
-        $recentLogs = ModerationLog::with(['user', 'admin'])
+        // Ensure user and admin relationships are defined in ModerationLog model
+        $recentLogs = ModerationLog::with(['user:id,name', 'admin:id,name'])
             ->latest()
             ->take(10)
             ->get();
+
+        $recentTopics = Topic::with(['user:id,name', 'group:id,name'])
+            ->latest()
+            ->take(8)
+            ->get();
+
+        $groupSummaries = Group::withCount([
+            'users',
+            'topics',
+            'topics as unanswered_topics_count' => fn ($query) => $query->where('is_question', true)->where('is_answered', false),
+        ])
+            ->orderByDesc('topics_count')
+            ->take(10)
+            ->get()
+            ->map(fn ($group) => [
+                'id' => $group->id,
+                'name' => $group->name,
+                'members' => $group->users_count,
+                'topics' => $group->topics_count,
+                'unanswered' => $group->unanswered_topics_count,
+            ]);
 
         // 3. Prepare Chart Data for the last 7 days
         $chartData = [];
@@ -40,7 +64,7 @@ class DashboardController extends Controller
             $date = Carbon::today()->subDays($i);
             $chartData[] = [
                 'label' => $date->format('M d'),
-                'count' => ModerationLog::whereDate('created_at', $date)->count()
+                'count' => Topic::whereDate('created_at', $date)->count()
             ];
         }
 
@@ -48,7 +72,9 @@ class DashboardController extends Controller
         return Inertia::render('Admin/Dashboard', [
             'stats'      => $stats,
             'recentLogs' => $recentLogs,
-            'chartData'  => $chartData
+            'chartData'     => $chartData,
+            'recentTopics'  => $recentTopics,
+            'groupSummaries' => $groupSummaries,
         ]);
     }
 }

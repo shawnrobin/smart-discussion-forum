@@ -12,8 +12,13 @@ class Group extends Model
     protected $fillable = [
         'name',
         'description',
+        'topic_keywords',
         'created_by',
         'max_members',
+    ];
+
+    protected $casts = [
+        'topic_keywords' => 'array',
     ];
 
     /**
@@ -58,4 +63,3 @@ class Group extends Model
         return $this->hasMany(Quiz::class);
     }
 }
-

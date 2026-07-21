@@ -76,7 +76,7 @@
         </div>
 
         <!-- Recent Quizzes -->
-        <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div v-if="isStudent" class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center">
             <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
               <svg class="w-5 h-5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -139,20 +139,24 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue';
 import { usePage, router, Link } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 
 const page = usePage();
 const auth = computed(() => page.props.auth || {});
+const isStudent = computed(() => auth.value?.user?.role === 'student');
 
 const searchQuery = ref('');
+const openingQuiz = ref(false);
+let activeQuizPoller;
 
 const props = defineProps({
   groups: { type: Array, default: () => [] },
   activities: { type: Array, default: () => [] },
   recentQuizzes: { type: Array, default: () => [] },
   stats: { type: Object, default: () => ({}) },
+  activeQuiz: { type: Object, default: null },
 });
 
 const search = () => {
@@ -166,4 +170,19 @@ const search = () => {
     });
   }
 };
+
+const openActiveQuiz = (quiz) => {
+  if (!quiz || openingQuiz.value) return;
+  openingQuiz.value = true;
+  router.visit(route('quizzes.start', quiz.id), { onFinish: () => { openingQuiz.value = false; } });
+};
+
+watch(() => props.activeQuiz, (quiz) => openActiveQuiz(quiz));
+onMounted(() => {
+  openActiveQuiz(props.activeQuiz);
+  activeQuizPoller = setInterval(() => {
+    if (!openingQuiz.value) router.reload({ only: ['activeQuiz'], preserveScroll: true, preserveState: true });
+  }, 15000);
+});
+onBeforeUnmount(() => clearInterval(activeQuizPoller));
 </script>

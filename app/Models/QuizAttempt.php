@@ -12,14 +12,18 @@ class QuizAttempt extends Model
         'quiz_id',
         'user_id',
         'started_at',
+        'deadline_at',
         'submitted_at',
+        'auto_submitted_at',
         'score',
         'time_taken_seconds',
     ];
 
     protected $casts = [
         'started_at' => 'datetime',
+        'deadline_at' => 'datetime',
         'submitted_at' => 'datetime',
+        'auto_submitted_at' => 'datetime',
         'score' => 'decimal:2',
     ];
 

@@ -26,7 +26,7 @@ class QuizAnswer extends Model
     {
         return $this->belongsTo(
             QuizAttempt::class,
-            'quiz_attempt_id'
+            'attempt_id'
         );
     }
 
@@ -37,7 +37,7 @@ class QuizAnswer extends Model
     {
         return $this->belongsTo(
             QuizQuestion::class,
-            'quiz_question_id'
+            'question_id'
         );
     }
 }

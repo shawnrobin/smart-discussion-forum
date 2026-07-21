@@ -27,14 +27,20 @@
               </span>
               <span class="flex items-center gap-1.5">
                 <MessageSquareIcon class="w-4 h-4 text-orange-500" />
-                {{ topics.length }} topics
+                {{ topics.length }} conversation threads
               </span>
             </div>
           </div>
           <PrimaryButton @click="openCreateModal" class="shrink-0">
-            + New Topic
+            + Start conversation
           </PrimaryButton>
         </div>
+      </div>
+
+      <div class="rounded-xl border border-orange-100 bg-orange-50 px-5 py-4 text-sm text-orange-950">
+        <p class="font-semibold">Keep this group focused</p>
+        <p class="mt-1 leading-6">Start a clear conversation for one subject, then use replies to chat in that thread. Titles need at least 8 characters and the opening message needs at least 30.</p>
+        <p v-if="topicKeywords.length" class="mt-2 font-medium">Relevant discussion keywords: {{ topicKeywords.join(', ') }}</p>
       </div>
 
       <!-- Search & Filter -->
@@ -44,7 +50,7 @@
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Search topics..."
+            placeholder="Find a conversation or topic..."
             class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
           />
         </div>
@@ -58,10 +64,17 @@
         </select>
       </div>
 
-      <!-- Topics List -->
+      <div class="flex items-center justify-between">
+        <div>
+          <h2 class="text-lg font-bold text-gray-900">Group chat</h2>
+          <p class="text-sm text-gray-500">Open a thread to read and send live replies.</p>
+        </div>
+      </div>
+
+      <!-- Conversation threads -->
       <div v-if="filteredTopics.length === 0" class="text-center py-16 text-gray-400">
         <MessageSquareIcon class="w-12 h-12 mx-auto mb-3 text-gray-300" />
-        <p class="text-sm">No topics yet. Be the first to start a discussion!</p>
+        <p class="text-sm">No conversations yet. Be the first to start one!</p>
       </div>
 
       <div class="space-y-3">
@@ -80,7 +93,10 @@
             <div class="flex-1 min-w-0">
               <div class="flex items-start justify-between gap-3">
                 <div class="min-w-0">
-                  <h3 class="font-semibold text-gray-900 truncate">{{ topic.title }}</h3>
+                  <div class="flex items-center gap-2">
+                    <span class="rounded-full bg-orange-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-orange-700">Thread</span>
+                    <h3 class="font-semibold text-gray-900 truncate">{{ topic.title }}</h3>
+                  </div>
                   <p class="text-sm text-gray-500 mt-1 line-clamp-2">{{ topic.body }}</p>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
@@ -116,7 +132,7 @@
               </div>
 
               <div class="mt-3 flex items-center justify-between text-xs text-gray-400">
-                <span>by {{ topic.author?.name || 'Unknown' }} &middot; {{ topic.createdAt }}</span>
+                <span>Started by {{ topic.author?.name || 'Unknown' }} &middot; {{ topic.createdAt }}</span>
                 <div class="flex items-center gap-3">
                   <span class="flex items-center gap-1">
                     <MessageSquareIcon class="w-3 h-3" /> {{ topic.replies ?? 0 }}
@@ -165,31 +181,38 @@
     <div v-if="showModal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" @click.self="closeModal">
       <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg mx-4">
         <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-bold text-gray-900">{{ isEditing ? 'Edit Topic' : 'New Topic' }}</h3>
+          <h3 class="text-lg font-bold text-gray-900">{{ isEditing ? 'Edit conversation' : 'Start a conversation' }}</h3>
           <button @click="closeModal" class="text-gray-400 hover:text-gray-600 transition">
             <XIcon class="w-5 h-5" />
           </button>
         </div>
 
         <div class="space-y-4">
+          <div class="rounded-lg border border-orange-100 bg-orange-50 px-3 py-2 text-xs leading-5 text-orange-900">
+            Keep it relevant and respectful: no abusive language, spam, or unrelated subjects.
+            <span v-if="topicKeywords.length" class="font-semibold"> Use one of: {{ topicKeywords.join(', ') }}.</span>
+          </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Title</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Conversation title</label>
             <input
               v-model="form.title"
               type="text"
-              placeholder="Enter a descriptive title"
+              placeholder="Ask a clear, relevant question or name the subject"
+              minlength="8"
               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
             />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Body</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Opening message</label>
             <textarea
               v-model="form.body"
               rows="4"
-              placeholder="Describe your topic..."
+              placeholder="Give enough detail for the group to help (at least 30 characters)..."
+              minlength="30"
               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none resize-none"
             ></textarea>
           </div>
+          <p v-if="topicError" class="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-700">{{ topicError }}</p>
           <div class="flex items-center gap-2">
             <input
               v-model="form.isQuestion"
@@ -198,6 +221,20 @@
               class="w-4 h-4 text-orange-600 rounded border-gray-300 focus:ring-orange-500"
             />
             <label for="topic-is-question" class="text-sm text-gray-700">This is a question — I'm looking for an answer</label>
+          </div>
+          <div v-if="!isEditing" class="rounded-xl border border-gray-200 p-4">
+            <p class="text-sm font-semibold text-gray-800">Who can see this conversation?</p>
+            <div class="mt-3 space-y-2 text-sm text-gray-700">
+              <label class="flex items-center gap-2"><input v-model="form.visibility" value="all" type="radio" class="text-orange-600 focus:ring-orange-500" /> Everyone in this group</label>
+              <label class="flex items-center gap-2"><input v-model="form.visibility" value="exclude" type="radio" class="text-orange-600 focus:ring-orange-500" /> Everyone except selected members</label>
+              <label class="flex items-center gap-2"><input v-model="form.visibility" value="selected" type="radio" class="text-orange-600 focus:ring-orange-500" /> Only selected members and me</label>
+            </div>
+            <div v-if="form.visibility !== 'all'" class="mt-3 max-h-36 space-y-2 overflow-y-auto rounded-lg bg-gray-50 p-3">
+              <p class="text-xs text-gray-500">{{ form.visibility === 'exclude' ? 'Choose members who should not see this conversation.' : 'Choose the members who may see this conversation.' }}</p>
+              <label v-for="member in groupMembers" :key="member.id" class="flex items-center gap-2 text-sm text-gray-700">
+                <input v-model="form.selectedUsers" :value="member.id" type="checkbox" class="rounded border-gray-300 text-orange-600 focus:ring-orange-500" /> {{ member.name }}
+              </label>
+            </div>
           </div>
         </div>
 
@@ -209,7 +246,7 @@
             Cancel
           </button>
           <PrimaryButton @click="saveTopic" :disabled="!form.title.trim() || saving">
-            {{ saving ? 'Saving...' : isEditing ? 'Save Changes' : 'Create Topic' }}
+            {{ saving ? 'Saving...' : isEditing ? 'Save Changes' : 'Start conversation' }}
           </PrimaryButton>
         </div>
       </div>
@@ -249,7 +286,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { usePage, router, Link } from '@inertiajs/vue3';
 import {
   ArrowLeft as ArrowLeftIcon,
@@ -272,6 +309,8 @@ const auth = usePage().props.auth;
 const props = defineProps({
   group: { type: Object, default: () => ({ id: null, name: '', description: '', members: 0 }) },
   topics: { type: Array, default: () => [] },
+  topicKeywords: { type: Array, default: () => [] },
+  groupMembers: { type: Array, default: () => [] },
 });
 
 const searchQuery = ref('');
@@ -284,7 +323,9 @@ const showModal = ref(false);
 const isEditing = ref(false);
 const editingTopicId = ref(null);
 const saving = ref(false);
-const form = ref({ title: '', body: '', isQuestion: false });
+const form = ref({ title: '', body: '', isQuestion: false, visibility: 'all', selectedUsers: [] });
+const topicError = ref('');
+const topicKeywords = computed(() => props.topicKeywords);
 
 // Delete state
 const deleteTarget = ref(null);
@@ -314,7 +355,6 @@ const paginatedTopics = computed(() => {
 });
 
 // Watch filter changes to reset pagination
-import { watch } from 'vue';
 watch(filterBy, () => { currentPage.value = 1; });
 watch(searchQuery, () => { currentPage.value = 1; });
 
@@ -325,14 +365,16 @@ const goToTopic = (topicId) => {
 const openCreateModal = () => {
   isEditing.value = false;
   editingTopicId.value = null;
-  form.value = { title: '', body: '', isQuestion: false };
+  form.value = { title: '', body: '', isQuestion: false, visibility: 'all', selectedUsers: [] };
+  topicError.value = '';
   showModal.value = true;
 };
 
 const openEditModal = (topic) => {
   isEditing.value = true;
   editingTopicId.value = topic.id;
-  form.value = { title: topic.title, body: topic.body, isQuestion: false };
+  form.value = { title: topic.title, body: topic.body, isQuestion: false, visibility: 'all', selectedUsers: [] };
+  topicError.value = '';
   showModal.value = true;
 };
 
@@ -341,7 +383,16 @@ const closeModal = () => {
 };
 
 const saveTopic = () => {
-  if (!form.value.title.trim() || saving.value) return;
+  if (saving.value) return;
+  if (form.value.title.trim().length < 8) {
+    topicError.value = 'Give the conversation a clear title of at least 8 characters.';
+    return;
+  }
+  if (form.value.body.trim().length < 30) {
+    topicError.value = 'Add an opening message of at least 30 characters so members have enough context.';
+    return;
+  }
+  topicError.value = '';
   saving.value = true;
 
   if (isEditing.value) {
@@ -353,14 +404,17 @@ const saveTopic = () => {
       title: form.value.title,
       description: form.value.body,
       is_question: form.value.isQuestion,
+      visibility: form.value.visibility,
+      selected_users: form.value.selectedUsers,
     }, {
       preserveScroll: true,
       onSuccess: () => {
-        form.value = { title: '', body: '', isQuestion: false };
+        form.value = { title: '', body: '', isQuestion: false, visibility: 'all', selectedUsers: [] };
         closeModal();
         router.reload({ only: ['topics'], preserveState: false });
       },
-      onError: () => {
+      onError: (errors) => {
+        topicError.value = errors.title || errors.description || errors.selected_users || 'This conversation could not be created.';
         saving.value = false;
       },
       onFinish: () => { saving.value = false; },

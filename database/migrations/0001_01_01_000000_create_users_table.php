@@ -195,8 +195,8 @@ return new class extends Migration
             $table->timestamps();
         });
 
-	        // TOPIC RECOMMENDATIONS TABLE (Requirement #11: ML recommendations)
-	        Schema::create('topic_recommendations', function (Blueprint $table) {
+        // TOPIC RECOMMENDATIONS TABLE (Requirement #11: ML recommendations)
+        Schema::create('topic_recommendations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->foreignId('topic_id')->constrained('topics')->onDelete('cascade');
@@ -204,7 +204,15 @@ return new class extends Migration
             $table->string('reason')->nullable();
             $table->timestamps();
         });
-
+        // Add extra columns to users table
+        Schema::table('users', function (Blueprint $table) {
+            $table->string('avatar')->nullable();
+            $table->text('bio')->nullable();
+            $table->string('course')->nullable();
+            $table->string('faculty')->nullable();
+            $table->integer('year_of_study')->nullable();
+            $table->string('phone_number')->nullable();
+        });
     }
 
     public function down(): void

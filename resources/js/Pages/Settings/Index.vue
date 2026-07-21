@@ -30,13 +30,19 @@
             <ProfileHeader
               :name="user.name"
               :email="user.email"
-              :gamification="{level:5, totalPoints: 1250, verifiedAnswers:14, weeklyStreak:6}"
+              :gamification="profileStats"
             />
+
+            <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              <div class="rounded-xl bg-gray-50 p-4 text-center"><p class="text-xl font-bold text-gray-900">{{ profileStats.topics }}</p><p class="text-xs text-gray-500">Topics started</p></div>
+              <div class="rounded-xl bg-gray-50 p-4 text-center"><p class="text-xl font-bold text-gray-900">{{ profileStats.replies }}</p><p class="text-xs text-gray-500">Replies posted</p></div>
+              <div class="rounded-xl bg-gray-50 p-4 text-center"><p class="text-xl font-bold text-gray-900">{{ profileStats.quizAverage }}%</p><p class="text-xs text-gray-500">Quiz average</p></div>
+            </div>
 
             <!-- Academic & Quiz Performance Table -->
             <div class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-6 shadow-sm">
               <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Academic & Quiz Performance</h2>
-              <div class="overflow-hidden border border-gray-100 dark:border-gray-700 rounded-xl">
+              <div v-if="exams.length" class="overflow-hidden border border-gray-100 dark:border-gray-700 rounded-xl">
                 <table class="min-w-full divide-y divide-gray-100 dark:divide-gray-700 text-left text-sm">
                   <thead class="bg-gray-50 dark:bg-gray-700 font-semibold text-gray-700 dark:text-gray-200">
                     <tr>
@@ -54,6 +60,7 @@
                   </tbody>
                 </table>
               </div>
+              <p v-else class="rounded-xl border border-dashed border-gray-200 p-6 text-center text-sm text-gray-500">Completed quizzes will appear here as soon as you submit them.</p>
             </div>
 
             <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-6">Profile</h2>
@@ -381,14 +388,16 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
-import { useForm } from '@inertiajs/vue3';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { useForm, router } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import ProfileHeader from '@/Components/ProfileHeader.vue';
 
 const props = defineProps({
   user: Object,
   settings: Object,
+  profileStats: { type: Object, default: () => ({ totalPoints: 0, level: 1, progress: 0, nextLevelPoints: 100, badge: 'New contributor', verifiedAnswers: 0, streak: 0, topics: 0, replies: 0, quizAverage: 0 }) },
+  exams: { type: Array, default: () => [] },
 });
 
 const tabs = [
@@ -404,11 +413,9 @@ const tabs = [
 const activeTab = ref('profile');
 
 // Profile
-const exams = ref([
-  { id: 1, title: 'Introduction to Algorithms Quiz', date: 'July 01, 2026', score: 92 },
-  { id: 2, title: 'Data Structures Mid-Term Assignment', date: 'June 24, 2026', score: 88 },
-  { id: 3, title: 'Database Systems Final Exam', date: 'June 15, 2026', score: 95 },
-]);
+let profileRefreshTimer;
+onMounted(() => { profileRefreshTimer = setInterval(() => router.reload({ only: ['profileStats', 'exams'], preserveScroll: true, preserveState: true }), 30000); });
+onBeforeUnmount(() => clearInterval(profileRefreshTimer));
 
 const profileSaved = ref(false);
 const profileForm = useForm({
@@ -420,7 +427,7 @@ const profileForm = useForm({
   year_of_study: props.user.year_of_study ?? '',
 });
 const submitProfile = () => {
-  profileForm.put(route('settings.profile'), {
+  profileForm.put(route('settings.profile.update'), {
     preserveScroll: true,
     onSuccess: () => {
       profileSaved.value = true;

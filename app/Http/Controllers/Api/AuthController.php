@@ -40,9 +40,6 @@ class AuthController extends Controller
             'agreed_to_rules' => 'required|boolean|accepted',
         ]);
 
-        // Trim whitespace
-        $validated['email'] = trim($validated['email']);
-
         if (!$validated['agreed_to_rules']) {
             return response()->json([
                 'success' => false,
@@ -96,9 +93,6 @@ class AuthController extends Controller
             'email' => 'required|email',
             'password' => 'required|string',
         ]);
-
-        // Trim whitespace from email
-        $credentials['email'] = trim($credentials['email']);
 
         if (!Auth::attempt($credentials)) {
 
