@@ -30,7 +30,11 @@ class TopicController
      */
     public function show(Topic $topic)
     {
-        $topic->load('user', 'messages.user', 'group');
+        $topic->load(['user', 'group']);
+        $topic->setRelation('messages', $topic->messages()
+            ->visibleTo(auth()->id())
+            ->with('user')
+            ->get());
 
         return response()->json([
             'success' => true,

@@ -133,11 +133,15 @@ Route::middleware('auth')->group(function () {
 
     // Topics
     Route::get('/groups/{group}/topics/{topic}', function ($group, $topicId) {
-        $topicModel = \App\Models\Topic::with('user', 'messages.user')->findOrFail($topicId);
+        $topicModel = \App\Models\Topic::with('user')->findOrFail($topicId);
         $groupModel = \App\Models\Group::with('users')->findOrFail($group);
 
         // Build threaded replies: compute depth for each message by walking parent chain
-        $allMessages = $topicModel->messages->keyBy('id');
+        $allMessages = $topicModel->messages()
+            ->visibleTo(Auth::id())
+            ->with('user')
+            ->get()
+            ->keyBy('id');
 
         $messages = $allMessages->map(function ($msg) use ($allMessages) {
             $depth = 0;

@@ -61,4 +61,11 @@ class Message extends Model
     {
         return $this->hasMany(UserExclusion::class);
     }
+
+    public function scopeVisibleTo($query, int $userId)
+    {
+        return $query->whereDoesntHave('exclusions', function ($exclusions) use ($userId) {
+            $exclusions->where('excluded_user_id', $userId);
+        });
+    }
 }

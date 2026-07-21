@@ -20,15 +20,17 @@ class MessageController
     public function index(Topic $topic)
     {
         $messages = $topic->messages()
+            ->visibleTo(Auth::id())
             ->with('user')
             ->whereNull('parent_message_id')
             ->latest()
             ->get();
 
         foreach ($messages as $message) {
-            $message->load([
-                'replies.user'
-            ]);
+            $message->setRelation('replies', $message->replies()
+                ->visibleTo(Auth::id())
+                ->with('user')
+                ->get());
         }
 
         return Inertia::render('Messages/Index', [
@@ -50,6 +52,19 @@ class MessageController
             'excluded_users.*' => 'exists:users,id',
         ]);
 
+        abort_unless($topic->group_id === $group->id, 404);
+        abort_unless($group->users()->whereKey(Auth::id())->exists(), 403);
+
+        $excludedUsers = collect($validated['excluded_users'] ?? [])
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->reject(fn ($id) => $id === Auth::id())
+            ->values();
+
+        if ($excludedUsers->isNotEmpty() && $group->users()->whereIn('users.id', $excludedUsers)->count() !== $excludedUsers->count()) {
+            return back()->withErrors(['excluded_users' => 'You can only exclude members of this group.']);
+        }
+
         $message = Message::create([
             'content' => $validated['content'],
             'topic_id' => $topic->id,
@@ -63,9 +78,9 @@ class MessageController
         |--------------------------------------------------------------------------
         */
 
-        if (!empty($validated['excluded_users'])) {
+        if ($excludedUsers->isNotEmpty()) {
 
-            foreach ($validated['excluded_users'] as $excludedUser) {
+            foreach ($excludedUsers as $excludedUser) {
 
                 UserExclusion::create([
                     'user_id' => Auth::id(),
@@ -174,12 +189,25 @@ class MessageController
             'excluded_users.*' => 'exists:users,id',
         ]);
 
+        abort_unless($message->user_id === Auth::id() || Auth::user()->isAdmin(), 403);
+
+        $excludedUsers = collect($validated['excluded_users'])
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->reject(fn ($id) => $id === Auth::id())
+            ->values();
+
+        $group = $message->topic->group;
+        if ($group->users()->whereIn('users.id', $excludedUsers)->count() !== $excludedUsers->count()) {
+            return back()->withErrors(['excluded_users' => 'You can only exclude members of this group.']);
+        }
+
         UserExclusion::where(
             'message_id',
             $message->id
         )->delete();
 
-        foreach ($validated['excluded_users'] as $user) {
+        foreach ($excludedUsers as $user) {
 
             UserExclusion::create([
                 'user_id' => Auth::id(),

@@ -32,11 +32,11 @@ class TopicController
      */
     public function show(Topic $topic)
     {
-        $topic->load([
-            'user',
-            'group',
-            'messages.user',
-        ]);
+        $topic->load(['user', 'group']);
+        $topic->setRelation('messages', $topic->messages()
+            ->visibleTo(Auth::id())
+            ->with('user')
+            ->get());
 
         return Inertia::render('Topics/Show', [
             'topic' => $topic,
