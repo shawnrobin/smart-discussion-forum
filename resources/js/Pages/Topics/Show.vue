@@ -10,32 +10,32 @@
       <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
         <div class="p-6">
           <div class="flex flex-col sm:flex-row gap-4">
-            <!-- Author Avatar -->
+            <!-- user Avatar -->
             <div class="flex sm:flex-col items-center gap-3 shrink-0">
               <div class="w-12 h-12 rounded-full bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center text-white font-bold shadow-sm">
-                {{ topic.author?.initials ?? '??' }}
+                {{ topic.user?.initials ?? '??' }}
               </div>
               <div class="sm:hidden">
                 <div class="flex items-center gap-2">
-                  <span class="font-semibold text-gray-900 text-sm">{{ topic.author?.name }}</span>
-                  <span v-if="topic.author?.role === 'lecturer'" class="px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-medium rounded-full">Lecturer</span>
+                  <span class="font-semibold text-gray-900 text-sm">{{ topic.user?.name }}</span>
+                  <span v-if="topic.user?.role === 'lecturer'" class="px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-medium rounded-full">Lecturer</span>
                 </div>
-                <p class="text-xs text-gray-400 mt-0.5">{{ topic.createdAt }}</p>
+                <p class="text-xs text-gray-400 mt-0.5">{{ topic.created_at }}</p>
               </div>
             </div>
 
             <div class="flex-1 min-w-0">
-              <!-- Desktop author row -->
+              <!-- Desktop user row -->
               <div class="hidden sm:flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                  <span class="font-semibold text-gray-900">{{ topic.author?.name }}</span>
-                  <span v-if="topic.author?.role === 'lecturer'" class="px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-medium rounded-full">Lecturer</span>
+                  <span class="font-semibold text-gray-900">{{ topic.user?.name }}</span>
+                  <span v-if="topic.user?.role === 'lecturer'" class="px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-medium rounded-full">Lecturer</span>
                 </div>
                 <p class="text-xs text-gray-400">{{ topic.createdAt }}</p>
               </div>
 
               <h1 class="text-xl font-bold text-gray-900 mt-2">{{ topic.title }}</h1>
-              <p class="mt-3 text-gray-700 leading-relaxed text-sm sm:text-base whitespace-pre-line">{{ topic.content }}</p>
+              <p class="mt-3 text-gray-700 leading-relaxed text-sm sm:text-base whitespace-pre-line">{{ topic.description }}</p>
 
               <hr class="my-4 border-gray-100" />
 
@@ -95,17 +95,17 @@
           >
             <div class="flex gap-3 sm:gap-4">
               <div class="w-9 h-9 rounded-full bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-sm">
-                {{ reply.author?.initials ?? '??' }}
+                {{ reply.user?.initials ?? '??' }}
               </div>
               <div class="flex-1 min-w-0">
                 <div class="flex items-center justify-between gap-2">
                   <div class="flex items-center gap-2 flex-wrap">
-                    <span class="font-semibold text-gray-900 text-sm">{{ reply.author?.name }}</span>
+                    <span class="font-semibold text-gray-900 text-sm">{{ reply.user?.name }}</span>
                     <span v-if="reply.isAnswer" class="inline-flex items-center gap-1 px-2.5 py-0.5 bg-orange-100 text-orange-800 text-[11px] font-semibold rounded-full">
                       <CheckCircleIcon class="w-3 h-3" /> Answer
                     </span>
                   </div>
-                  <span class="text-[11px] text-gray-400 shrink-0">{{ reply.createdAt }}</span>
+                  <span class="text-[11px] text-gray-400 shrink-0">{{ reply.created_at }}</span>
                 </div>
 
                 <p class="mt-2 text-gray-700 text-sm leading-relaxed whitespace-pre-line">{{ reply.content }}</p>
@@ -145,7 +145,7 @@
       <!-- Reply Form -->
       <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
         <h3 class="text-base font-bold text-gray-900 mb-1">
-          {{ replyTo ? 'Reply to ' + replyTo.author?.name : 'Write a Reply' }}
+          {{ replyTo ? 'Reply to ' + replyTo.user?.name : 'Write a Reply' }}
         </h3>
         <p v-if="replyTo" class="text-xs text-gray-400 mb-3 italic">"{{ replyTo.content.substring(0, 80) }}..."</p>
 
@@ -286,7 +286,7 @@ const props = defineProps({
 });
 
 // Use server data only — no mock fallbacks
-const replies = ref(props.topic.replies ?? []);
+const replies = ref(props.topic.messages ?? []);
 const replyCount = computed(() => replies.value.length);
 
 // Reply form
@@ -319,7 +319,7 @@ const submitReply = () => {
     excluded_users: excludedUserIds.value,
   };
 
-  router.post(`/groups/${props.group.id}/topics/${props.topic.id}/replies`, payload, {
+  router.post(route('replies.store', { group: props.group.id, topic: props.topic.id }), payload, {
     preserveScroll: true,
     onSuccess: () => {
       replyForm.value = { content: '', isAnswer: false };
@@ -331,14 +331,14 @@ const submitReply = () => {
 };
 
 const canMarkAnswer = (reply) => {
-  // Topic author or admin can mark answers
+  // Topic user or admin can mark answers
   const userId = auth?.user?.id;
   const isAdmin = auth?.user?.is_admin || ['system_admin', 'group_admin', 'lecturer'].includes(auth?.user?.role);
-  return (props.topic.author?.id === userId || isAdmin) && !reply.isAnswer;
+  return (props.topic.user?.id === userId || isAdmin) && !reply.isAnswer;
 };
 
 const markAsAnswer = (reply) => {
-  router.post(`/messages/${reply.id}/mark-answer`, {}, {
+  router.post(route('messages.mark-answer', reply.id), {}, {
     preserveScroll: true,
     onSuccess: () => {
       // Update local state optimistically
@@ -355,7 +355,7 @@ const likeReply = (replyId) => {
 };
 
 const exportPDF = () => {
-  router.post(`/topics/${props.topic.id}/export-pdf`, {}, {
+  router.post(route('topics.export-pdf', props.topic.id), {}, {
     preserveScroll: true,
     onSuccess: () => {},
   });
@@ -373,8 +373,8 @@ const shareTopic = () => {
 
 // Client-side hydration: overwrite replies with server data when it arrives
 onMounted(() => {
-  if (props.topic.replies) {
-    replies.value = props.topic.replies;
+  if (props.topic.messages) {
+    replies.value = props.topic.messages;
   }
 });
 </script>
