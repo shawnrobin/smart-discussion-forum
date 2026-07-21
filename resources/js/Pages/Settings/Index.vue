@@ -420,7 +420,7 @@ const profileForm = useForm({
   year_of_study: props.user.year_of_study ?? '',
 });
 const submitProfile = () => {
-  profileForm.put(route('settings.profile'), {
+  profileForm.put(route('settings.profile.update'), {
     preserveScroll: true,
     onSuccess: () => {
       profileSaved.value = true;
