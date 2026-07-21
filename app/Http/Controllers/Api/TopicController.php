@@ -83,7 +83,7 @@ class TopicController
      */
     public function update(Request $request, Topic $topic)
     {
-        // Check if user is author or admin
+        // Check if user is user or admin
         if ($topic->user_id !== auth()->id() && !auth()->user()->isAdmin()) {
             return response()->json([
                 'success' => false,
@@ -101,9 +101,9 @@ class TopicController
 
         return response()->json([
             'success' => true,
-            'message' => 'Topic updated successfully',
+            'group' => $topic->group,
             'topic' => $topic
-        ]);
+        ])->with('success', 'Topic created successfully.');
     }
 
     /**
