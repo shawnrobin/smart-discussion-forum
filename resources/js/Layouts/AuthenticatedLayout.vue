@@ -41,6 +41,7 @@
   </span>
 </Link>
         </div>
+      </div>
 
       <div class="border-t border-gray-100 bg-white">
         <div v-if="isAdmin" class="p-4 border-b border-gray-100 space-y-1">
@@ -136,7 +137,6 @@
             </div>
           </div>
           <div class="h-4 w-px bg-gray-200 dark:bg-gray-600"></div>
-          </div>
           <Link
             :href="route('settings.index')"
             class="text-sm font-medium text-gray-700 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100 hover:bg-orange-50 hover:text-orange-600 transition"
