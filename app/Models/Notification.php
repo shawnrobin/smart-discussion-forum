@@ -23,7 +23,13 @@ class Notification extends Model
 
     protected static function booted(): void
     {
-        static::created(fn (Notification $notification) => event(new \App\Events\UserNotificationCreated($notification)));
+        static::created(function (Notification $notification): void {
+            try {
+                event(new \App\Events\UserNotificationCreated($notification));
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
+        });
     }
 
     /**

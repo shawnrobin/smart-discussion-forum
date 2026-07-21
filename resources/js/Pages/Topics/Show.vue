@@ -42,11 +42,11 @@
               <!-- Action Bar -->
               <div class="flex flex-wrap items-center justify-between gap-4">
                 <div class="flex items-center gap-4 text-sm">
-                  <button class="flex items-center gap-1.5 text-gray-500 hover:text-orange-600 font-medium transition-colors">
-                    <ThumbsUpIcon class="w-4 h-4" /> {{ topic.likes ?? 0 }}
+                  <button @click="toggleTopicLike" :class="topicLiked ? 'text-orange-600' : 'text-gray-500 hover:text-orange-600'" class="flex items-center gap-1.5 font-medium transition-colors">
+                    <ThumbsUpIcon class="w-4 h-4" :fill="topicLiked ? 'currentColor' : 'none'" /> {{ topicLikes }}
                   </button>
-                  <button class="flex items-center gap-1.5 text-gray-500 hover:text-orange-600 font-medium transition-colors">
-                    <MessageSquareIcon class="w-4 h-4" /> {{ replyCount }}
+                  <button @click="repliesOpen = !repliesOpen" class="flex items-center gap-1.5 text-gray-500 hover:text-orange-600 font-medium transition-colors">
+                    <MessageSquareIcon class="w-4 h-4" /> {{ replyCount }} {{ replyCount === 1 ? 'reply' : 'replies' }}
                   </button>
                   <button
                     @click="showReportModal = true"
@@ -59,9 +59,10 @@
                 <div class="flex items-center gap-2">
                   <button
                     @click="exportPDF"
+                    :disabled="exporting"
                     class="inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-orange-600 px-2.5 py-1.5 rounded-md hover:bg-orange-50 transition"
                   >
-                    <FileTextIcon class="w-3.5 h-3.5" /> Export PDF
+                    <FileTextIcon class="w-3.5 h-3.5" /> {{ exporting ? 'Preparing...' : 'Export PDF' }}
                   </button>
                   <button
                     @click="shareTopic"
@@ -79,13 +80,14 @@
       <!-- Replies Section -->
       <div>
         <div class="flex items-center gap-2 mb-4">
-          <h3 class="text-lg font-bold text-gray-900">{{ replies.length }} {{ replies.length === 1 ? 'Reply' : 'Replies' }}</h3>
+          <h3 class="text-lg font-bold text-gray-900">{{ replyCount }} {{ replyCount === 1 ? 'Reply' : 'Replies' }}</h3>
           <div class="h-px flex-1 bg-gray-200"></div>
+          <button @click="repliesOpen = !repliesOpen" class="text-xs font-semibold text-orange-600 hover:text-orange-700">{{ repliesOpen ? 'Hide replies' : `View ${replyCount} replies` }}</button>
         </div>
 
-        <div class="space-y-2">
+        <div v-if="repliesOpen" class="space-y-2">
           <div
-              v-for="reply in sortedReplies"
+              v-for="reply in visibleReplies"
             :key="reply.id"
             :style="{ marginLeft: (reply.depth || 0) * 1.5 + 'rem' }"
             :class="[
@@ -112,10 +114,11 @@
 
                 <div class="mt-3 flex items-center gap-4 text-xs border-t border-dashed border-gray-100 pt-2.5">
                   <button
-                    @click="likeReply(reply.id)"
-                    class="flex items-center gap-1 text-gray-500 hover:text-orange-600 transition-colors font-medium"
+                    @click="toggleReplyLike(reply)"
+                    :class="reply.liked_by_current_user ? 'text-orange-600' : 'text-gray-500 hover:text-orange-600'"
+                    class="flex items-center gap-1 transition-colors font-medium"
                   >
-                    <ThumbsUpIcon class="w-3.5 h-3.5" /> {{ reply.likes ?? 0 }}
+                    <ThumbsUpIcon class="w-3.5 h-3.5" :fill="reply.liked_by_current_user ? 'currentColor' : 'none'" /> {{ reply.likes ?? 0 }}
                   </button>
                   <button
                     @click="setReplyParent(reply)"
@@ -131,6 +134,9 @@
                     <CheckCircleIcon class="w-3.5 h-3.5" /> {{ reply.isAnswer ? 'Unmark' : 'Mark as Answer' }}
                   </button>
                 </div>
+                <button v-if="replyChildrenCount(reply.id)" @click="toggleReplyChildren(reply.id)" class="mt-3 text-xs font-semibold text-orange-600 hover:text-orange-700">
+                  {{ expandedReplyIds.has(reply.id) ? 'Hide' : `View ${replyChildrenCount(reply.id)}` }} {{ replyChildrenCount(reply.id) === 1 ? 'reply' : 'replies' }}
+                </button>
               </div>
             </div>
           </div>
@@ -151,6 +157,7 @@
 
         <form @submit.prevent="submitReply" class="space-y-4">
           <textarea
+            ref="replyTextarea"
             v-model="replyForm.content"
             :placeholder="replyTo ? 'Write your reply...' : 'Share your thoughts...'"
             rows="4"
@@ -278,7 +285,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, nextTick, onBeforeUnmount, onMounted, watch } from 'vue';
+import axios from 'axios';
 import { usePage, router, Link } from '@inertiajs/vue3';
 import {
   ArrowLeft as ArrowLeftIcon,
@@ -306,7 +314,42 @@ const props = defineProps({
 // Use server data only — no mock fallbacks
 const replies = ref(props.topic.messages ?? []);
 const replyCount = computed(() => replies.value.length);
-const sortedReplies = computed(() => [...replies.value].sort((a, b) => Number(b.isAnswer || b.is_answer) - Number(a.isAnswer || a.is_answer)));
+const topicLikes = ref(props.topic.likes ?? 0);
+const topicLiked = ref(Boolean(props.topic.liked_by_current_user));
+const repliesOpen = ref(true);
+const expandedReplyIds = ref(new Set());
+const exporting = ref(false);
+const replyTextarea = ref(null);
+
+const repliesByParent = computed(() => {
+  const byParent = new Map();
+  for (const reply of replies.value) {
+    const parentId = reply.parent_message_id ?? null;
+    if (!byParent.has(parentId)) byParent.set(parentId, []);
+    byParent.get(parentId).push(reply);
+  }
+  for (const children of byParent.values()) children.sort((a, b) => a.id - b.id);
+  return byParent;
+});
+
+const visibleReplies = computed(() => {
+  const result = [];
+  const appendChildren = (parentId, depth = 0) => {
+    for (const reply of repliesByParent.value.get(parentId) ?? []) {
+      result.push({ ...reply, depth });
+      if (expandedReplyIds.value.has(reply.id)) appendChildren(reply.id, depth + 1);
+    }
+  };
+  appendChildren(null);
+  return result;
+});
+
+const replyChildrenCount = (replyId) => (repliesByParent.value.get(replyId) ?? []).length;
+const toggleReplyChildren = (replyId) => {
+  const expanded = new Set(expandedReplyIds.value);
+  expanded.has(replyId) ? expanded.delete(replyId) : expanded.add(replyId);
+  expandedReplyIds.value = expanded;
+};
 
 // Reply form
 const replyForm = ref({ content: '', isAnswer: false });
@@ -324,6 +367,7 @@ const reportSubmitting = ref(false);
 
 const setReplyParent = (reply) => {
   replyTo.value = reply;
+  nextTick(() => replyTextarea.value?.focus());
 };
 
 const cancelReply = () => {
@@ -348,6 +392,7 @@ const submitReply = () => {
       replyForm.value = { content: '', isAnswer: false };
       excludedUserIds.value = [];
       replyTo.value = null;
+      router.reload({ only: ['topic'] });
     },
     onError: (errors) => {
       replyError.value = errors.content || errors.group || errors.excluded_users || 'Your reply could not be posted. Please try again.';
@@ -373,18 +418,32 @@ const markAsAnswer = (reply) => {
   });
 };
 
-const likeReply = (replyId) => {
-  // Simple like toggle — could call an API endpoint
-  replies.value = replies.value.map(r =>
-    r.id === replyId ? { ...r, likes: (r.likes ?? 0) + 1 } : r
-  );
+const toggleTopicLike = async () => {
+  const { data } = await axios.post(route('topics.like', props.topic.id));
+  topicLikes.value = data.likes;
+  topicLiked.value = data.liked;
+};
+
+const toggleReplyLike = async (reply) => {
+  const { data } = await axios.post(route('messages.like', reply.id));
+  replies.value = replies.value.map(item => item.id === reply.id
+    ? { ...item, likes: data.likes, liked_by_current_user: data.liked }
+    : item);
 };
 
 const exportPDF = () => {
-  router.post(route('topics.export-pdf', props.topic.id), {}, {
-    preserveScroll: true,
-    onSuccess: () => {},
-  });
+  exporting.value = true;
+  const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[character]));
+  const replyHtml = replies.value.map(reply => `<article><strong>${escapeHtml(reply.user?.name)}</strong><p>${escapeHtml(reply.content)}</p><small>${escapeHtml(reply.created_at)}</small></article>`).join('');
+  const printWindow = window.open('', '_blank');
+  if (!printWindow) {
+    exporting.value = false;
+    return;
+  }
+  printWindow.document.write(`<!doctype html><html><head><title>${escapeHtml(props.topic.title)}</title><style>body{font:15px Arial;color:#1f2937;max-width:760px;margin:40px auto;line-height:1.55}h1{color:#111827}article{border-top:1px solid #e5e7eb;padding:16px 0}p{white-space:pre-wrap}small{color:#6b7280}@media print{body{margin:20px}}</style></head><body><h1>${escapeHtml(props.topic.title)}</h1><p>${escapeHtml(props.topic.description)}</p><h2>Replies (${replyCount.value})</h2>${replyHtml}</body></html>`);
+  printWindow.document.close();
+  printWindow.focus();
+  setTimeout(() => { printWindow.print(); exporting.value = false; }, 250);
 };
 
 const sharePlatforms = computed(() => [
@@ -416,5 +475,35 @@ onMounted(() => {
   if (props.topic.messages) {
     replies.value = props.topic.messages;
   }
+
+  if (window.Echo && props.topic.id) {
+    window.Echo.private(`topic.${props.topic.id}`)
+      .listen('.reply.created', ({ reply }) => {
+        if (!replies.value.some((existing) => existing.id === reply.id)) replies.value.push(reply);
+        if (reply.parent_message_id) {
+          expandedReplyIds.value = new Set([...expandedReplyIds.value, reply.parent_message_id]);
+        }
+      })
+      .listen('.like.updated', (update) => {
+        if (update.content_type === 'topic' && update.content_id === props.topic.id) {
+          topicLikes.value = update.likes;
+          return;
+        }
+        if (update.content_type === 'message') {
+          replies.value = replies.value.map(reply => reply.id === update.content_id ? { ...reply, likes: update.likes } : reply);
+        }
+      });
+  }
+});
+
+watch(() => props.topic.messages, (messages) => {
+  replies.value = messages ?? [];
+});
+
+watch(() => props.topic.likes, (likes) => { topicLikes.value = likes ?? 0; });
+watch(() => props.topic.liked_by_current_user, (liked) => { topicLiked.value = Boolean(liked); });
+
+onBeforeUnmount(() => {
+  if (window.Echo && props.topic.id) window.Echo.leave(`topic.${props.topic.id}`);
 });
 </script>

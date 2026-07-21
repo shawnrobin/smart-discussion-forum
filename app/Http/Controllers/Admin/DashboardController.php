@@ -42,6 +42,22 @@ class DashboardController extends Controller
             ->take(8)
             ->get();
 
+        $groupSummaries = Group::withCount([
+            'users',
+            'topics',
+            'topics as unanswered_topics_count' => fn ($query) => $query->where('is_question', true)->where('is_answered', false),
+        ])
+            ->orderByDesc('topics_count')
+            ->take(10)
+            ->get()
+            ->map(fn ($group) => [
+                'id' => $group->id,
+                'name' => $group->name,
+                'members' => $group->users_count,
+                'topics' => $group->topics_count,
+                'unanswered' => $group->unanswered_topics_count,
+            ]);
+
         // 3. Prepare Chart Data for the last 7 days
         $chartData = [];
         for ($i = 6; $i >= 0; $i--) {
@@ -58,6 +74,7 @@ class DashboardController extends Controller
             'recentLogs' => $recentLogs,
             'chartData'     => $chartData,
             'recentTopics'  => $recentTopics,
+            'groupSummaries' => $groupSummaries,
         ]);
     }
 }

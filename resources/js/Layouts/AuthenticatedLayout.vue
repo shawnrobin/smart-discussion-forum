@@ -155,7 +155,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { router, Link, usePage } from '@inertiajs/vue3';
 import { 
-  LayoutDashboard, Users, Award, User, Settings, LogOut as LogOutIcon, 
+  LayoutDashboard, Users, Award, Settings, LogOut as LogOutIcon,
   Shield as ShieldIcon, BookOpen as BookOpenIcon, AlertTriangle as AlertTriangleIcon 
 } from 'lucide-vue-next';
 
@@ -173,9 +173,8 @@ const notificationChannel = computed(() => user.value ? `App.Models.User.${user.
 const navLinks = computed(() => [
   { id: 1, label: 'Dashboard', href: route('dashboard'),     matchUrl: '/dashboard', icon: LayoutDashboard },
   { id: 3, label: 'Groups',    href: route('groups.index'),  matchUrl: '/groups',    icon: Users },
-  { id: 4, label: 'Quizzes',   href: route('quizzes.index'), matchUrl: '/quizzes',   icon: Award },
-  { id: 5, label: 'Profile',   href: route('profile.edit'),  matchUrl: '/profile',   icon: User },
-  { id: 6, label: 'Settings',  href: route('settings.index'),matchUrl: '/settings',  icon: Settings }
+  ...(user.value?.role === 'student' ? [{ id: 4, label: 'Quizzes', href: route('quizzes.index'), matchUrl: '/quizzes', icon: Award }] : []),
+  { id: 5, label: 'Settings',  href: route('settings.index'),matchUrl: '/settings',  icon: Settings },
 ]);
 
 const logout = () => router.post(route('logout'));

@@ -270,7 +270,7 @@ const formatDate = (date) => {
         return '';
     }
 
-    return new Date(date).toLocaleString();
+    return new Date(date).toLocaleString('en-KE', { timeZone: 'Africa/Nairobi' });
 
 };
 

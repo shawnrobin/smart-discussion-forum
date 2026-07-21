@@ -55,4 +55,16 @@ class Topic extends Model
     {
         return $this->hasMany(TopicRecommendation::class);
     }
+
+    public function exclusions(): HasMany
+    {
+        return $this->hasMany(TopicExclusion::class);
+    }
+
+    public function scopeVisibleTo($query, int $userId)
+    {
+        return $query->whereDoesntHave('exclusions', function ($exclusions) use ($userId) {
+            $exclusions->where('excluded_user_id', $userId);
+        });
+    }
 }

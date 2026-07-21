@@ -12,7 +12,7 @@ const props = defineProps({
 
 const formatDate = (date) => {
     if (!date) return '';
-    return new Date(date).toLocaleString();
+    return new Date(date).toLocaleString('en-KE', { timeZone: 'Africa/Nairobi' });
 };
 
 const questionsCount = computed(() => props.quiz.questions?.length ?? 0);
@@ -50,7 +50,7 @@ const startQuiz = () => {
                             <p class="text-xs text-gray-500">Questions</p>
                         </div>
                         <div class="bg-gray-50 rounded-xl p-4 text-center col-span-2">
-                            <p class="text-xs text-gray-500 mb-1">Time Window</p>
+                            <p class="text-xs text-gray-500 mb-1">Time Window (Africa/Nairobi)</p>
                             <p class="text-sm font-semibold text-gray-900">{{ formatDate(quiz.start_time) }}</p>
                             <p class="text-xs text-gray-400">to {{ formatDate(quiz.end_time) }}</p>
                         </div>

@@ -1,4 +1,6 @@
 <script setup>
+import { Link } from '@inertiajs/vue3';
+
 defineProps({ attempt: Object });
 </script>
 
@@ -18,6 +20,12 @@ defineProps({ attempt: Object });
                 Your Answer: {{ answer.user_answer }} 
                 <span v-if="!answer.is_correct">(Correct: {{ answer.question.correct_answer }})</span>
             </p>
+        </div>
+
+        <div class="mt-8 flex justify-end">
+            <Link :href="route('dashboard')" class="rounded-lg bg-orange-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-700 transition">
+                Back to Dashboard
+            </Link>
         </div>
     </div>
 </template>

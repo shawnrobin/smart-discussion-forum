@@ -18,6 +18,7 @@ class Quiz extends Model
         'duration_minutes',
         'shuffle_questions',
         'show_results_after',
+        'target_category',
         'published',
     ];
 

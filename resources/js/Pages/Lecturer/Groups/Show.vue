@@ -8,6 +8,7 @@
           <p class="text-gray-500 mt-1">Created on {{ new Date(group.created_at).toLocaleDateString() }}</p>
         </div>
         <div class="flex gap-3">
+          <Link :href="route('lecturer.groups.statistics', group.id)" class="px-4 py-2 text-sm font-bold text-orange-700 bg-orange-50 rounded-xl hover:bg-orange-100 transition">View Statistics</Link>
           <Link :href="route('quizzes.create', group.id)" class="px-4 py-2 text-sm font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition">Create Quiz</Link>
           <button class="px-4 py-2 text-sm font-bold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition">Edit Group</button>
           <button 

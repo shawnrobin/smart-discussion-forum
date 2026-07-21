@@ -19,6 +19,7 @@ class MessageController
      */
     public function index(Topic $topic)
     {
+        abort_unless(Topic::whereKey($topic->id)->visibleTo(Auth::id())->exists(), 404);
         $messages = $topic->messages()
             ->visibleTo(Auth::id())
             ->with('user')
@@ -53,7 +54,11 @@ class MessageController
         ]);
 
         abort_unless($topic->group_id === $group->id, 404);
-        abort_unless($group->users()->whereKey(Auth::id())->exists(), 403);
+        abort_unless(Topic::whereKey($topic->id)->visibleTo(Auth::id())->exists(), 404);
+        $isMember = $group->users()->whereKey(Auth::id())->exists() || (int) $group->created_by === (int) Auth::id();
+        if (!$isMember) {
+            return back()->withErrors(['content' => 'Join this group before posting a reply.']);
+        }
 
         $excludedUsers = collect($validated['excluded_users'] ?? [])
             ->map(fn ($id) => (int) $id)
@@ -113,6 +118,14 @@ class MessageController
 
             }
 
+        }
+
+        if ($excludedUsers->isEmpty()) {
+            try {
+                event(new \App\Events\ReplyCreated($message));
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
         }
 
         /*

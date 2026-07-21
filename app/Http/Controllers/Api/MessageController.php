@@ -16,6 +16,7 @@ class MessageController
      */
     public function index(Topic $topic)
     {
+        abort_unless(Topic::whereKey($topic->id)->visibleTo(auth()->id())->exists(), 404);
         $messages = $topic->messages()
             ->visibleTo(auth()->id())
             ->with('user')
@@ -50,6 +51,7 @@ class MessageController
         ]);
 
         $group = $topic->group;
+        abort_unless(Topic::whereKey($topic->id)->visibleTo(auth()->id())->exists(), 404);
         if (!$group->users()->whereKey(auth()->id())->exists()) {
             return response()->json(['success' => false, 'message' => 'You must be a group member to post a reply.'], 403);
         }

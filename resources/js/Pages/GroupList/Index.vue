@@ -68,7 +68,7 @@
           <div class="mt-4 flex gap-2" @click.stop>
             <button
               v-if="!group.joined"
-              @click="joinGroup(group.id)"
+              @click="openJoinRules(group)"
               :disabled="loadingId === group.id"
               class="flex-1 px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 disabled:opacity-40 transition"
             >
@@ -123,6 +123,16 @@
               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none resize-none"
             ></textarea>
           </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Allowed discussion keywords</label>
+            <input
+              v-model="newGroup.keywords"
+              type="text"
+              placeholder="e.g. algorithms, arrays, trees"
+              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none"
+            />
+            <p class="mt-1 text-xs text-gray-500">Separate keywords with commas. New conversation threads must match one of them.</p>
+          </div>
         </div>
 
         <div class="flex justify-end gap-3 mt-6">
@@ -135,6 +145,32 @@
           <PrimaryButton @click="createGroup" :disabled="creating || !newGroup.name.trim()">
             {{ creating ? 'Creating...' : 'Create Group' }}
           </PrimaryButton>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="joiningGroup" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 p-4" @click.self="cancelJoin">
+      <div class="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+        <div class="bg-gradient-to-r from-orange-600 to-amber-500 px-8 py-7 text-white">
+          <p class="text-xs font-bold uppercase tracking-[0.18em] text-orange-100">Before you join</p>
+          <h3 class="mt-1 text-2xl font-bold">{{ joiningGroup.name }} group rules</h3>
+          <p class="mt-2 text-sm leading-6 text-orange-50">Please read these guidelines carefully. Agreeing means you will follow them whenever you participate in this group.</p>
+        </div>
+        <div class="p-8">
+          <div class="flex items-center justify-between gap-4">
+            <h4 class="text-lg font-bold text-slate-900">{{ rules?.title }}</h4>
+            <span class="shrink-0 rounded-full bg-orange-100 px-3 py-1 text-xs font-semibold text-orange-800">Version {{ rules?.version }}</span>
+          </div>
+          <div class="mt-4 max-h-80 overflow-y-auto whitespace-pre-line rounded-xl border border-slate-200 bg-slate-50 p-6 text-base leading-8 text-slate-700 shadow-inner">{{ rules?.content }}</div>
+          <label class="mt-6 flex items-start gap-3 rounded-xl border border-orange-200 bg-orange-50 p-4 text-sm leading-6 text-slate-800 cursor-pointer">
+            <input v-model="agreedToRules" type="checkbox" class="mt-1 h-5 w-5 rounded border-gray-300 text-orange-600 focus:ring-orange-500" />
+            <span><strong>I have read and agree to these group rules.</strong><br />I understand that breaking them may lead to moderation action.</span>
+          </label>
+        <p v-if="joinError" class="mt-2 text-sm text-rose-600">{{ joinError }}</p>
+        <div class="mt-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
+          <button @click="cancelJoin" class="rounded-xl px-5 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-100">Decline</button>
+          <button @click="confirmJoin" :disabled="!agreedToRules || joining" class="rounded-xl bg-orange-600 px-5 py-3 text-sm font-semibold text-white shadow-sm hover:bg-orange-700 disabled:cursor-not-allowed disabled:opacity-50">{{ joining ? 'Joining group...' : 'Agree & Join Group' }}</button>
+        </div>
         </div>
       </div>
     </div>
@@ -154,6 +190,7 @@ const auth = computed(() => page.props.auth);
 
 const props = defineProps({
   groups: { type: Array, default: () => [] },
+  rules: { type: Object, default: null },
 });
 
 const searchQuery = ref('');
@@ -161,12 +198,16 @@ const sortBy = ref('recent');
 const showCreateModal = ref(false);
 const creating = ref(false);
 const loadingId = ref(null);
+const joiningGroup = ref(null);
+const agreedToRules = ref(false);
+const joinError = ref('');
+const joining = ref(false);
 
-const newGroup = ref({ name: '', description: '' });
+const newGroup = ref({ name: '', description: '', keywords: '' });
 
 const canCreateGroups = computed(() => {
   const role = auth.value?.user?.role;
-  return role === 'lecturer' || role === 'system_admin';
+  return role === 'lecturer';
 });
 
 const createGroup = () => {
@@ -175,10 +216,11 @@ const createGroup = () => {
   router.post('/groups', {
     name: newGroup.value.name,
     description: newGroup.value.description,
+    topic_keywords: newGroup.value.keywords.split(',').map(keyword => keyword.trim()).filter(Boolean),
   }, {
     preserveScroll: true,
     onSuccess: () => {
-      newGroup.value = { name: '', description: '' };
+      newGroup.value = { name: '', description: '', keywords: '' };
       showCreateModal.value = false;
     },
     onFinish: () => { creating.value = false; },
@@ -206,15 +248,38 @@ const goToGroup = (groupId) => {
   router.visit(`/groups/${groupId}`);
 };
 
-const joinGroup = (groupId) => {
+const openJoinRules = (group) => {
+  joiningGroup.value = group;
+  agreedToRules.value = false;
+  joinError.value = '';
+};
+
+const cancelJoin = () => {
+  if (joining.value) return;
+  joiningGroup.value = null;
+  agreedToRules.value = false;
+};
+
+const confirmJoin = () => {
+  if (!joiningGroup.value || !agreedToRules.value || joining.value) return;
+  const groupId = joiningGroup.value.id;
+  joining.value = true;
+  joinError.value = '';
   if (loadingId.value) return;
   loadingId.value = groupId;
   const group = props.groups.find(g => g.id === groupId);
   if (group) group.joined = true;
-  router.post(`/groups/${groupId}/join`, {}, {
+  router.post(`/groups/${groupId}/join`, {
+    rules_version: props.rules?.version,
+    agreed_to_rules: agreedToRules.value,
+  }, {
     preserveScroll: true,
-    onError: () => { if (group) group.joined = false; },
-    onFinish: () => { loadingId.value = null; },
+    onSuccess: () => { joiningGroup.value = null; },
+    onError: (errors) => {
+      if (group) group.joined = false;
+      joinError.value = errors.agreed_to_rules || errors.rules_version || 'Unable to join this group.';
+    },
+    onFinish: () => { loadingId.value = null; joining.value = false; },
   });
 };
 

@@ -67,13 +67,26 @@
                 <p v-else class="text-sm text-gray-500">No moderation activity yet.</p>
             </section>
         </div>
+
+        <section class="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+                <div><h2 class="text-lg font-bold text-gray-800">Group statistics</h2><p class="text-sm text-gray-500">Open any group for its full participation and moderation report.</p></div>
+            </div>
+            <div v-if="groupSummaries.length" class="divide-y divide-gray-100">
+                <Link v-for="group in groupSummaries" :key="group.id" :href="route('admin.groups.statistics', group.id)" class="flex items-center justify-between gap-4 px-6 py-4 hover:bg-orange-50 transition">
+                    <p class="font-semibold text-gray-900">{{ group.name }}</p>
+                    <div class="flex gap-4 text-xs text-gray-500"><span>{{ group.members }} members</span><span>{{ group.topics }} conversations</span><span :class="group.unanswered ? 'text-rose-600 font-semibold' : ''">{{ group.unanswered }} unanswered</span></div>
+                </Link>
+            </div>
+            <p v-else class="px-6 py-5 text-sm text-gray-500">No groups have been created yet.</p>
+        </section>
     </div>
   </AdminLayout>
 </template>
 
 <script setup>
 import { computed } from 'vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Line } from 'vue-chartjs';
 import { Chart as ChartJS, Title, Tooltip, Legend, LineElement, LinearScale, PointElement, CategoryScale } from 'chart.js';
@@ -85,6 +98,7 @@ const props = defineProps({
     recentLogs: { type: Array, default: () => [] },
     recentTopics: { type: Array, default: () => [] },
     chartData: { type: Array, default: () => [] },
+    groupSummaries: { type: Array, default: () => [] },
 });
 
 const mappedChartData = computed(() => ({
