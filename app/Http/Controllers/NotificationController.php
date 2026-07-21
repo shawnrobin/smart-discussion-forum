@@ -23,7 +23,6 @@ class NotificationController extends Controller
 
     /**
      * Mark a single notification as read.
-     * Note: Adjusted to use 'is_read' as per your model structure.
      */
     public function markAsRead(Request $request, $id): RedirectResponse
     {
@@ -32,7 +31,7 @@ class NotificationController extends Controller
         // Authorization check
         $this->authorizeOwner($request, $notification);
         
-        $notification->update(['is_read' => true]);
+        $notification->update(['read' => true]);
         
         return back();
     }
@@ -40,8 +39,8 @@ class NotificationController extends Controller
     public function markAllAsRead(Request $request): RedirectResponse
     {
         Notification::where('user_id', $request->user()->id)
-            ->where('is_read', false)
-            ->update(['is_read' => true]);
+            ->where('read', false)
+            ->update(['read' => true]);
 
         return back()->with('success', 'All notifications marked as read.');
     }

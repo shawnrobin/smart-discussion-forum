@@ -94,6 +94,8 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     // Notifications
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.markAllAsRead');
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])->name('notifications.markAsRead');
 
     // Groups
@@ -201,7 +203,33 @@ Route::middleware('auth')->group(function () {
     Route::get('/quizzes/{quiz}/performance', [QuizController::class, 'performance'])->name('quizzes.performance');
 
     // Profile & Settings
-    Route::get('/profile', function () { return Inertia::render('Profile/Edit'); })->name('profile.edit');
+    Route::get('/profile', function () {
+        $user = Auth::user();
+        $quizAttempts = \App\Models\QuizAttempt::where('user_id', $user->id)
+            ->whereNotNull('submitted_at')
+            ->with('quiz')
+            ->latest()
+            ->take(10)
+            ->get()
+            ->map(fn($a) => [
+                'id' => $a->id,
+                'title' => $a->quiz->title ?? 'Quiz',
+                'date' => $a->submitted_at->format('F d, Y'),
+                'score' => round($a->score ?? 0),
+            ]);
+
+        $topicsCount = \App\Models\Topic::where('user_id', $user->id)->count();
+        $messagesCount = \App\Models\Message::where('user_id', $user->id)->count();
+
+        return Inertia::render('Profile/Edit', [
+            'exams' => $quizAttempts,
+            'total_points' => $messagesCount * 10 + $topicsCount * 25,
+            'level' => intval(floor(($messagesCount + $topicsCount) / 5) + 1),
+            'progress' => (($messagesCount + $topicsCount) % 5) * 20,
+            'answers_provided' => $messagesCount,
+            'topics_created' => $topicsCount,
+        ]);
+    })->name('profile.edit');
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::put('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile.update');
     Route::put('/settings/account', [SettingsController::class, 'updateAccount'])->name('settings.account');
@@ -233,8 +261,8 @@ Route::middleware(['auth', 'isLecturer'])->prefix('lecturer')->as('lecturer.')->
     Route::delete('/groups/{group}', [LecturerGroupController::class, 'destroy'])->name('groups.destroy');
     Route::get('/moderation', [LecturerGroupController::class, 'moderation'])->name('moderation.index');
 
-    // Quiz Management
-    Route::get('/quizzes', [QuizController::class, 'index'])->name('quizzes.index');
-    Route::get('/groups/{group}/quizzes/create', [QuizController::class, 'create'])->name('quizzes.create');
-    Route::post('/groups/{group}/quizzes', [QuizController::class, 'store'])->name('quizzes.store');
+    // Quiz Management (names inherit 'lecturer.' prefix from group)
+    Route::get('/quizzes', [QuizController::class, 'index']);
+    Route::get('/groups/{group}/quizzes/create', [QuizController::class, 'create']);
+    Route::post('/groups/{group}/quizzes', [QuizController::class, 'store']);
 });

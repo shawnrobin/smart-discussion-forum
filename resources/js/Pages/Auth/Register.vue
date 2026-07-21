@@ -81,7 +81,7 @@
       <div class="mt-6 text-center text-sm text-gray-600">
         <p>
           Already have an account?
-          <Link href="/login" class="text-blue-600 hover:underline font-medium">
+          <Link :href="route('login')" class="text-blue-600 hover:underline font-medium">
             Sign in here
           </Link>
         </p>

@@ -64,7 +64,7 @@ const suggestEndTime = () => {
             <!-- Header with Back Button -->
             <div class="flex items-center justify-between">
                 <div>
-                    <button @click="router.visit('/dashboard')" class="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-orange-600 transition-colors mb-2">
+                    <button @click="router.visit(route('dashboard'))" class="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-orange-600 transition-colors mb-2">
                         <ArrowLeft class="w-4 h-4" />
                         Back to Dashboard
                     </button>
@@ -270,7 +270,7 @@ const suggestEndTime = () => {
                         <p>The quiz will appear to students based on the scheduled times.</p>
                     </div>
                     <div class="flex gap-3 w-full sm:w-auto">
-                        <button type="button" @click="router.visit('/dashboard')"
+                        <button type="button" @click="router.visit(route('dashboard'))"
                                 class="flex-1 sm:flex-none px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium text-sm">
                             Cancel
                         </button>

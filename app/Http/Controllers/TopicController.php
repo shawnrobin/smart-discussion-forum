@@ -40,6 +40,8 @@ class TopicController
 
         return Inertia::render('Topics/Show', [
             'topic' => $topic,
+            'group' => $topic->group,
+            
         ]);
     }
 

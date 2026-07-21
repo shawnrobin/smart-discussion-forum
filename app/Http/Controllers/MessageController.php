@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Message;
 use App\Models\ParticipationScore;
 use App\Models\Topic;
+use App\Models\Group;
 use App\Models\UserExclusion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -39,7 +40,7 @@ class MessageController
      * Store a reply.
      * Requirement #3
      */
-    public function store(Request $request, Topic $topic)
+    public function store(Request $request, Group $group, Topic $topic)
     {
         $validated = $request->validate([
             'content' => 'required|string|min:2|max:5000',
