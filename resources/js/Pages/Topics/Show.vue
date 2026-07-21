@@ -85,7 +85,7 @@
 
         <div class="space-y-2">
           <div
-            v-for="reply in replies"
+              v-for="reply in sortedReplies"
             :key="reply.id"
             :style="{ marginLeft: (reply.depth || 0) * 1.5 + 'rem' }"
             :class="[
@@ -231,6 +231,23 @@
       </div>
 
       <!-- Share Modal -->
+      <div v-if="showReportModal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" @click.self="showReportModal = false">
+        <form @submit.prevent="submitReport" class="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-bold text-gray-900">Report topic</h3>
+            <button type="button" @click="showReportModal = false" class="text-gray-400 hover:text-gray-600 transition">
+              <XIcon class="w-5 h-5" />
+            </button>
+          </div>
+          <p class="text-sm text-gray-500 mb-3">Tell the moderators why this topic is irrelevant or violates the group rules.</p>
+          <textarea v-model="reportReason" rows="4" required minlength="5" maxlength="1000" placeholder="Describe the issue..." class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none resize-none"></textarea>
+          <div class="flex justify-end gap-3 mt-4">
+            <button type="button" @click="showReportModal = false" class="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+            <PrimaryButton type="submit" :disabled="reportSubmitting || reportReason.trim().length < 5">{{ reportSubmitting ? 'Submitting...' : 'Submit report' }}</PrimaryButton>
+          </div>
+        </form>
+      </div>
+
       <div v-if="showShareModal" class="fixed inset-0 bg-black/40 flex items-center justify-center z-50" @click.self="showShareModal = false">
         <div class="bg-white rounded-xl shadow-xl p-6 w-full max-w-sm mx-4">
           <div class="flex items-center justify-between mb-4">
@@ -288,6 +305,7 @@ const props = defineProps({
 // Use server data only — no mock fallbacks
 const replies = ref(props.topic.messages ?? []);
 const replyCount = computed(() => replies.value.length);
+const sortedReplies = computed(() => [...replies.value].sort((a, b) => Number(b.isAnswer || b.is_answer) - Number(a.isAnswer || a.is_answer)));
 
 // Reply form
 const replyForm = ref({ content: '', isAnswer: false });
@@ -299,6 +317,8 @@ const excludedUserIds = ref([]);
 const showExcludeModal = ref(false);
 const showShareModal = ref(false);
 const showReportModal = ref(false);
+const reportReason = ref('');
+const reportSubmitting = ref(false);
 
 const setReplyParent = (reply) => {
   replyTo.value = reply;
@@ -369,6 +389,20 @@ const sharePlatforms = computed(() => [
 
 const shareTopic = () => {
   showShareModal.value = true;
+};
+
+const submitReport = () => {
+  if (reportReason.value.trim().length < 5 || reportSubmitting.value) return;
+  reportSubmitting.value = true;
+
+  router.post(route('topics.report', props.topic.id), { reason: reportReason.value }, {
+    preserveScroll: true,
+    onSuccess: () => {
+      reportReason.value = '';
+      showReportModal.value = false;
+    },
+    onFinish: () => { reportSubmitting.value = false; },
+  });
 };
 
 // Client-side hydration: overwrite replies with server data when it arrives

@@ -6,6 +6,7 @@ use Inertia\Inertia;
 
 // Controllers
 use App\Http\Controllers\Admin\DashboardController as AdminDashboard;
+use App\Http\Controllers\Admin\ModerationController as AdminModerationController;
 use App\Http\Controllers\Admin\UserManagementController;
 use App\Http\Controllers\Lecturer\DashboardController as LecturerDashboard;
 use App\Http\Controllers\Lecturer\GroupController as LecturerGroupController;
@@ -191,6 +192,7 @@ Route::middleware('auth')->group(function () {
 
     // PDF export
     Route::post('/topics/{topic}/export-pdf', [TopicController::class, 'exportPdf'])->name('topics.export-pdf');
+    Route::post('/topics/{topic}/report', [AdminModerationController::class, 'reportTopic'])->name('topics.report');
 
     // Quizzes
     Route::get('/quizzes', [QuizController::class, 'index'])->name('quizzes.index');
@@ -241,6 +243,8 @@ Route::middleware('auth')->group(function () {
 // 4. Admin Routes
 Route::middleware(['auth', 'ensureIsAdmin'])->prefix('admin')->as('admin.')->group(function () {
     Route::get('/dashboard', [AdminDashboard::class, 'index'])->name('dashboard');
+    Route::get('/moderation', [AdminModerationController::class, 'index'])->name('moderation.index');
+    Route::post('/moderation/reports/{report}/resolve', [AdminModerationController::class, 'resolve'])->name('moderation.resolve');
 
     // User Management
     Route::get('/users', [UserManagementController::class, 'index'])->name('users.index');

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Message;
+use App\Models\Notification;
 use App\Models\ParticipationScore;
 use App\Models\Topic;
 use App\Models\Group;
@@ -128,6 +129,17 @@ class MessageController
         $topic->update([
             'is_answered' => true,
         ]);
+
+        if ($topic->user_id !== $message->user_id) {
+            Notification::create([
+                'user_id' => $topic->user_id,
+                'type' => 'answer_accepted',
+                'title' => 'Your question has an accepted answer',
+                'message' => "{$message->user->name} posted an accepted answer to: {$topic->title}",
+                'related_entity_id' => $topic->id,
+                'related_entity_type' => Topic::class,
+            ]);
+        }
 
         $score = ParticipationScore::firstOrCreate(
             [

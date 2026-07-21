@@ -18,6 +18,12 @@
         >
           User Management
         </Link>
+        <Link
+          href="/admin/moderation"
+          :class="[$page.url === '/admin/moderation' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white', 'block px-4 py-2.5 rounded-lg transition-colors font-medium']"
+        >
+          Moderation
+        </Link>
         
         <div class="mt-auto pt-8">
           <Link 
