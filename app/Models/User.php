@@ -22,6 +22,7 @@ class User extends Authenticatable
         'role',
         'status',
         'blacklisted',
+        'is_admin',
         'inactive_warnings',
         'last_login',
         'last_communication_at',
@@ -44,6 +45,7 @@ class User extends Authenticatable
         'last_inactivity_warning_at' => 'datetime',
         'blacklisted_until' => 'datetime',
         'password' => 'hashed',
+        'is_admin' => 'boolean',
         'agreed_to_rules' => 'boolean', // Cast for registration
     ];
 
@@ -149,5 +151,10 @@ class User extends Authenticatable
     public function settings(): HasOne
     {
         return $this->hasOne(UserSetting::class);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->is_admin === true || in_array($this->role, ['system_admin', 'group_admin', 'lecturer'], true);
     }
 }

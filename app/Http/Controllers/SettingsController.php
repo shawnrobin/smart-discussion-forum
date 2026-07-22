@@ -19,21 +19,23 @@ class SettingsController extends Controller
 
         $totalPoints = (float) ParticipationScore::where('user_id', $user->id)->sum('total_score');
         $level = max(1, (int) floor($totalPoints / 100) + 1);
+        $isPrivilegedProfile = $user->is_admin || in_array($user->role, ['lecturer', 'group_admin', 'system_admin'], true);
+        $quizAverage = $isPrivilegedProfile ? null : round((float) QuizAttempt::where('user_id', $user->id)->whereNotNull('submitted_at')->avg('score'), 1);
 
         return Inertia::render('Settings/Index', [
             'user' => $user,
             'settings' => $settings,
             'profileStats' => [
-                'totalPoints' => $totalPoints,
-                'level' => $level,
-                'progress' => (int) ($totalPoints % 100),
-                'nextLevelPoints' => 100 - (int) ($totalPoints % 100),
-                'badge' => $totalPoints >= 1000 ? 'Gold contributor' : ($totalPoints >= 300 ? 'Active contributor' : 'New contributor'),
-                'verifiedAnswers' => (int) ParticipationScore::where('user_id', $user->id)->sum('answers_provided'),
-                'streak' => $this->dailyStreak($user->id),
+                'totalPoints' => $isPrivilegedProfile ? 0 : $totalPoints,
+                'level' => $isPrivilegedProfile ? 1 : $level,
+                'progress' => $isPrivilegedProfile ? 0 : (int) ($totalPoints % 100),
+                'nextLevelPoints' => $isPrivilegedProfile ? 100 : 100 - (int) ($totalPoints % 100),
+                'badge' => $isPrivilegedProfile ? 'Staff account' : ($totalPoints >= 1000 ? 'Gold contributor' : ($totalPoints >= 300 ? 'Active contributor' : 'New contributor')),
+                'verifiedAnswers' => $isPrivilegedProfile ? null : (int) ParticipationScore::where('user_id', $user->id)->sum('answers_provided'),
+                'streak' => $isPrivilegedProfile ? null : $this->dailyStreak($user->id),
                 'topics' => Topic::where('user_id', $user->id)->count(),
                 'replies' => Message::where('user_id', $user->id)->count(),
-                'quizAverage' => round((float) QuizAttempt::where('user_id', $user->id)->whereNotNull('submitted_at')->avg('score'), 1),
+                'quizAverage' => $quizAverage,
             ],
             'exams' => QuizAttempt::where('user_id', $user->id)->whereNotNull('submitted_at')->with('quiz:id,title')->latest('submitted_at')->take(10)->get()->map(fn ($attempt) => [
                 'id' => $attempt->id,
