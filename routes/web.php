@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -20,23 +21,20 @@ use App\Http\Controllers\TopicController;
 use App\Http\Controllers\MessageController;
 use App\Http\Controllers\EngagementController;
 use App\Http\Controllers\GroupStatisticsController;
+use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\Auth\NewPasswordController;
 
 // 1. Root
-Route::get('/', function () { return Auth::check() ? redirect('/dashboard') : redirect('/login'); });
+Route::get('/', function () { return Auth::check() ? redirect('dashboard') : redirect('/login'); });
 
-// 2. Authentication (Guest only)
-Route::middleware('guest')->group(function () {
-    Route::get('/login', function () { return Inertia::render('Auth/Login'); })->name('login');
-    Route::post('/login', [AuthController::class, 'login'])->name('login.store');
-
-    Route::get('/register', function () { return Inertia::render('Auth/Register'); })->name('register');
-    Route::post('/register', [AuthController::class, 'register'])->name('register.store');
-});
+// 2. Authentication routes
+require __DIR__ . '/auth.php';
 
 // 3. General Authenticated User
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', function () {
+    Route::get('/dashboard', function (Request $request) {
         $user = Auth::user();
+        $search = trim($request->query('search', ''));
 
         // My groups with topic and member counts
         $groups = $user->groups()->withCount(['topics', 'users'])->latest()->take(5)->get();
@@ -97,6 +95,106 @@ Route::middleware('auth')->group(function () {
             ->get()
             ->first($isEligibleForQuiz) : null;
 
+        $filter = $request->query('filter', 'latest');
+        $allowedFilters = ['latest', 'group', 'replies', 'quiz'];
+        if (!in_array($filter, $allowedFilters, true)) {
+            $filter = 'latest';
+        }
+
+        $searchResults = [];
+        if ($search !== '') {
+            $groupIds = $groups->pluck('id');
+
+            if ($filter === 'group' || $filter === 'latest') {
+                $groupResults = \App\Models\Group::whereIn('id', $groupIds)
+                    ->where(function ($query) use ($search) {
+                        $query->where('name', 'like', "%{$search}%")
+                            ->orWhere('description', 'like', "%{$search}%");
+                    })
+                    ->latest('updated_at')
+                    ->take(6)
+                    ->get();
+
+                foreach ($groupResults as $groupResult) {
+                    $searchResults[] = [
+                        'id' => 'group-' . $groupResult->id,
+                        'type' => 'Group',
+                        'title' => $groupResult->name,
+                        'subtitle' => 'Group',
+                        'detail' => \Illuminate\Support\Str::limit($groupResult->description ?? '', 80),
+                        'url' => route('groups.show', $groupResult->id),
+                    ];
+                }
+            }
+
+            if ($filter === 'replies' || $filter === 'latest') {
+                $messageResults = \App\Models\Message::whereIn('topic_id', function ($query) use ($groupIds) {
+                        $query->select('id')->from('topics')->whereIn('group_id', $groupIds);
+                    })
+                    ->where('content', 'like', "%{$search}%")
+                    ->with(['topic.group', 'user'])
+                    ->latest('updated_at')
+                    ->take(6)
+                    ->get();
+
+                foreach ($messageResults as $message) {
+                    $searchResults[] = [
+                        'id' => 'message-' . $message->id,
+                        'type' => 'Reply',
+                        'title' => 'Reply in ' . ($message->topic->title ?? 'a topic'),
+                        'subtitle' => 'by ' . ($message->user->name ?? 'Someone'),
+                        'detail' => \Illuminate\Support\Str::limit($message->content, 90),
+                        'url' => route('topics.show', ['group' => $message->topic->group_id, 'topic' => $message->topic_id]),
+                    ];
+                }
+            }
+
+            if ($filter === 'quiz' || $filter === 'latest') {
+                $quizResults = \App\Models\Quiz::whereIn('group_id', $groupIds)
+                    ->where(function ($query) use ($search) {
+                        $query->where('title', 'like', "%{$search}%")
+                            ->orWhere('description', 'like', "%{$search}%");
+                    })
+                    ->latest('updated_at')
+                    ->take(6)
+                    ->get();
+
+                foreach ($quizResults as $quiz) {
+                    $searchResults[] = [
+                        'id' => 'quiz-' . $quiz->id,
+                        'type' => 'Quiz',
+                        'title' => $quiz->title,
+                        'subtitle' => 'in ' . ($quiz->group->name ?? 'a group'),
+                        'detail' => \Illuminate\Support\Str::limit($quiz->description ?? '', 90),
+                        'url' => route('quizzes.show', $quiz->id),
+                    ];
+                }
+            }
+
+            if ($filter === 'latest') {
+                $topicResults = \App\Models\Topic::whereIn('group_id', $groupIds)
+                    ->where(function ($query) use ($search) {
+                        $query->where('title', 'like', "%{$search}%")
+                            ->orWhere('description', 'like', "%{$search}%");
+                    })
+                    ->with(['group', 'user'])
+                    ->latest('updated_at')
+                    ->take(6)
+                    ->get();
+
+                foreach ($topicResults as $topic) {
+                    $searchResults[] = [
+                        'id' => 'topic-' . $topic->id,
+                        'type' => 'Topic',
+                        'title' => $topic->title,
+                        'subtitle' => 'in ' . ($topic->group->name ?? 'a group'),
+                        'detail' => \Illuminate\Support\Str::limit($topic->description ?? '', 80),
+                        'url' => route('topics.show', ['group' => $topic->group_id, 'topic' => $topic->id]),
+                    ];
+                }
+            }
+        }
+
         return Inertia::render('Dashboard', [
             'groups' => $groups->map(function ($g) {
                 return ['id' => $g->id, 'name' => $g->name, 'members' => $g->users_count ?? 0, 'topics' => $g->topics_count ?? 0];
@@ -112,6 +210,9 @@ Route::middleware('auth')->group(function () {
                 'quizzes' => $quizzesCount,
                 'attempts' => $myQuizAttempts,
             ],
+            'search' => $search,
+            'filter' => $filter,
+            'searchResults' => $searchResults,
         ]);
     })->name('dashboard');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -240,7 +341,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/quizzes/{quiz}/performance', [QuizController::class, 'performance'])->name('quizzes.performance');
 
     // Profile & Settings
-    Route::get('/profile', fn () => redirect()->route('settings.index'))->name('profile.edit');
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
     Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
     Route::put('/settings/profile', [SettingsController::class, 'updateProfile'])->name('settings.profile.update');
     Route::put('/settings/account', [SettingsController::class, 'updateAccount'])->name('settings.account');

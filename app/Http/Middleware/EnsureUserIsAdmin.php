@@ -16,8 +16,8 @@ class EnsureUserIsAdmin
         // Define the roles allowed to access admin/quiz-creation features
         $authorizedRoles = ['system_admin', 'group_admin', 'lecturer'];
 
-        // Check if the user is logged in and their role exists in our authorized list
-        if ($request->user() && in_array($request->user()->role, $authorizedRoles)) {
+        // Check if the user is logged in and has either an authorized role or an admin flag
+        if ($request->user() && (in_array($request->user()->role, $authorizedRoles) || $request->user()->is_admin)) {
             return $next($request);
         }
 

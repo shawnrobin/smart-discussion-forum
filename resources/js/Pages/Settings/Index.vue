@@ -33,34 +33,43 @@
               :gamification="profileStats"
             />
 
-            <div class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div v-if="!isPrivilegedProfile" class="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <div class="rounded-xl bg-gray-50 p-4 text-center"><p class="text-xl font-bold text-gray-900">{{ profileStats.topics }}</p><p class="text-xs text-gray-500">Topics started</p></div>
               <div class="rounded-xl bg-gray-50 p-4 text-center"><p class="text-xl font-bold text-gray-900">{{ profileStats.replies }}</p><p class="text-xs text-gray-500">Replies posted</p></div>
               <div class="rounded-xl bg-gray-50 p-4 text-center"><p class="text-xl font-bold text-gray-900">{{ profileStats.quizAverage }}%</p><p class="text-xs text-gray-500">Quiz average</p></div>
             </div>
 
+            <div v-else class="rounded-2xl border border-orange-100 bg-orange-50/60 p-5 text-sm text-orange-800">
+              Lecturer and admin profiles do not show participation score, streak, or average quiz metrics.
+            </div>
+
             <!-- Academic & Quiz Performance Table -->
             <div class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-6 shadow-sm">
               <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Academic & Quiz Performance</h2>
-              <div v-if="exams.length" class="overflow-hidden border border-gray-100 dark:border-gray-700 rounded-xl">
-                <table class="min-w-full divide-y divide-gray-100 dark:divide-gray-700 text-left text-sm">
-                  <thead class="bg-gray-50 dark:bg-gray-700 font-semibold text-gray-700 dark:text-gray-200">
-                    <tr>
-                      <th class="px-4 py-3">Evaluation Element</th>
-                      <th class="px-4 py-3">Completed</th>
-                      <th class="px-4 py-3 text-right">Resulting Score</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-600 dark:text-gray-300">
-                    <tr v-for="exam in exams" :key="exam.id">
-                      <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ exam.title }}</td>
-                      <td class="px-4 py-3 text-xs text-gray-400 dark:text-gray-500">{{ exam.date }}</td>
-                      <td class="px-4 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400">{{ exam.score }}%</td>
-                    </tr>
-                  </tbody>
-                </table>
+              <div v-if="!isPrivilegedProfile">
+                <div v-if="exams.length" class="overflow-hidden border border-gray-100 dark:border-gray-700 rounded-xl">
+                  <table class="min-w-full divide-y divide-gray-100 dark:divide-gray-700 text-left text-sm">
+                    <thead class="bg-gray-50 dark:bg-gray-700 font-semibold text-gray-700 dark:text-gray-200">
+                      <tr>
+                        <th class="px-4 py-3">Evaluation Element</th>
+                        <th class="px-4 py-3">Completed</th>
+                        <th class="px-4 py-3 text-right">Resulting Score</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 dark:divide-gray-700 text-gray-600 dark:text-gray-300">
+                      <tr v-for="exam in exams" :key="exam.id">
+                        <td class="px-4 py-3 font-medium text-gray-900 dark:text-white">{{ exam.title }}</td>
+                        <td class="px-4 py-3 text-xs text-gray-400 dark:text-gray-500">{{ exam.date }}</td>
+                        <td class="px-4 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400">{{ exam.score }}%</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p v-else class="rounded-xl border border-dashed border-gray-200 p-6 text-center text-sm text-gray-500">Completed quizzes will appear here as soon as you submit them.</p>
               </div>
-              <p v-else class="rounded-xl border border-dashed border-gray-200 p-6 text-center text-sm text-gray-500">Completed quizzes will appear here as soon as you submit them.</p>
+              <div v-else class="rounded-2xl border border-orange-100 bg-orange-50 p-6 text-sm text-orange-900">
+                This section is hidden for lecturers and admin users. Quiz average and participation score metrics are only shown for student profiles.
+              </div>
             </div>
 
             <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-6">Profile</h2>
@@ -399,6 +408,8 @@ const props = defineProps({
   profileStats: { type: Object, default: () => ({ totalPoints: 0, level: 1, progress: 0, nextLevelPoints: 100, badge: 'New contributor', verifiedAnswers: 0, streak: 0, topics: 0, replies: 0, quizAverage: 0 }) },
   exams: { type: Array, default: () => [] },
 });
+
+const isPrivilegedProfile = computed(() => props.user?.is_admin || ['lecturer', 'group_admin', 'system_admin'].includes(props.user?.role));
 
 const tabs = [
   { id: 'profile', label: 'Profile' },

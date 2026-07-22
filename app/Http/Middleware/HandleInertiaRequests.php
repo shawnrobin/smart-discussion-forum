@@ -38,7 +38,8 @@ class HandleInertiaRequests extends Middleware
                     'name' => $request->user()->name,
                     'email' => $request->user()->email,
                     'username' => $request->user()->username,
-                    'role' => $request->user()->role, // Updated to pass 'role'
+                    'role' => $request->user()->role,
+                    'is_admin' => $request->user()->is_admin,
                 ] : null,
             ],
             // Updated to filter by 'read' (boolean) to match your migration/schema

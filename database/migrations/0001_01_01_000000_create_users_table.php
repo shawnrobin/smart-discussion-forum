@@ -15,24 +15,20 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('username')->unique();
             $table->string('password');
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('remember_token')->nullable();
             $table->enum('role', ['student', 'lecturer', 'group_admin', 'system_admin'])->default('student');
             $table->enum('status', ['active', 'inactive', 'blacklisted'])->default('active');
             $table->boolean('blacklisted')->default(false); // Added missing column
             $table->boolean('is_admin')->default(false);    // Added missing column
+            $table->boolean('agreed_to_rules')->default(false);
+            $table->integer('rules_version')->default(1);
             $table->timestamp('last_login')->nullable();
             $table->integer('inactive_warnings')->default(0);
             $table->timestamps();
         });
 
-        // 2. Add extra profile fields to users
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('avatar')->nullable();
-            $table->text('bio')->nullable();
-            $table->string('course')->nullable();
-            $table->string('faculty')->nullable();
-            $table->integer('year_of_study')->nullable();
-            $table->string('phone_number')->nullable();
-        });
+        // Profile fields are added later to avoid duplicate column additions
 
         // ... Keep all other Schema::create blocks exactly as they were
         Schema::create('groups', function (Blueprint $table) {
@@ -205,16 +201,7 @@ return new class extends Migration
 	            $table->timestamps();
 	        });
 
-	        // TOPIC EXCLUSIONS TABLE (Requirement #3: exclude users from seeing a topic)
-	        if (!Schema::hasTable('topic_exclusions')) {
-	            Schema::create('topic_exclusions', function (Blueprint $table) {
-	                $table->id();
-	                $table->foreignId('topic_id')->constrained()->cascadeOnDelete();
-	                $table->foreignId('excluded_user_id')->constrained('users')->cascadeOnDelete();
-	                $table->timestamps();
-	                $table->unique(['topic_id', 'excluded_user_id']);
-	            });
-	        }
+            // Topic exclusions are created in their own migration file to avoid duplication
 
 	        Schema::table('users', function (Blueprint $table) {
 	            $table->string('avatar')->nullable();
