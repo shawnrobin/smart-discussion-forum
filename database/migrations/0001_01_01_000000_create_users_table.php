@@ -195,29 +195,41 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // TOPIC RECOMMENDATIONS TABLE (Requirement #11: ML recommendations)
-        Schema::create('topic_recommendations', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('topic_id')->constrained('topics')->onDelete('cascade');
-            $table->decimal('score', 5, 2);
-            $table->string('reason')->nullable();
-            $table->timestamps();
-        });
-        // Add extra columns to users table
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('avatar')->nullable();
-            $table->text('bio')->nullable();
-            $table->string('course')->nullable();
-            $table->string('faculty')->nullable();
-            $table->integer('year_of_study')->nullable();
-            $table->string('phone_number')->nullable();
-        });
+	        // TOPIC RECOMMENDATIONS TABLE (Requirement #11: ML recommendations)
+	        Schema::create('topic_recommendations', function (Blueprint $table) {
+	            $table->id();
+	            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+	            $table->foreignId('topic_id')->constrained('topics')->onDelete('cascade');
+	            $table->decimal('score', 5, 2);
+	            $table->string('reason')->nullable();
+	            $table->timestamps();
+	        });
+
+	        // TOPIC EXCLUSIONS TABLE (Requirement #3: exclude users from seeing a topic)
+	        if (!Schema::hasTable('topic_exclusions')) {
+	            Schema::create('topic_exclusions', function (Blueprint $table) {
+	                $table->id();
+	                $table->foreignId('topic_id')->constrained()->cascadeOnDelete();
+	                $table->foreignId('excluded_user_id')->constrained('users')->cascadeOnDelete();
+	                $table->timestamps();
+	                $table->unique(['topic_id', 'excluded_user_id']);
+	            });
+	        }
+
+	        Schema::table('users', function (Blueprint $table) {
+	            $table->string('avatar')->nullable();
+	            $table->text('bio')->nullable();
+	            $table->string('course')->nullable();
+	            $table->string('faculty')->nullable();
+	            $table->integer('year_of_study')->nullable();
+	            $table->string('phone_number')->nullable();
+	        });
     }
 
     public function down(): void
     {
         Schema::dropIfExists('topic_recommendations');
+        Schema::dropIfExists('topic_exclusions');
         Schema::dropIfExists('sync_queue');
         Schema::dropIfExists('notifications');
         Schema::dropIfExists('quiz_answers');
