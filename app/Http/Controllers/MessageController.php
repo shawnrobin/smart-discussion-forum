@@ -3,8 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Message;
+use App\Models\Notification;
 use App\Models\ParticipationScore;
 use App\Models\Topic;
+use App\Models\Group;
 use App\Models\UserExclusion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -17,16 +19,19 @@ class MessageController
      */
     public function index(Topic $topic)
     {
+        abort_unless(Topic::whereKey($topic->id)->visibleTo(Auth::id())->exists(), 404);
         $messages = $topic->messages()
+            ->visibleTo(Auth::id())
             ->with('user')
             ->whereNull('parent_message_id')
             ->latest()
             ->get();
 
         foreach ($messages as $message) {
-            $message->load([
-                'replies.user'
-            ]);
+            $message->setRelation('replies', $message->replies()
+                ->visibleTo(Auth::id())
+                ->with('user')
+                ->get());
         }
 
         return Inertia::render('Messages/Index', [
@@ -39,7 +44,7 @@ class MessageController
      * Store a reply.
      * Requirement #3
      */
-    public function store(Request $request, Topic $topic)
+    public function store(Request $request, Group $group, Topic $topic)
     {
         $validated = $request->validate([
             'content' => 'required|string|min:2|max:5000',
@@ -48,6 +53,23 @@ class MessageController
             'excluded_users.*' => 'exists:users,id',
         ]);
 
+        abort_unless($topic->group_id === $group->id, 404);
+        abort_unless(Topic::whereKey($topic->id)->visibleTo(Auth::id())->exists(), 404);
+        $isMember = $group->users()->whereKey(Auth::id())->exists() || (int) $group->created_by === (int) Auth::id();
+        if (!$isMember) {
+            return back()->withErrors(['content' => 'Join this group before posting a reply.']);
+        }
+
+        $excludedUsers = collect($validated['excluded_users'] ?? [])
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->reject(fn ($id) => $id === Auth::id())
+            ->values();
+
+        if ($excludedUsers->isNotEmpty() && $group->users()->whereIn('users.id', $excludedUsers)->count() !== $excludedUsers->count()) {
+            return back()->withErrors(['excluded_users' => 'You can only exclude members of this group.']);
+        }
+
         $message = Message::create([
             'content' => $validated['content'],
             'topic_id' => $topic->id,
@@ -55,15 +77,38 @@ class MessageController
             'parent_message_id' => $validated['parent_message_id'] ?? null,
         ]);
 
+        Auth::user()->update([
+            'last_communication_at' => now(),
+            'inactive_warnings' => 0,
+            'last_inactivity_warning_at' => null,
+        ]);
+
+        $recipientIds = collect([$topic->user_id, $message->parent?->user_id])
+            ->filter()
+            ->reject(fn ($id) => (int) $id === (int) Auth::id())
+            ->diff($excludedUsers)
+            ->unique();
+
+        foreach ($recipientIds as $recipientId) {
+            Notification::create([
+                'user_id' => $recipientId,
+                'type' => 'new_reply',
+                'title' => 'New reply in a discussion',
+                'message' => Auth::user()->name . " replied to: {$topic->title}",
+                'related_entity_id' => $topic->id,
+                'related_entity_type' => Topic::class,
+            ]);
+        }
+
         /*
         |--------------------------------------------------------------------------
         | Requirement #3
         |--------------------------------------------------------------------------
         */
 
-        if (!empty($validated['excluded_users'])) {
+        if ($excludedUsers->isNotEmpty()) {
 
-            foreach ($validated['excluded_users'] as $excludedUser) {
+            foreach ($excludedUsers as $excludedUser) {
 
                 UserExclusion::create([
                     'user_id' => Auth::id(),
@@ -73,6 +118,14 @@ class MessageController
 
             }
 
+        }
+
+        if ($excludedUsers->isEmpty()) {
+            try {
+                event(new \App\Events\ReplyCreated($message));
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
         }
 
         /*
@@ -128,6 +181,17 @@ class MessageController
             'is_answered' => true,
         ]);
 
+        if ($topic->user_id !== $message->user_id) {
+            Notification::create([
+                'user_id' => $topic->user_id,
+                'type' => 'answer_accepted',
+                'title' => 'Your question has an accepted answer',
+                'message' => "{$message->user->name} posted an accepted answer to: {$topic->title}",
+                'related_entity_id' => $topic->id,
+                'related_entity_type' => Topic::class,
+            ]);
+        }
+
         $score = ParticipationScore::firstOrCreate(
             [
                 'user_id' => $message->user_id,
@@ -161,12 +225,25 @@ class MessageController
             'excluded_users.*' => 'exists:users,id',
         ]);
 
+        abort_unless($message->user_id === Auth::id() || Auth::user()->isAdmin(), 403);
+
+        $excludedUsers = collect($validated['excluded_users'])
+            ->map(fn ($id) => (int) $id)
+            ->unique()
+            ->reject(fn ($id) => $id === Auth::id())
+            ->values();
+
+        $group = $message->topic->group;
+        if ($group->users()->whereIn('users.id', $excludedUsers)->count() !== $excludedUsers->count()) {
+            return back()->withErrors(['excluded_users' => 'You can only exclude members of this group.']);
+        }
+
         UserExclusion::where(
             'message_id',
             $message->id
         )->delete();
 
-        foreach ($validated['excluded_users'] as $user) {
+        foreach ($excludedUsers as $user) {
 
             UserExclusion::create([
                 'user_id' => Auth::id(),

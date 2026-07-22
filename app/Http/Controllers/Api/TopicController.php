@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Models\Topic;
+use App\Models\TopicExclusion;
 use App\Models\Group;
 use App\Models\ParticipationScore;
+use App\Services\TopicContentPolicy;
 use Illuminate\Http\Request;
 
 class TopicController
@@ -14,7 +16,9 @@ class TopicController
      */
     public function index(Request $request, Group $group)
     {
+        abort_unless($group->users()->whereKey($request->user()->id)->exists() || (int) $group->created_by === (int) $request->user()->id, 403);
         $topics = $group->topics()
+            ->visibleTo($request->user()->id)
             ->with('user', 'messages')
             ->latest()
             ->paginate(10);
@@ -30,7 +34,13 @@ class TopicController
      */
     public function show(Topic $topic)
     {
-        $topic->load('user', 'messages.user', 'group');
+        abort_unless(Topic::whereKey($topic->id)->visibleTo(auth()->id())->exists(), 404);
+        abort_unless($topic->group->users()->whereKey(auth()->id())->exists() || (int) $topic->group->created_by === (int) auth()->id(), 403);
+        $topic->load(['user', 'group']);
+        $topic->setRelation('messages', $topic->messages()
+            ->visibleTo(auth()->id())
+            ->with('user')
+            ->get());
 
         return response()->json([
             'success' => true,
@@ -44,17 +54,33 @@ class TopicController
     public function store(Request $request, Group $group)
     {
         $validated = $request->validate([
-            'title' => 'required|string|max:500',
-            'description' => 'required|string|min:10|max:5000',
+            'title' => 'required|string|min:8|max:150',
+            'description' => 'required|string|min:30|max:5000',
             'is_question' => 'boolean',
+            'visibility' => 'nullable|in:all,exclude,selected',
+            'selected_users' => 'nullable|array',
+            'selected_users.*' => 'integer|exists:users,id',
         ]);
 
         // Check if user is member of group
-        if (!$group->users()->where('user_id', auth()->id())->exists()) {
+        if (!$group->users()->where('user_id', auth()->id())->exists() && (int) $group->created_by !== (int) auth()->id()) {
             return response()->json([
                 'success' => false,
                 'message' => 'You must be a group member to create topics'
             ], 403);
+        }
+
+        if ($violation = TopicContentPolicy::violation($group, $validated['title'], $validated['description'])) {
+            return response()->json([
+                'success' => false,
+                'message' => $violation,
+                'errors' => ['title' => [$violation]],
+            ], 422);
+        }
+
+        $selectedUsers = collect($validated['selected_users'] ?? [])->map(fn ($id) => (int) $id)->unique()->values();
+        if ($selectedUsers->isNotEmpty() && $group->users()->whereIn('users.id', $selectedUsers)->count() !== $selectedUsers->count()) {
+            return response()->json(['success' => false, 'message' => 'You can only choose members of this group.'], 422);
         }
 
         // Create topic
@@ -62,6 +88,26 @@ class TopicController
             ...$validated,
             'group_id' => $group->id,
             'user_id' => auth()->id()
+        ]);
+
+        $visibility = $validated['visibility'] ?? 'all';
+        $excludedUsers = $visibility === 'selected'
+            ? $group->users()->whereNotIn('users.id', $selectedUsers->push(auth()->id())->unique())->pluck('users.id')
+            : ($visibility === 'exclude' ? $selectedUsers->reject(fn ($id) => $id === auth()->id()) : collect());
+
+        if ($excludedUsers->isNotEmpty()) {
+            TopicExclusion::insert($excludedUsers->map(fn ($id) => [
+                'topic_id' => $topic->id,
+                'excluded_user_id' => $id,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ])->all());
+        }
+
+        $request->user()->update([
+            'last_communication_at' => now(),
+            'inactive_warnings' => 0,
+            'last_inactivity_warning_at' => null,
         ]);
 
         // Update participation score (Requirement #9)
@@ -83,7 +129,7 @@ class TopicController
      */
     public function update(Request $request, Topic $topic)
     {
-        // Check if user is author or admin
+        // Check if user is user or admin
         if ($topic->user_id !== auth()->id() && !auth()->user()->isAdmin()) {
             return response()->json([
                 'success' => false,
@@ -92,18 +138,26 @@ class TopicController
         }
 
         $validated = $request->validate([
-            'title' => 'required|string|max:500',
-            'description' => 'required|string',
+            'title' => 'required|string|min:8|max:150',
+            'description' => 'required|string|min:30|max:5000',
             'is_question' => 'boolean'
         ]);
+
+        if ($violation = TopicContentPolicy::violation($topic->group, $validated['title'], $validated['description'])) {
+            return response()->json([
+                'success' => false,
+                'message' => $violation,
+                'errors' => ['title' => [$violation]],
+            ], 422);
+        }
 
         $topic->update($validated);
 
         return response()->json([
             'success' => true,
-            'message' => 'Topic updated successfully',
+            'group' => $topic->group,
             'topic' => $topic
-        ]);
+        ])->with('success', 'Topic created successfully.');
     }
 
     /**

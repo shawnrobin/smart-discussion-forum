@@ -1,9 +1,11 @@
 <script setup>
 import { useForm, router } from '@inertiajs/vue3';
+import { watch } from 'vue';
 import { Plus, Trash2, ArrowLeft, Clock, Award, AlertCircle, CheckCircle, Save } from 'lucide-vue-next';
 
 const props = defineProps({
-    group: Object
+    group: Object,
+    targetCategories: { type: Array, default: () => [] },
 });
 
 const form = useForm({
@@ -12,6 +14,7 @@ const form = useForm({
     start_time: '',
     end_time: '',
     duration_minutes: 30,
+    target_category: 'all',
     shuffle_questions: true,
     show_results_after: 'immediately',
     questions: [
@@ -47,14 +50,16 @@ const submit = () => {
 
 const questionTypeOptions = ['multiple_choice', 'true_false', 'short_answer'];
 
-// Pre-fill a suggested end_time 1 hour after start
+// Suggest a closing time, while allowing the lecturer to set a different hard deadline.
 const suggestEndTime = () => {
-    if (form.start_time && !form.end_time) {
+    if (form.start_time) {
         const start = new Date(form.start_time);
-        start.setHours(start.getHours() + 1);
+        start.setMinutes(start.getMinutes() + Number(form.duration_minutes || 0));
         form.end_time = start.toISOString().slice(0, 16);
     }
 };
+
+watch(() => form.duration_minutes, suggestEndTime);
 </script>
 
 <template>
@@ -64,7 +69,7 @@ const suggestEndTime = () => {
             <!-- Header with Back Button -->
             <div class="flex items-center justify-between">
                 <div>
-                    <button @click="router.visit('/dashboard')" class="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-orange-600 transition-colors mb-2">
+                    <button @click="router.visit(route('dashboard'))" class="inline-flex items-center gap-2 text-sm font-medium text-gray-500 hover:text-orange-600 transition-colors mb-2">
                         <ArrowLeft class="w-4 h-4" />
                         Back to Dashboard
                     </button>
@@ -111,14 +116,14 @@ const suggestEndTime = () => {
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Start Time</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Start Time <span class="text-xs font-normal text-gray-400">(Africa/Nairobi)</span></label>
                             <input v-model="form.start_time" type="datetime-local" @change="suggestEndTime"
                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition"
                                    :class="{ 'border-red-400': form.errors.start_time }" required>
                             <p v-if="form.errors.start_time" class="text-xs text-red-500 mt-1">{{ form.errors.start_time }}</p>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1.5">End Time</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Closing Time <span class="text-xs font-normal text-gray-400">(hard deadline, Africa/Nairobi)</span></label>
                             <input v-model="form.end_time" type="datetime-local"
                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition"
                                    :class="{ 'border-red-400': form.errors.end_time }" required>
@@ -136,6 +141,13 @@ const suggestEndTime = () => {
                                    class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition"
                                    :class="{ 'border-red-400': form.errors.duration_minutes }" required>
                             <p v-if="form.errors.duration_minutes" class="text-xs text-red-500 mt-1">{{ form.errors.duration_minutes }}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Students who can take it</label>
+                            <select v-model="form.target_category" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-white">
+                                <option v-for="category in targetCategories" :key="category.value" :value="category.value">{{ category.label }}</option>
+                            </select>
+                            <p class="mt-1 text-xs text-gray-500">Eligible students receive the quiz announcement.</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">Shuffle Questions</label>
@@ -270,7 +282,7 @@ const suggestEndTime = () => {
                         <p>The quiz will appear to students based on the scheduled times.</p>
                     </div>
                     <div class="flex gap-3 w-full sm:w-auto">
-                        <button type="button" @click="router.visit('/dashboard')"
+                        <button type="button" @click="router.visit(route('dashboard'))"
                                 class="flex-1 sm:flex-none px-6 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition font-medium text-sm">
                             Cancel
                         </button>

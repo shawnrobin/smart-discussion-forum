@@ -81,7 +81,7 @@
                 <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ quiz.title }}</h3>
                 <p class="text-sm text-gray-600 dark:text-gray-300 mt-1">by {{ quiz.instructor }}</p>
                 <p class="text-sm text-gray-600 dark:text-gray-300 mt-2">
-                  ⏱️ {{ quiz.duration }} minutes | 📋 {{ quiz.questions_count || 0 }} questions
+                  ⏱️ {{ quiz.duration }} minutes | 📋 {{ quiz.questions }} questions
                 </p>
                 <!-- Active quizzes -->
 <p
@@ -125,12 +125,9 @@
 
 <span
     v-else-if="selectedFilter === 'completed'"
-    class="flex items-center gap-3"
+    class="text-green-600 font-semibold"
 >
-    <span class="text-green-600 font-semibold text-sm">✓ {{ quiz.score ? Math.round(quiz.score) + '%' : 'Completed' }}</span>
-    <Link :href="route('quizzes.performance', quiz.id)" class="text-xs text-orange-600 hover:text-orange-700 font-bold hover:underline">
-        View Report
-    </Link>
+    ✓ Completed
 </span>
 
 <span
@@ -173,8 +170,8 @@
 
 <script setup>
 
-import { computed, ref, onMounted, onUnmounted } from 'vue';
-import { usePage, router, Link } from '@inertiajs/vue3';
+import { computed, ref } from 'vue';
+import { usePage, router } from '@inertiajs/vue3';
 
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import Card from '@/Components/Card.vue';
@@ -202,28 +199,6 @@ const props = defineProps({
         default: () => []
     }
 
-});
-
-// Auto-popup: poll every 10s for newly active quizzes not yet attempted
-let pollTimer;
-
-const startAutoPopup = () => {
-    const notStartedActive = props.quizzes.filter(
-        q => q.status === 'active' && !q.attempted && !q.score
-    );
-    if (notStartedActive.length > 0) {
-        const nextQuiz = notStartedActive[0];
-        router.visit(route('quizzes.start', nextQuiz.id));
-    }
-};
-
-onMounted(() => {
-    startAutoPopup(); // Check immediately
-    pollTimer = setInterval(startAutoPopup, 10000); // Then every 10s
-});
-
-onUnmounted(() => {
-    if (pollTimer) clearInterval(pollTimer);
 });
 
 
@@ -295,7 +270,7 @@ const formatDate = (date) => {
         return '';
     }
 
-    return new Date(date).toLocaleString();
+    return new Date(date).toLocaleString('en-KE', { timeZone: 'Africa/Nairobi' });
 
 };
 

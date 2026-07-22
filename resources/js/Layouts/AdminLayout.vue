@@ -6,17 +6,23 @@
       </div>
       
       <nav class="flex flex-col flex-1 p-4 space-y-1">
-        <Link 
-          :href="route('admin.dashboard')" 
+        <Link
+          href="/admin/dashboard"
           :class="[$page.url === '/admin/dashboard' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white', 'block px-4 py-2.5 rounded-lg transition-colors font-medium']"
         >
           Dashboard
         </Link>
-        <Link 
-          :href="route('admin.users.index')" 
+        <Link
+          href="/admin/users"
           :class="[$page.url.startsWith('/admin/users') ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white', 'block px-4 py-2.5 rounded-lg transition-colors font-medium']"
         >
           User Management
+        </Link>
+        <Link
+          href="/admin/moderation"
+          :class="[$page.url === '/admin/moderation' ? 'bg-orange-600 text-white' : 'text-slate-400 hover:bg-slate-800 hover:text-white', 'block px-4 py-2.5 rounded-lg transition-colors font-medium']"
+        >
+          Moderation
         </Link>
         
         <div class="mt-auto pt-8">

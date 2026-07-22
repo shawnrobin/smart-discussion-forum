@@ -50,7 +50,7 @@ const page = usePage();
 const notifications = ref(page.props.notifications || []);
 
 const markAsRead = (id) => {
-  router.post(`/notifications/${id}/read`, {}, {
+  router.post(route('notifications.markAsRead', id), {}, {
     preserveScroll: true,
     onSuccess: () => {
       const note = notifications.value.find(n => n.id === id);
@@ -60,7 +60,7 @@ const markAsRead = (id) => {
 };
 
 const markAllAsRead = () => {
-  router.post('/notifications/mark-all-read', {}, {
+  router.post(route('notifications.markAllAsRead'), {}, {
     preserveScroll: true,
     onSuccess: () => {
       notifications.value.forEach(n => n.read = true);

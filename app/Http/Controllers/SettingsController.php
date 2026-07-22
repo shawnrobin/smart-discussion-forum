@@ -4,6 +4,11 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use App\Models\Message;
+use App\Models\ParticipationScore;
+use App\Models\QuizAttempt;
+use App\Models\Topic;
+use Carbon\Carbon;
 
 class SettingsController extends Controller
 {
@@ -12,10 +17,53 @@ class SettingsController extends Controller
         $user = auth()->user();
         $settings = $user->settings ?? $user->settings()->create([]);
 
+        $totalPoints = (float) ParticipationScore::where('user_id', $user->id)->sum('total_score');
+        $level = max(1, (int) floor($totalPoints / 100) + 1);
+        $isPrivilegedProfile = $user->is_admin || in_array($user->role, ['lecturer', 'group_admin', 'system_admin'], true);
+        $quizAverage = $isPrivilegedProfile ? null : round((float) QuizAttempt::where('user_id', $user->id)->whereNotNull('submitted_at')->avg('score'), 1);
+
         return Inertia::render('Settings/Index', [
             'user' => $user,
             'settings' => $settings,
+            'profileStats' => [
+                'totalPoints' => $isPrivilegedProfile ? 0 : $totalPoints,
+                'level' => $isPrivilegedProfile ? 1 : $level,
+                'progress' => $isPrivilegedProfile ? 0 : (int) ($totalPoints % 100),
+                'nextLevelPoints' => $isPrivilegedProfile ? 100 : 100 - (int) ($totalPoints % 100),
+                'badge' => $isPrivilegedProfile ? 'Staff account' : ($totalPoints >= 1000 ? 'Gold contributor' : ($totalPoints >= 300 ? 'Active contributor' : 'New contributor')),
+                'verifiedAnswers' => $isPrivilegedProfile ? null : (int) ParticipationScore::where('user_id', $user->id)->sum('answers_provided'),
+                'streak' => $isPrivilegedProfile ? null : $this->dailyStreak($user->id),
+                'topics' => Topic::where('user_id', $user->id)->count(),
+                'replies' => Message::where('user_id', $user->id)->count(),
+                'quizAverage' => $quizAverage,
+            ],
+            'exams' => QuizAttempt::where('user_id', $user->id)->whereNotNull('submitted_at')->with('quiz:id,title')->latest('submitted_at')->take(10)->get()->map(fn ($attempt) => [
+                'id' => $attempt->id,
+                'title' => $attempt->quiz->title ?? 'Quiz',
+                'date' => $attempt->submitted_at->format('d M Y, H:i'),
+                'score' => round((float) $attempt->score, 1),
+            ]),
         ]);
+    }
+
+    private function dailyStreak(int $userId): int
+    {
+        $dates = Topic::where('user_id', $userId)->pluck('created_at')
+            ->merge(Message::where('user_id', $userId)->pluck('created_at'))
+            ->map(fn ($date) => Carbon::parse($date)->timezone(config('app.timezone'))->toDateString())
+            ->unique()
+            ->flip();
+
+        $cursor = Carbon::today(config('app.timezone'));
+        if (!$dates->has($cursor->toDateString())) $cursor->subDay();
+
+        $streak = 0;
+        while ($dates->has($cursor->toDateString())) {
+            $streak++;
+            $cursor->subDay();
+        }
+
+        return $streak;
     }
 
     public function updateProfile(Request $request)

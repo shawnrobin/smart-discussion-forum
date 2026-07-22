@@ -52,21 +52,6 @@
           :error="form.errors.password_confirmation"
         />
 
-        <!-- Agree to Terms -->
-        <div class="flex items-start gap-2">
-          <input
-            v-model="form.agreed_to_rules"
-            type="checkbox"
-            class="w-4 h-4 text-blue-600 rounded mt-1"
-          />
-          <label class="text-sm text-gray-700">
-            I agree to the
-            <a href="#" class="text-blue-600 hover:underline">Terms of Service</a>
-            and
-            <a href="#" class="text-blue-600 hover:underline">Privacy Policy</a>
-          </label>
-        </div>
-
         <!-- Submit Button -->
         <PrimaryButton
           type="submit"
@@ -81,7 +66,7 @@
       <div class="mt-6 text-center text-sm text-gray-600">
         <p>
           Already have an account?
-          <Link href="/login" class="text-blue-600 hover:underline font-medium">
+          <Link :href="route('login')" class="text-blue-600 hover:underline font-medium">
             Sign in here
           </Link>
         </p>
@@ -104,8 +89,6 @@ const form = useForm({
   username: '',
   password: '',
   password_confirmation: '',
-  agreed_to_rules: false,
-  rules_version: 1,
 });
 
 const submit = () => {

@@ -15,24 +15,20 @@ return new class extends Migration
             $table->string('email')->unique();
             $table->string('username')->unique();
             $table->string('password');
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('remember_token')->nullable();
             $table->enum('role', ['student', 'lecturer', 'group_admin', 'system_admin'])->default('student');
             $table->enum('status', ['active', 'inactive', 'blacklisted'])->default('active');
             $table->boolean('blacklisted')->default(false); // Added missing column
             $table->boolean('is_admin')->default(false);    // Added missing column
+            $table->boolean('agreed_to_rules')->default(false);
+            $table->integer('rules_version')->default(1);
             $table->timestamp('last_login')->nullable();
             $table->integer('inactive_warnings')->default(0);
             $table->timestamps();
         });
 
-        // 2. Add extra profile fields to users
-        Schema::table('users', function (Blueprint $table) {
-            $table->string('avatar')->nullable();
-            $table->text('bio')->nullable();
-            $table->string('course')->nullable();
-            $table->string('faculty')->nullable();
-            $table->integer('year_of_study')->nullable();
-            $table->string('phone_number')->nullable();
-        });
+        // Profile fields are added later to avoid duplicate column additions
 
         // ... Keep all other Schema::create blocks exactly as they were
         Schema::create('groups', function (Blueprint $table) {
@@ -197,19 +193,30 @@ return new class extends Migration
 
 	        // TOPIC RECOMMENDATIONS TABLE (Requirement #11: ML recommendations)
 	        Schema::create('topic_recommendations', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
-            $table->foreignId('topic_id')->constrained('topics')->onDelete('cascade');
-            $table->decimal('score', 5, 2);
-            $table->string('reason')->nullable();
-            $table->timestamps();
-        });
+	            $table->id();
+	            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+	            $table->foreignId('topic_id')->constrained('topics')->onDelete('cascade');
+	            $table->decimal('score', 5, 2);
+	            $table->string('reason')->nullable();
+	            $table->timestamps();
+	        });
 
+            // Topic exclusions are created in their own migration file to avoid duplication
+
+	        Schema::table('users', function (Blueprint $table) {
+	            $table->string('avatar')->nullable();
+	            $table->text('bio')->nullable();
+	            $table->string('course')->nullable();
+	            $table->string('faculty')->nullable();
+	            $table->integer('year_of_study')->nullable();
+	            $table->string('phone_number')->nullable();
+	        });
     }
 
     public function down(): void
     {
         Schema::dropIfExists('topic_recommendations');
+        Schema::dropIfExists('topic_exclusions');
         Schema::dropIfExists('sync_queue');
         Schema::dropIfExists('notifications');
         Schema::dropIfExists('quiz_answers');

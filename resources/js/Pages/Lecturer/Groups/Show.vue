@@ -8,7 +8,8 @@
           <p class="text-gray-500 mt-1">Created on {{ new Date(group.created_at).toLocaleDateString() }}</p>
         </div>
         <div class="flex gap-3">
-          <Link :href="route('quizzes.create', group.id)" class="px-4 py-2 text-sm font-bold text-white bg-orange-600 rounded-xl hover:bg-orange-700 transition">Create Quiz</Link>
+          <Link :href="route('lecturer.groups.statistics', group.id)" class="px-4 py-2 text-sm font-bold text-orange-700 bg-orange-50 rounded-xl hover:bg-orange-100 transition">View Statistics</Link>
+          <Link :href="route('quizzes.create', group.id)" class="px-4 py-2 text-sm font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition">Create Quiz</Link>
           <button class="px-4 py-2 text-sm font-bold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition">Edit Group</button>
           <button 
             @click="deleteGroup" 
@@ -43,7 +44,7 @@
 
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Link, useForm } from '@inertiajs/vue3';
+import { useForm, Link } from '@inertiajs/vue3';
 
 const props = defineProps({ 
   group: Object 

@@ -55,12 +55,12 @@
       <div class="mt-6 text-center space-y-2">
         <p class="text-sm text-gray-600">
           Don't have an account?
-          <Link href="/register" class="text-blue-600 hover:underline font-medium">
+          <Link :href="route('register')" class="text-blue-600 hover:underline font-medium">
             Create one here
           </Link>
         </p>
         <p class="text-sm">
-          <Link href="/" class="text-blue-600 hover:underline">
+          <Link :href="route('dashboard')" class="text-blue-600 hover:underline">
             Back to home
           </Link>
         </p>

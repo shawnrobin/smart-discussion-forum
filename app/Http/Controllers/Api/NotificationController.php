@@ -27,15 +27,15 @@ class NotificationController extends Controller
     public function markAsRead(Request $request, Notification $notification): JsonResponse
     {
         $this->authorizeOwner($request, $notification);
-        $notification->update(['is_read' => true]);
+        $notification->update(['read' => true]);
         return response()->json($notification);
     }
 
     public function markAllAsRead(Request $request): JsonResponse
     {
         Notification::where('user_id', $request->user()->id)
-            ->where('is_read', false)
-            ->update(['is_read' => true]);
+            ->where('read', false)
+            ->update(['read' => true]);
 
         return response()->json(['message' => 'All notifications marked as read']);
     }

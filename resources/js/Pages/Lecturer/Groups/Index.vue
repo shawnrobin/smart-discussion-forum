@@ -27,7 +27,7 @@
               <td class="px-6 py-4 text-gray-600">{{ group.users_count || 0 }}</td>
               <td class="px-6 py-4 flex gap-4">
                 <Link :href="route('lecturer.groups.show', group.id)" class="text-orange-600 font-bold hover:underline">View</Link>
-                <Link :href="route('quizzes.create', group.id)" class="text-emerald-600 font-bold hover:underline">Create Quiz</Link>
+                <Link :href="route('quizzes.create', group.id)" class="text-blue-600 font-bold hover:underline">Create Quiz</Link>
                 <button @click.prevent="deleteGroup(group.id)" class="text-rose-600 font-bold hover:underline">Delete</button>
               </td>
             </tr>
