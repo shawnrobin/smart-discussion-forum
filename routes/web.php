@@ -112,19 +112,6 @@ Route::middleware('auth')->group(function () {
                 'quizzes' => $quizzesCount,
                 'attempts' => $myQuizAttempts,
             ],
-            'recommendations' => $user->role === 'student'
-                ? \App\Services\RecommendationService::getRecommendations($user->id, 5)
-                    ->map(fn ($r) => [
-                        'id'          => $r->topic->id,
-                        'title'       => $r->topic->title,
-                        'group_id'    => $r->topic->group_id,
-                        'group_name'  => $r->topic->group->name ?? '',
-                        'author'      => $r->topic->user->name ?? 'Unknown',
-                        'replies'     => $r->topic->messages_count ?? 0,
-                        'score'       => round((float) $r->score, 1),
-                        'is_answered' => $r->topic->is_answered,
-                    ])
-                : [],
         ]);
     })->name('dashboard');
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -241,10 +228,6 @@ Route::middleware('auth')->group(function () {
     // PDF export
     Route::post('/topics/{topic}/export-pdf', [TopicController::class, 'exportPdf'])->name('topics.export-pdf');
     Route::post('/topics/{topic}/report', [AdminModerationController::class, 'reportTopic'])->name('topics.report');
-
-    // Recommendations (ML)
-    Route::get('/recommendations', [\App\Http\Controllers\RecommendationController::class, 'index'])->name('recommendations.index');
-    Route::post('/recommendations/generate', [\App\Http\Controllers\RecommendationController::class, 'generate'])->name('recommendations.generate');
 
     // Quizzes
     Route::get('/quizzes', [QuizController::class, 'index'])->name('quizzes.index');
