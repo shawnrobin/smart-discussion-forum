@@ -1,12 +1,12 @@
 <template>
   <AuthenticatedLayout page-title="Profile Settings">
     <div class="max-w-4xl mx-auto p-6 space-y-6">
-      
+
       <!-- 1. Header Section -->
-      <ProfileHeader 
-        :name="name" 
-        :email="email" 
-        :gamification="gamification" 
+      <ProfileHeader
+        :name="name"
+        :email="email"
+        :gamification="gamification"
       />
 
       <!-- 2. Academic Performance Section -->

@@ -164,7 +164,10 @@ const props = defineProps({ pageTitle: String, userName: String });
 
 const page = usePage();
 const user = computed(() => page.props.auth?.user || null);
-const isAdmin = computed(() => user.value?.role === 'system_admin');
+const isAdmin = computed(() => {
+  if (!user.value) return false;
+  return user.value?.is_admin === true || ['system_admin', 'group_admin'].includes(user.value?.role);
+});
 const isLecturer = computed(() => user.value?.role === 'lecturer' || user.value?.role === 'system_admin');
 
 const showNotifications = ref(false);

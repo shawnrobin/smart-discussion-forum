@@ -11,13 +11,12 @@ return new class extends Migration
      */
     public function up(): void
 {
-    Schema::table('quizzes', function (Blueprint $table) {
-        $table->timestamp('start_time')->nullable();
-        $table->timestamp('end_time')->nullable();
-        $table->integer('duration_minutes');
-        $table->string('target_category'); // e.g., 'Year 1', 'Section B'
-        $table->boolean('is_published')->default(false);
-    });
+   Schema::table('quizzes', function (Blueprint $table) {
+    $table->string('target_category')->nullable();
+
+    // Only add this if your application actually uses it.
+    $table->boolean('is_published')->default(false);
+});
 }
 
     /**

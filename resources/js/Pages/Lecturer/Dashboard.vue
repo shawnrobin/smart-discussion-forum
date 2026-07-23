@@ -1,7 +1,7 @@
 <template>
   <AuthenticatedLayout page-title="Lecturer Dashboard">
     <div class="p-8 max-w-7xl mx-auto space-y-8">
-      
+
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div class="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm transition hover:shadow-md">
           <p class="text-sm font-medium text-gray-500">My Groups</p>
@@ -24,7 +24,7 @@
             View All
           </Link>
         </div>
-        
+
         <div v-if="recent_groups.length > 0" class="divide-y divide-gray-50">
           <div v-for="group in recent_groups" :key="group.id" class="p-6 flex justify-between items-center hover:bg-gray-50 transition">
             <div>
@@ -41,7 +41,7 @@
           <Link :href="route('lecturer.groups.index')" class="text-orange-600 font-semibold text-sm hover:underline">Create your first group</Link>
         </div>
       </div>
-      
+
     </div>
   </AuthenticatedLayout>
 </template>
