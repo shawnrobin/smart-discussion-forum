@@ -13,6 +13,34 @@ use Inertia\Response;
 
 class GroupController extends Controller
 {
+    /**
+     * Desktop clients only receive groups they can actually open for chat.
+     * This stays separate from the web group directory, which also lists
+     * groups a student may choose to join.
+     */
+    public function desktopIndex(Request $request)
+    {
+        $user = $request->user();
+
+        $groups = Group::query()
+            ->where(function ($query) use ($user) {
+                $query->where('created_by', $user->id)
+                    ->orWhereHas('users', fn ($members) => $members->whereKey($user->id));
+            })
+            ->withCount(['users', 'topics'])
+            ->orderBy('name')
+            ->get(['id', 'name', 'description', 'created_by'])
+            ->map(fn (Group $group) => [
+                'id' => $group->id,
+                'name' => $group->name,
+                'description' => $group->description,
+                'members' => $group->users_count,
+                'topics' => $group->topics_count,
+            ]);
+
+        return response()->json(['success' => true, 'groups' => $groups]);
+    }
+
     public function index(Request $request): Response
     {
         $userId = $request->user()->id;
