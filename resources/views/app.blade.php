@@ -3,9 +3,6 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="theme-color" content="#ea580c">
-        <link rel="manifest" href="/manifest.webmanifest">
-        <link rel="apple-touch-icon" href="/favicon.ico">
 
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 

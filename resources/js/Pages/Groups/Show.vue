@@ -64,24 +64,10 @@
         </select>
       </div>
 
-      <!-- Improved Online Indicator -->
       <div class="flex items-center justify-between">
         <div>
           <h2 class="text-lg font-bold text-gray-900">Group chat</h2>
           <p class="text-sm text-gray-500">Open a thread to read and send live replies.</p>
-        </div>
-        <div v-if="onlineUsers.length > 0" class="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border shadow-sm">
-            <span class="relative flex h-2 w-2">
-              <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-            </span>
-            <div class="flex -space-x-2">
-                <div v-for="user in onlineUsers" :key="user.id" 
-                     class="w-7 h-7 rounded-full bg-orange-100 border-2 border-white flex items-center justify-center text-[10px] text-orange-700 font-bold ring-1 ring-black/5" 
-                     :title="user.name">
-                    {{ user.name.substring(0, 2).toUpperCase() }}
-                </div>
-            </div>
         </div>
       </div>
 
@@ -95,7 +81,7 @@
         <div
           v-for="topic in paginatedTopics"
           :key="topic.id"
-          class="group bg-white rounded-xl border border-gray-200 shadow-sm p-5 hover:shadow-orange-100 hover:border-orange-300 transition-all cursor-pointer"
+          class="bg-white rounded-xl border border-gray-200 shadow-sm p-5 hover:shadow-md transition-all duration-200 hover:border-orange-200 cursor-pointer"
           @click="goToTopic(topic.id)"
         >
           <div class="flex items-start gap-4">
@@ -114,24 +100,22 @@
                   <p class="text-sm text-gray-500 mt-1 line-clamp-2">{{ topic.body }}</p>
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
-                <button
-                  v-if="topic.author?.name === auth?.user?.name"
-                  @click.stop="openEditModal(topic)"
-                  :disabled="saving"
-                  class="p-1.5 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition disabled:opacity-50"
-                  title="Edit"
-                >
-                  <Edit2Icon class="w-4 h-4" />
-                </button>
-                <button
-                  v-if="topic.author?.name === auth?.user?.name"
-                  @click.stop="confirmDeleteTopic(topic)"
-                  :disabled="deleting"
-                  class="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition disabled:opacity-50"
-                  title="Delete"
-                >
-                  <Trash2Icon class="w-4 h-4" />
-                </button>
+                  <button
+                    v-if="topic.author?.name === auth?.user?.name"
+                    @click.stop="openEditModal(topic)"
+                    class="p-1.5 text-gray-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition"
+                    title="Edit"
+                  >
+                    <Edit2Icon class="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    v-if="topic.author?.name === auth?.user?.name"
+                    @click.stop="confirmDeleteTopic(topic)"
+                    class="p-1.5 text-gray-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
+                    title="Delete"
+                  >
+                    <Trash2Icon class="w-3.5 h-3.5" />
+                  </button>
                   <span
                     v-if="topic.status === 'answered'"
                     class="px-2.5 py-1 bg-green-100 text-green-700 text-[11px] font-semibold rounded-full"
@@ -302,7 +286,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { usePage, router, Link } from '@inertiajs/vue3';
 import {
   ArrowLeft as ArrowLeftIcon,
@@ -346,26 +330,6 @@ const topicKeywords = computed(() => props.topicKeywords);
 // Delete state
 const deleteTarget = ref(null);
 const deleting = ref(false);
-const onlineUsers = ref([]);
-
-onMounted(() => {
-  window.Echo.join(`group.online.${props.group.id}`)
-    .here((users) => {
-        onlineUsers.value = users;
-    })
-    .joining((user) => {
-        if (!onlineUsers.value.find(u => u.id === user.id)) {
-            onlineUsers.value.push(user);
-        }
-    })
-    .leaving((user) => {
-        onlineUsers.value = onlineUsers.value.filter(u => u.id !== user.id);
-    });
-});
-
-onUnmounted(() => {
-  window.Echo.leave(`group.online.${props.group.id}`);
-});
 
 const filteredTopics = computed(() => {
   let list = props.topics.filter(t =>

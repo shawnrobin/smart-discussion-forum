@@ -86,8 +86,10 @@ class QuizController extends Controller
         }
 
         if ($status === 'closed') {
-            // All eligible group members can see the performance report once closed
-            return redirect()->route('quizzes.performance', $quiz);
+            $attempt = $quiz->attempts()->where('user_id', Auth::id())->first();
+            return $attempt
+                ? redirect()->route('quizzes.results', $attempt)
+                : redirect()->route('quizzes.performance', $quiz);
         }
 
         // Active — hide answers before attempt
@@ -110,48 +112,59 @@ class QuizController extends Controller
         $this->ensureCanManageGroup($group);
 
         $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string|max:1000',
-            'start_time' => 'required|date',
-            'end_time' => 'required|date|after:start_time',
-            'duration_minutes' => 'required|integer|min:5|max:480',
-            'target_category' => 'required|string|max:255',
-            'shuffle_questions' => 'boolean',
-            'show_results_after' => 'nullable|in:immediately,after_end,manually',
-            'questions' => 'required|array|min:1',
-            'questions.*.question_text' => 'required|string',
-            'questions.*.question_type' => 'required|in:multiple_choice,true_false,short_answer',
-            'questions.*.options' => 'nullable|array',
-            'questions.*.correct_answer' => 'required|string',
-            'questions.*.points' => 'required|integer|min:1',
+            'title'                        => 'required|string|max:255',
+            'description'                  => 'nullable|string|max:1000',
+            'start_time'                   => 'required|date',
+            'end_time'                     => 'required|date|after:start_time',
+            'duration_minutes'             => 'required|integer|min:1|max:480',
+            'target_category'              => 'nullable|string|max:255',
+            'shuffle_questions'            => 'boolean',
+            'show_results_after'           => 'nullable|in:immediately,after_end,manually',
+            'questions'                    => 'required|array|min:1',
+            'questions.*.question_text'    => 'required|string',
+            'questions.*.question_type'    => 'required|in:multiple_choice,true_false,short_answer',
+            'questions.*.options'          => 'nullable|array',
+            'questions.*.options.*'        => 'nullable|string',
+            'questions.*.correct_answer'   => 'required|string',
+            'questions.*.points'           => 'required|integer|min:1',
         ]);
 
         $startTime = Carbon::parse($validated['start_time'], config('app.timezone'));
-        $endTime = Carbon::parse($validated['end_time'], config('app.timezone'));
+        $endTime   = Carbon::parse($validated['end_time'],   config('app.timezone'));
 
         $quiz = Quiz::create([
-            'title' => $validated['title'],
-            'description' => $validated['description'] ?? null,
-            'group_id' => $group->id,
-            'created_by' => Auth::id(),
-            'start_time' => $startTime,
-            'end_time' => $endTime,
-            'duration_minutes' => $validated['duration_minutes'],
-            'target_category' => $validated['target_category'],
-            'shuffle_questions' => $validated['shuffle_questions'] ?? true,
+            'title'              => $validated['title'],
+            'description'        => $validated['description'] ?? null,
+            'group_id'           => $group->id,
+            'created_by'         => Auth::id(),
+            'start_time'         => $startTime,
+            'end_time'           => $endTime,
+            'duration_minutes'   => $validated['duration_minutes'],
+            'target_category'    => $validated['target_category'] ?? 'all',
+            'shuffle_questions'  => $validated['shuffle_questions'] ?? true,
             'show_results_after' => $validated['show_results_after'] ?? 'immediately',
-            'published' => true,
+            'published'          => true,
         ]);
 
         foreach ($validated['questions'] as $index => $question) {
+            // Strip empty option strings before storing
+            $options = null;
+            if (!empty($question['options'])) {
+                $options = array_values(array_filter(
+                    $question['options'],
+                    fn ($o) => is_string($o) && trim($o) !== ''
+                ));
+                $options = count($options) ? $options : null;
+            }
+
             QuizQuestion::create([
-                'quiz_id' => $quiz->id,
-                'question_text' => $question['question_text'],
-                'question_type' => $question['question_type'],
-                'options' => $question['options'] ?? null,
+                'quiz_id'        => $quiz->id,
+                'question_text'  => $question['question_text'],
+                'question_type'  => $question['question_type'],
+                'options'        => $options,
                 'correct_answer' => $question['correct_answer'],
-                'points' => $question['points'],
-                'order_index' => $index + 1,
+                'points'         => $question['points'],
+                'order_index'    => $index + 1,
             ]);
         }
 
@@ -282,73 +295,42 @@ class QuizController extends Controller
     {
         $user = auth()->user();
 
+        // System admins can always manage any group.
+        // Lecturers can manage groups they created OR groups they are a member of.
         abort_unless(
             $user && (
-                ($user->role === 'lecturer' && (int) $group->created_by === (int) $user->id)
-                || $user->role === 'system_admin'
+                $user->role === 'system_admin'
+                || (
+                    $user->role === 'lecturer'
+                    && (
+                        (int) $group->created_by === (int) $user->id
+                        || $group->users()->whereKey($user->id)->exists()
+                    )
+                )
             ),
-            403
+            403,
+            'Only the group lecturer or a system admin can manage this group.'
         );
     }
 
-    /**
-     * Performance report — visible to ALL eligible group members after the quiz closes.
-     * Students see their own score + class summary.
-     * Lecturers/admins see the full per-student breakdown.
-     */
     public function performance(Quiz $quiz)
     {
         $user = Auth::user();
-        $canManage = $user && (
-            $user->role === 'system_admin' ||
-            ($user->role === 'lecturer' && (int) $quiz->group->created_by === (int) $user->id)
-        );
+        $canManage = $user && ($user->role === 'system_admin' || ($user->role === 'lecturer' && (int) $quiz->group->created_by === (int) $user->id));
+        abort_unless($this->canTakeQuiz($quiz, $user) || $canManage, 403);
+        abort_unless($this->getQuizStatus($quiz) === 'closed', 403, 'Performance is available after the quiz closes.');
 
-        // Any group member who could have taken the quiz (or a manager) can view the report
-        $isMember = $quiz->group->users()->whereKey($user->id)->exists();
-        abort_unless($isMember || $canManage, 403);
-        abort_unless($this->getQuizStatus($quiz) === 'closed', 403, 'Performance report is available after the quiz closes.');
-
-        $attempts = $quiz->attempts()
-            ->whereNotNull('submitted_at')
-            ->with('user:id,name,course,year_of_study')
-            ->get();
-
+        $attempts = $quiz->attempts()->whereNotNull('submitted_at')->get();
         $myAttempt = $attempts->firstWhere('user_id', Auth::id());
 
-        // Per-student leaderboard (visible to lecturers/admins only)
-        $leaderboard = $canManage
-            ? $attempts->sortByDesc('score')->values()->map(fn ($a) => [
-                'name'       => $a->user->name ?? 'Unknown',
-                'score'      => round((float) $a->score, 1),
-                'time_taken' => $a->time_taken_seconds,
-                'submitted_at' => $a->submitted_at?->toDateTimeString(),
-                'auto'       => (bool) $a->auto_submitted_at,
-              ])
-            : null;
-
-        // Distribution buckets: 0-49, 50-69, 70-84, 85-100
-        $distribution = [
-            '0–49'  => $attempts->where('score', '<',  50)->count(),
-            '50–69' => $attempts->whereBetween('score', [50, 69])->count(),
-            '70–84' => $attempts->whereBetween('score', [70, 84])->count(),
-            '85–100'=> $attempts->where('score', '>=', 85)->count(),
-        ];
-
         return Inertia::render('Quizzes/Performance', [
-            'quiz'         => $quiz->only('id', 'title', 'description', 'start_time', 'end_time', 'duration_minutes'),
-            'summary'      => [
-                'attempts'     => $attempts->count(),
-                'average'      => round((float) $attempts->avg('score'), 1),
-                'highest'      => round((float) $attempts->max('score'), 1),
-                'lowest'       => round((float) $attempts->min('score'), 1),
-                'myScore'      => $myAttempt ? round((float) $myAttempt->score, 1) : null,
-                'myTime'       => $myAttempt?->time_taken_seconds,
-                'myAutoSubmit' => $myAttempt ? (bool) $myAttempt->auto_submitted_at : false,
-                'distribution' => $distribution,
+            'quiz' => $quiz,
+            'summary' => [
+                'attempts' => $attempts->count(),
+                'average' => round((float) $attempts->avg('score'), 1),
+                'highest' => round((float) $attempts->max('score'), 1),
+                'myScore' => $myAttempt ? round((float) $myAttempt->score, 1) : null,
             ],
-            'leaderboard'  => $leaderboard,
-            'canManage'    => $canManage,
         ]);
     }
 
@@ -364,11 +346,24 @@ class QuizController extends Controller
     private function targetCategories(Group $group): array
     {
         $categories = [['value' => 'all', 'label' => 'All members of this group']];
-        foreach (['year_of_study' => 'Year', 'course' => 'Course', 'faculty' => 'Faculty'] as $field => $label) {
-            $group->users()->whereNotNull($field)->distinct()->pluck($field)->filter()->each(function ($value) use (&$categories, $field, $label) {
-                $categories[] = ['value' => $field . ':' . $value, 'label' => $label . ': ' . $value];
-            });
+
+        $group->load('users');
+
+        foreach (['year_of_study' => 'Year of Study', 'course' => 'Course', 'faculty' => 'Faculty'] as $field => $label) {
+            $group->users
+                ->whereNotNull($field)
+                ->pluck($field)
+                ->filter()
+                ->unique()
+                ->sort()
+                ->each(function ($value) use (&$categories, $field, $label) {
+                    $categories[] = [
+                        'value' => $field . ':' . $value,
+                        'label' => $label . ': ' . $value,
+                    ];
+                });
         }
+
         return $categories;
     }
 

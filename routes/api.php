@@ -12,7 +12,6 @@ use App\Http\Controllers\Api\NotificationController;
 use App\Http\Controllers\Api\ShareController;
 use App\Http\Controllers\Api\ParticipationController;
 use App\Http\Controllers\Api\RecommendationController;
-use App\Http\Controllers\Api\DesktopController;
 
 
 /*
@@ -88,16 +87,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/groups', [
         GroupController::class,
         'index'
-    ]);
-
-    Route::get('/desktop/groups', [
-        GroupController::class,
-        'desktopIndex'
-    ]);
-
-    Route::get('/desktop/bootstrap', [
-        DesktopController::class,
-        'bootstrap'
     ]);
 
     Route::get('/groups/{group}', [
