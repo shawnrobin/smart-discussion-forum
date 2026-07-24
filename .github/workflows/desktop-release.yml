@@ -1,0 +1,84 @@
+name: Build & Release Desktop App
+
+on:
+  push:
+    branches: [ develop, main ]
+    paths:
+      - 'smart-forum-desktop/**'
+  workflow_dispatch:   # allow manual trigger from GitHub Actions UI
+
+permissions:
+  contents: write      # needed to create releases and upload assets
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout ────────────────────────────────────────
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # ── 2. Set up Java 17 with JavaFX ──────────────────────
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      # ── 3. Build the fat JAR ───────────────────────────────
+      - name: Build desktop JAR
+        run: |
+          cd smart-forum-desktop
+          mvn clean package -DskipTests -q
+          echo "JAR_PATH=$(ls target/smart-forum-desktop-*.jar | grep -v original)" >> $GITHUB_ENV
+
+      # ── 4. Get version from pom.xml ────────────────────────
+      - name: Get version
+        id: version
+        run: |
+          VERSION=$(cd smart-forum-desktop && mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag=desktop-v$VERSION-$(date +'%Y%m%d%H%M')" >> $GITHUB_OUTPUT
+
+      # ── 5. Delete previous desktop release (keep only latest) ─
+      - name: Delete previous desktop release if exists
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Find and delete any release tagged desktop-latest
+          gh release delete desktop-latest --yes 2>/dev/null || true
+          git push origin :refs/tags/desktop-latest 2>/dev/null || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── 6. Create GitHub Release and upload JAR ────────────
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: desktop-latest
+          name: "SmartForum Desktop — Latest Build"
+          body: |
+            ## SmartForum Desktop App
+
+            Auto-built from the `${{ github.ref_name }}` branch.
+            Commit: `${{ github.sha }}`
+
+            ### How to run
+            1. Make sure **Java 17+** is installed on your computer
+            2. Download `smart-forum-desktop.jar` below
+            3. Double-click the JAR, or run:
+               ```
+               java -jar smart-forum-desktop.jar
+               ```
+            4. Make sure the web server is running at `http://127.0.0.1:8001`
+
+            ### Requirements
+            - Java 17 or higher ([download here](https://adoptium.net))
+            - The Smart Forum web server must be running locally
+          files: |
+            ${{ env.JAR_PATH }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          prerelease: false
+          make_latest: true

@@ -30,3 +30,7 @@ yarn-error.log
 # Bwat per-workspace permission allowlist
 .bwat/
 smart-forum-web/.npmrc
+
+# Desktop app — compiled output (built by GitHub Actions, not committed)
+smart-forum-desktop/target/
+smart-forum-desktop/dependency-reduced-pom.xml
