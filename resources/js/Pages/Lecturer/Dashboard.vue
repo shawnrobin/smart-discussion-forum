@@ -4,11 +4,11 @@
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div class="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm transition hover:shadow-md">
-          <p class="text-sm font-medium text-gray-500">My Groups</p>
+          <p class="text-sm font-medium text-gray-500">All Groups</p>
           <h2 class="text-3xl font-bold text-gray-900 mt-2">{{ stats.my_groups }}</h2>
         </div>
         <div class="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm transition hover:shadow-md">
-          <p class="text-sm font-medium text-gray-500">My Quizzes</p>
+          <p class="text-sm font-medium text-gray-500">All Quizzes</p>
           <h2 class="text-3xl font-bold text-gray-900 mt-2">{{ stats.my_quizzes }}</h2>
         </div>
         <div class="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm transition hover:shadow-md">
@@ -29,7 +29,7 @@
           <div v-for="group in recent_groups" :key="group.id" class="flex flex-col gap-3 p-4 transition hover:bg-gray-50 sm:flex-row sm:items-center sm:justify-between sm:p-6">
             <div>
               <p class="font-bold text-gray-900">{{ group.name }}</p>
-              <p class="text-xs text-gray-400">Created: {{ new Date(group.created_at).toLocaleDateString() }}</p>
+              <p class="text-xs text-gray-400">Created by {{ group.creator?.name ?? 'Unknown' }} · {{ new Date(group.created_at).toLocaleDateString() }}</p>
             </div>
             <div class="text-sm bg-gray-100 text-gray-600 px-3 py-1 rounded-full font-medium">
               {{ group.users_count }} Members

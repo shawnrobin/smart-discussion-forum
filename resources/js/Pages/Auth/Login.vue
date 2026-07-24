@@ -64,10 +64,11 @@
           </div>
         </div>
         <ul class="mt-4 space-y-2 text-xs leading-5 text-slate-700">
-          <li class="flex gap-2"><span class="text-orange-600">•</span><span>Keep discussions relevant to the group or academic topic.</span></li>
+          <li class="flex gap-2"><span class="text-orange-600">•</span><span>Post relevant academic material in the correct group and topic.</span></li>
+          <li class="flex gap-2"><span class="text-orange-600">•</span><span>Keep questions and follow-up answers together in their topic thread.</span></li>
           <li class="flex gap-2"><span class="text-orange-600">•</span><span>Treat every member with respect—no harassment or personal attacks.</span></li>
           <li class="flex gap-2"><span class="text-orange-600">•</span><span>Protect other members’ privacy and avoid sharing private information.</span></li>
-          <li class="flex gap-2"><span class="text-orange-600">•</span><span>Report inappropriate content instead of escalating a dispute.</span></li>
+          <li class="flex gap-2"><span class="text-orange-600">•</span><span>Follow quiz time limits and report inappropriate content instead of escalating a dispute.</span></li>
         </ul>
         <Link :href="route('community.rules')" class="mt-4 inline-flex text-xs font-semibold text-orange-700 hover:text-orange-800 hover:underline">
           Read the full community rules

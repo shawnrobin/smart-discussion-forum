@@ -284,8 +284,7 @@ class QuizController extends Controller
 
         abort_unless(
             $user && (
-                ($user->role === 'lecturer' && (int) $group->created_by === (int) $user->id)
-                || $user->role === 'system_admin'
+                in_array($user->role, ['lecturer', 'system_admin'], true)
             ),
             403
         );
@@ -300,8 +299,7 @@ class QuizController extends Controller
     {
         $user = Auth::user();
         $canManage = $user && (
-            $user->role === 'system_admin' ||
-            ($user->role === 'lecturer' && (int) $quiz->group->created_by === (int) $user->id)
+            in_array($user->role, ['lecturer', 'system_admin'], true)
         );
 
         // Any group member who could have taken the quiz (or a manager) can view the report

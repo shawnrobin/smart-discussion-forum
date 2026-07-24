@@ -17,7 +17,7 @@ defineProps({
     <article>
       <p class="text-xs font-bold uppercase tracking-widest text-orange-600">Community standards</p>
       <h2 class="mt-1 text-2xl font-bold text-slate-900">{{ rules.title }}</h2>
-      <p class="mt-2 text-sm leading-6 text-slate-500">These expectations help keep SmartForum safe, respectful, and useful for every learner.</p>
+      <p class="mt-2 text-sm leading-6 text-slate-500">These expectations help keep SmartForum safe, respectful, and useful for every learner. Version {{ rules.version }}.</p>
 
       <div class="mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm leading-7 text-slate-700 whitespace-pre-line">
         {{ rules.content }}
