@@ -45,7 +45,29 @@ const removeQuestion = (index) => {
 };
 
 const submit = () => {
-    form.post(route('quizzes.store', props.group.id));
+    // Clean up empty multiple-choice options before submitting
+    const cleaned = form.questions.map(q => ({
+        ...q,
+        options: q.question_type === 'multiple_choice'
+            ? q.options.filter(o => o.trim() !== '')
+            : q.options,
+    }));
+
+    // Validate locally: each MC question needs ≥ 2 options
+    for (let i = 0; i < cleaned.length; i++) {
+        const q = cleaned[i];
+        if (q.question_type === 'multiple_choice' && q.options.length < 2) {
+            alert(`Question ${i + 1}: multiple choice needs at least 2 options.`);
+            return;
+        }
+        if (!q.correct_answer.trim()) {
+            alert(`Question ${i + 1}: correct answer cannot be empty.`);
+            return;
+        }
+    }
+
+    form.transform(data => ({ ...data, questions: cleaned }))
+        .post(route('quizzes.store', props.group.id));
 };
 
 const questionTypeOptions = ['multiple_choice', 'true_false', 'short_answer'];
@@ -82,9 +104,11 @@ watch(() => form.duration_minutes, suggestEndTime);
             <div v-if="Object.keys(form.errors).length > 0" class="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
                 <AlertCircle class="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
                 <div>
-                    <p class="font-semibold text-red-800 text-sm">Please fix the following errors:</p>
-                    <ul class="text-sm text-red-600 mt-1 list-disc list-inside">
-                        <li v-for="(msg, field) in form.errors" :key="field">{{ msg }}</li>
+                    <p class="font-semibold text-red-800 text-sm">Please fix the following errors before publishing:</p>
+                    <ul class="text-sm text-red-600 mt-2 space-y-1 list-disc list-inside">
+                        <li v-for="(msg, field) in form.errors" :key="field">
+                            <strong>{{ field.replace(/_/g,' ').replace('questions.','Q').replace('.question text','') }}:</strong> {{ msg }}
+                        </li>
                     </ul>
                 </div>
             </div>
