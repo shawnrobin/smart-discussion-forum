@@ -15,3 +15,9 @@ Broadcast::channel('topic.{topicId}', function ($user, $topicId) {
         && !$topic->exclusions()->where('excluded_user_id', $user->id)->exists()
         && ($topic->group->users()->whereKey($user->id)->exists() || (int) $topic->group->created_by === (int) $user->id);
 });
+
+Broadcast::channel('group.online.{groupId}', function ($user, $groupId) {
+    if ($user->groups()->where('groups.id', $groupId)->exists()) {
+        return ['id' => $user->id, 'name' => $user->name];
+    }
+});

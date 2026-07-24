@@ -115,6 +115,9 @@ class MessageController
         $score->increment('topics_replied');
         $score->increment('total_score', 5); // 5 points for replying
 
+        // API and desktop replies must reach connected web clients too.
+        event(new \App\Events\ReplyCreated($message));
+
         return response()->json([
             'success' => true,
             'message' => 'Reply posted successfully',
