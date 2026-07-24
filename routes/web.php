@@ -26,26 +26,7 @@ use App\Http\Controllers\Auth\NewPasswordController;
 use App\Models\User;
 
 Route::get('/make-admin', function () {
-    try {
-        $user = User::where('email', 'tinkashawnarmstraong21@gmail.com')->first();
-
-        if (!$user) {
-            return response()->json([
-                'error' => 'User not found'
-            ]);
-        }
-
-        return response()->json([
-            'user' => $user,
-            'role_column_exists' => array_key_exists('role', $user->getAttributes()),
-        ]);
-    } catch (\Throwable $e) {
-        return response()->json([
-            'message' => $e->getMessage(),
-            'file' => $e->getFile(),
-            'line' => $e->getLine(),
-        ], 500);
-    }
+    return User::select('id', 'name', 'email', 'role')->get();
 });
 
 // 1. Root
