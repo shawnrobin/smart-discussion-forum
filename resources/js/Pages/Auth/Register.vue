@@ -51,6 +51,21 @@
           placeholder="Confirm your password"
           :error="form.errors.password_confirmation"
         />
+        <!-- Agree to Rules Checkbox -->
+        <div class="flex items-center">
+          <input
+            v-model="form.agreed_to_rules"
+            type="checkbox"
+            id="agree"
+            class="mr-2"
+          />
+          <label for="agree" class="text-gray-700">
+            I agree to the
+            <Link :href="route('rules')" class="text-blue-600 hover:underline font-medium">
+              rules and guidelines
+            </Link>
+          </label>
+        </div>
 
         <!-- Submit Button -->
         <PrimaryButton
