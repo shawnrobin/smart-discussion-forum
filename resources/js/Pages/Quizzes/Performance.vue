@@ -34,7 +34,7 @@ const maxBucket = computed(() => Math.max(...Object.values(props.summary.distrib
 
 <template>
   <AuthenticatedLayout :page-title="`${quiz.title} — Performance`">
-    <div class="mx-auto max-w-4xl space-y-6 p-6">
+    <div class="mx-auto max-w-4xl space-y-6 p-4 sm:p-6">
 
       <!-- Back -->
       <Link :href="route('quizzes.index')"
@@ -44,7 +44,7 @@ const maxBucket = computed(() => Math.max(...Object.values(props.summary.distrib
 
       <!-- Hero card -->
       <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div class="bg-gradient-to-r from-orange-600 to-amber-500 px-8 py-7 text-white">
+        <div class="bg-gradient-to-r from-orange-600 to-amber-500 px-5 py-6 text-white sm:px-8 sm:py-7">
           <p class="text-xs font-bold uppercase tracking-widest text-orange-100">Quiz performance report</p>
           <h1 class="mt-1 text-2xl font-bold">{{ quiz.title }}</h1>
           <p v-if="quiz.description" class="mt-1 text-sm text-orange-100">{{ quiz.description }}</p>

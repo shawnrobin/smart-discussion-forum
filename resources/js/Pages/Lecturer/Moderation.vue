@@ -1,8 +1,8 @@
 <template>
   <AuthenticatedLayout page-title="Moderation Center">
-    <div class="p-8 max-w-5xl mx-auto">
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <table class="w-full text-left">
+    <div class="mx-auto max-w-5xl p-4 sm:p-6 lg:p-8">
+      <div class="overflow-x-auto rounded-2xl border border-gray-100 bg-white shadow-sm">
+        <table class="min-w-[34rem] w-full text-left">
           <thead class="bg-gray-50 text-gray-400 text-[10px] font-bold uppercase">
             <tr>
               <th class="px-6 py-4">Reporter</th>

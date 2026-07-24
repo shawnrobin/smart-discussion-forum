@@ -73,11 +73,6 @@ class GroupController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
-        // Groups are created by lecturers; students participate by joining them.
-        if ($request->user()->role !== 'lecturer') {
-            return back()->with('error', 'Only lecturers can create groups.');
-        }
-
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',

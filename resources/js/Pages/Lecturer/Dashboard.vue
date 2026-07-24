@@ -1,6 +1,6 @@
 <template>
   <AuthenticatedLayout page-title="Lecturer Dashboard">
-    <div class="p-8 max-w-7xl mx-auto space-y-8">
+    <div class="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div class="p-6 bg-white rounded-2xl border border-gray-100 shadow-sm transition hover:shadow-md">
@@ -17,8 +17,8 @@
         </div>
       </div>
 
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+      <div class="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+        <div class="flex items-center justify-between gap-4 border-b border-gray-100 p-4 sm:p-6">
           <h3 class="text-lg font-bold text-gray-900">Recent Groups</h3>
           <Link :href="route('lecturer.groups.index')" class="text-sm text-orange-600 font-bold hover:underline">
             View All
@@ -26,7 +26,7 @@
         </div>
 
         <div v-if="recent_groups.length > 0" class="divide-y divide-gray-50">
-          <div v-for="group in recent_groups" :key="group.id" class="p-6 flex justify-between items-center hover:bg-gray-50 transition">
+          <div v-for="group in recent_groups" :key="group.id" class="flex flex-col gap-3 p-4 transition hover:bg-gray-50 sm:flex-row sm:items-center sm:justify-between sm:p-6">
             <div>
               <p class="font-bold text-gray-900">{{ group.name }}</p>
               <p class="text-xs text-gray-400">Created: {{ new Date(group.created_at).toLocaleDateString() }}</p>

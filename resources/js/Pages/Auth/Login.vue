@@ -1,7 +1,11 @@
 <template>
   <GuestLayout>
     <div>
-      <h2 class="text-2xl font-bold text-gray-900 mb-6">Sign In</h2>
+      <div class="mb-6">
+        <p class="text-xs font-bold uppercase tracking-widest text-orange-600">Welcome back</p>
+        <h2 class="mt-1 text-2xl font-bold text-slate-900">Sign in to your account</h2>
+        <p class="mt-2 text-sm text-slate-500">Continue your academic discussions and quizzes.</p>
+      </div>
 
       <!-- Error Alert -->
       <Alert
@@ -34,9 +38,9 @@
           <input
             v-model="form.remember"
             type="checkbox"
-            class="w-4 h-4 text-blue-600 rounded"
+            class="h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500"
           />
-          <label class="ml-2 text-sm text-gray-700">
+          <label class="ml-2 text-sm text-slate-700">
             Remember me
           </label>
         </div>
@@ -53,14 +57,14 @@
 
       <!-- Links -->
       <div class="mt-6 text-center space-y-2">
-        <p class="text-sm text-gray-600">
+        <p class="text-sm text-slate-600">
           Don't have an account?
-          <Link :href="route('register')" class="text-blue-600 hover:underline font-medium">
+          <Link :href="route('register')" class="font-medium text-orange-600 hover:text-orange-700 hover:underline">
             Create one here
           </Link>
         </p>
         <p class="text-sm">
-          <Link :href="route('dashboard')" class="text-blue-600 hover:underline">
+          <Link :href="route('dashboard')" class="text-orange-600 hover:text-orange-700 hover:underline">
             Back to home
           </Link>
         </p>
