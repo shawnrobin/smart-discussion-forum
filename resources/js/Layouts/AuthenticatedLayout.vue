@@ -183,7 +183,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { router, Link, usePage } from '@inertiajs/vue3';
 import { 
-  LayoutDashboard, Users, Award, Settings, LogOut as LogOutIcon, Menu as MenuIcon, X as XIcon,
+  LayoutDashboard, Users, Award, Sparkles, Settings, LogOut as LogOutIcon, Menu as MenuIcon, X as XIcon,
   Shield as ShieldIcon, BookOpen as BookOpenIcon, AlertTriangle as AlertTriangleIcon 
 } from 'lucide-vue-next';
 
