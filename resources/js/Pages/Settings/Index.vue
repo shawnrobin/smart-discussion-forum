@@ -1,11 +1,11 @@
 <template>
   <AuthenticatedLayout page-title="Settings" :user-name="user.name">
-    <div class="p-8 max-w-5xl mx-auto">
-      <div class="flex gap-8">
+    <div class="mx-auto w-full max-w-5xl p-4 sm:p-6 lg:p-8">
+      <div class="flex flex-col gap-6 lg:flex-row lg:gap-8">
 
         <!-- Sidebar tabs -->
-        <div class="w-56 shrink-0">
-          <nav class="space-y-1">
+        <div class="w-full shrink-0 lg:w-56">
+          <nav class="flex gap-1 overflow-x-auto pb-1 lg:block lg:space-y-1 lg:overflow-visible">
             <button
               v-for="tab in tabs"
               :key="tab.id"
@@ -14,7 +14,7 @@
                 activeTab === tab.id
                   ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-300 font-semibold'
                   : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white',
-                'w-full text-left px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-150'
+                'shrink-0 rounded-xl px-4 py-2.5 text-left text-sm font-medium transition-all duration-150 lg:w-full'
               ]"
             >
               {{ tab.label }}
@@ -23,7 +23,7 @@
         </div>
 
         <!-- Content -->
-        <div class="flex-1 bg-white dark:bg-gray-800 dark:text-gray-100 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm p-8">
+        <div class="min-w-0 flex-1 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm dark:border-gray-700 dark:bg-gray-800 dark:text-gray-100 sm:p-6 lg:p-8">
 
           <!-- Profile Tab -->
           <div v-if="activeTab === 'profile'" class="space-y-6">
@@ -33,7 +33,7 @@
               :gamification="profileStats"
             />
 
-            <div v-if="!isPrivilegedProfile" class="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <div v-if="!isPrivilegedProfile" class="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div class="rounded-xl bg-gray-50 p-4 text-center"><p class="text-xl font-bold text-gray-900">{{ profileStats.topics }}</p><p class="text-xs text-gray-500">Topics started</p></div>
               <div class="rounded-xl bg-gray-50 p-4 text-center"><p class="text-xl font-bold text-gray-900">{{ profileStats.replies }}</p><p class="text-xs text-gray-500">Replies posted</p></div>
               <div class="rounded-xl bg-gray-50 p-4 text-center"><p class="text-xl font-bold text-gray-900">{{ profileStats.quizAverage }}%</p><p class="text-xs text-gray-500">Quiz average</p></div>
@@ -47,7 +47,7 @@
             <div class="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl p-6 shadow-sm">
               <h2 class="text-lg font-bold text-gray-900 dark:text-white mb-4">Academic & Quiz Performance</h2>
               <div v-if="!isPrivilegedProfile">
-                <div v-if="exams.length" class="overflow-hidden border border-gray-100 dark:border-gray-700 rounded-xl">
+                <div v-if="exams.length" class="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-700">
                   <table class="min-w-full divide-y divide-gray-100 dark:divide-gray-700 text-left text-sm">
                     <thead class="bg-gray-50 dark:bg-gray-700 font-semibold text-gray-700 dark:text-gray-200">
                       <tr>
@@ -95,7 +95,7 @@
                   class="w-full px-4 py-2.5 rounded-xl border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-orange-500 focus:border-orange-500 text-sm"></textarea>
               </div>
 
-              <div class="grid grid-cols-2 gap-4">
+              <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div>
                   <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Course</label>
                   <input v-model="profileForm.course" type="text"

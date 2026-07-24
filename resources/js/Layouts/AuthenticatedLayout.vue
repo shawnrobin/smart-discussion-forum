@@ -1,11 +1,21 @@
 <template>
-<div class="flex h-screen bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-gray-100 antialiased">
-  <nav class="w-64 bg-white dark:bg-gray-800 border-r border-gray-100 dark:border-gray-700 flex flex-col justify-between shrink-0 shadow-sm">
+<div class="relative min-h-dvh overflow-x-hidden bg-gray-50 text-gray-800 antialiased dark:bg-gray-900 dark:text-gray-100 md:flex">
+  <div
+    v-if="sidebarOpen"
+    class="absolute inset-0 z-30 bg-gray-900/40 md:hidden"
+    aria-hidden="true"
+    @click="sidebarOpen = false"
+  ></div>
+
+  <nav
+    :class="[
+      sidebarOpen ? 'translate-x-0' : '-translate-x-full',
+      'absolute inset-y-0 left-0 z-40 flex w-4/5 max-w-xs flex-col justify-between overflow-y-auto border-r border-gray-100 bg-white shadow-sm transition-transform duration-200 dark:border-gray-700 dark:bg-gray-800 md:relative md:min-h-dvh md:w-64 md:max-w-none md:translate-x-0'
+    ]"
+  >
     <div>
-      <Link
-        :href="route('dashboard')"
-        class="p-6 border-b border-gray-100 dark:border-gray-700 flex items-center gap-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-      >
+      <div class="flex items-center justify-between border-b border-gray-100 p-5 dark:border-gray-700">
+        <Link :href="route('dashboard')" class="flex items-center gap-2" @click="sidebarOpen = false">
         <div class="w-8 h-8 rounded-lg bg-orange-600 flex items-center justify-center text-white font-black text-lg shadow-sm">
           S
         </div>
@@ -13,13 +23,23 @@
         <h2 class="text-xl font-bold tracking-tight text-gray-900 dark:text-white">
           Smart<span class="text-orange-600">Forum</span>
         </h2>
-      </Link>
+        </Link>
+        <button
+          type="button"
+          class="rounded-lg p-2 text-gray-500 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 md:hidden"
+          aria-label="Close navigation"
+          @click="sidebarOpen = false"
+        >
+          <XIcon class="h-5 w-5" />
+        </button>
+      </div>
 
         <div class="p-4 space-y-1">
          <Link
   v-for="link in navLinks"
   :key="link.id"
   :href="link.href"
+  @click="sidebarOpen = false"
   :class="[
     $page.url === link.matchUrl || $page.url.startsWith(link.matchUrl + '/')
       ? 'bg-orange-50 dark:bg-orange-900/30 text-orange-600 dark:text-orange-300 font-semibold'
@@ -76,15 +96,23 @@
       </div>
     </nav>
 
-    <div class="flex-1 flex flex-col min-w-0">
-      <header class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 h-20 px-8 flex justify-between items-center shrink-0">
+    <div class="flex min-w-0 flex-1 flex-col">
+      <header class="flex min-h-16 shrink-0 items-center justify-between border-b border-gray-100 bg-white px-4 py-3 dark:border-gray-700 dark:bg-gray-800 sm:px-6 lg:px-8">
         <div class="flex items-center gap-4">
-          <h1 class="text-xl font-bold text-gray-900 dark:text-white tracking-tight">
+          <button
+            type="button"
+            class="rounded-lg p-2 text-gray-600 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 md:hidden"
+            aria-label="Open navigation"
+            @click="sidebarOpen = true"
+          >
+            <MenuIcon class="h-5 w-5" />
+          </button>
+          <h1 class="text-lg font-bold tracking-tight text-gray-900 dark:text-white sm:text-xl">
             {{ pageTitle || 'Overview' }}
           </h1>
         </div>
 
-        <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2 sm:gap-4">
           <!-- Notification Bell -->
           <div class="relative">
             <button
@@ -103,7 +131,7 @@
 
             <div
               v-if="showNotifications"
-              class="absolute right-0 mt-2 w-80 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-100 dark:border-gray-700 overflow-hidden z-50"
+              class="absolute right-0 z-50 mt-2 w-[calc(100vw-2rem)] max-w-80 overflow-hidden rounded-xl border border-gray-100 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
             >
               <div class="p-3 border-b border-gray-100 dark:border-gray-700 font-bold text-sm text-gray-900 dark:text-white">
                 Notifications
@@ -136,15 +164,15 @@
               </div>
             </div>
           </div>
-          <div class="h-4 w-px bg-gray-200 dark:bg-gray-600"></div>
+          <div class="hidden h-4 w-px bg-gray-200 dark:bg-gray-600 sm:block"></div>
           <Link
             :href="route('settings.index')"
-            class="text-sm font-medium text-gray-700 bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-100 hover:bg-orange-50 hover:text-orange-600 transition"
+            class="hidden rounded-lg border border-gray-100 bg-gray-50 px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-orange-50 hover:text-orange-600 sm:block"
           >{{ user?.name ?? userName ?? 'Guest Account' }}</Link>
         </div>
       </header>
 
-      <main class="flex-1 overflow-auto bg-gray-50/50 dark:bg-gray-900">
+      <main class="flex-1 min-w-0 bg-gray-50/50 dark:bg-gray-900">
         <slot></slot>
       </main>
     </div>
@@ -155,7 +183,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { router, Link, usePage } from '@inertiajs/vue3';
 import { 
-  LayoutDashboard, Users, Award, Settings, LogOut as LogOutIcon,
+  LayoutDashboard, Users, Award, Settings, LogOut as LogOutIcon, Menu as MenuIcon, X as XIcon,
   Shield as ShieldIcon, BookOpen as BookOpenIcon, AlertTriangle as AlertTriangleIcon 
 } from 'lucide-vue-next';
 
@@ -170,6 +198,7 @@ const isAdmin = computed(() => {
 const isLecturer = computed(() => user.value?.role === 'lecturer' || user.value?.role === 'system_admin');
 
 const showNotifications = ref(false);
+const sidebarOpen = ref(false);
 const notifications = ref(page.props.notifications || []);
 const notificationChannel = computed(() => user.value ? `App.Models.User.${user.value.id}` : null);
 
