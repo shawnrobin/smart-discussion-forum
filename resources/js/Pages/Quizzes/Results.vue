@@ -13,26 +13,25 @@ const bandColor = (score) => {
 };
 
 const formatTime = (secs) => {
-    if (!secs) return 'ΓÇö';
+    if (!secs) return '—';
     return `${Math.floor(secs / 60)}m ${secs % 60}s`;
 };
 </script>
 
 <template>
-    <div class="max-w-4xl mx-auto p-6 bg-white shadow-md rounded-lg mt-10">
-        <h1 class="text-2xl font-bold mb-6">Quiz Results: {{ attempt.quiz.title }}</h1>
+  <AuthenticatedLayout :page-title="`Results: ${attempt.quiz.title}`">
+    <div class="mx-auto max-w-3xl space-y-6 p-6">
 
-        <div class="bg-gray-100 p-6 rounded-lg mb-6">
-            <h2 class="text-xl">Your Score: <span class="font-bold text-green-600">{{ attempt.score }}%</span></h2>
-            <p class="text-gray-600">Time Taken: {{ Math.round(attempt.time_taken_seconds / 60) }} minutes</p>
+      <!-- Score hero -->
+      <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <div class="bg-gradient-to-r from-orange-600 to-amber-500 px-8 py-7 text-white">
+          <p class="text-xs font-bold uppercase tracking-widest text-orange-100">Your results</p>
+          <h1 class="mt-1 text-2xl font-bold">{{ attempt.quiz.title }}</h1>
         </div>
-
-        <h3 class="font-bold mb-4">Detailed Performance:</h3>
-        <div v-for="answer in attempt.answers" :key="answer.id" class="border-b py-3">
-            <p>{{ answer.question.question_text }}</p>
-            <p :class="answer.is_correct ? 'text-green-600' : 'text-red-600'">
-                Your Answer: {{ answer.user_answer }}
-                <span v-if="!answer.is_correct">(Correct: {{ answer.question.correct_answer }})</span>
+        <div class="flex flex-wrap items-center gap-8 px-8 py-6">
+          <div class="text-center">
+            <p class="text-5xl font-black" :class="bandColor(attempt.score)">
+              {{ Math.round(attempt.score) }}%
             </p>
             <p class="mt-1 text-xs text-slate-500">Your score</p>
           </div>
@@ -42,7 +41,7 @@ const formatTime = (secs) => {
           </div>
           <div v-if="attempt.auto_submitted_at"
                class="rounded-lg bg-amber-50 px-3 py-2 text-xs font-medium text-amber-700">
-            ΓÜá Auto-submitted when timer expired
+            Auto-submitted when timer expired
           </div>
         </div>
       </section>
