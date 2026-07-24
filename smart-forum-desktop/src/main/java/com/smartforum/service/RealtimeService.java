@@ -13,8 +13,8 @@ public class RealtimeService {
 
     private static RealtimeService instance;
     private static final Logger LOG = Logger.getLogger(RealtimeService.class.getName());
-    private static final String WS_HOST  = "ws://127.0.0.1:8080/app/vqryuhowkvohjs8hcobc";
-    private static final String AUTH_URL = "http://127.0.0.1:8001/broadcasting/auth";
+    private static final String WS_HOST  = "wss://smart-discussion-forum-x0vd.onrender.com/app/vqryuhowkvohjs8hcobc";
+    private static final String AUTH_URL = "https://smart-discussion-forum-x0vd.onrender.com/broadcasting/auth";
 
     private final OkHttpClient wsClient = new OkHttpClient();
     private WebSocket socket;

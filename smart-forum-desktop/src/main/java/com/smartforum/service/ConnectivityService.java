@@ -51,7 +51,8 @@ public class ConnectivityService {
 
     private boolean probe() {
         try (Socket s = new Socket()) {
-            s.connect(new InetSocketAddress("127.0.0.1", 8001), 2000);
+            // Probe the hosted Render server on port 443 (HTTPS)
+            s.connect(new InetSocketAddress("smart-discussion-forum-x0vd.onrender.com", 443), 4000);
             return true;
         } catch (IOException e) { return false; }
     }

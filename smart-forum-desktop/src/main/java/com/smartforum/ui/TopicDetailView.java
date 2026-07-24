@@ -458,7 +458,7 @@ public class TopicDetailView {
     private void showShareDialog(String title) {
         String encodedTitle = URLEncoder.encode(title, StandardCharsets.UTF_8);
         // Build a shareable web URL pointing to the topic on the web app
-        String topicUrl = "http://127.0.0.1:8001/groups/" + groupId + "/topics/" + topicId;
+        String topicUrl = "https://smart-discussion-forum-x0vd.onrender.com/groups/" + groupId + "/topics/" + topicId;
         String encodedUrl  = URLEncoder.encode(topicUrl, StandardCharsets.UTF_8);
 
         String[][] platforms = {

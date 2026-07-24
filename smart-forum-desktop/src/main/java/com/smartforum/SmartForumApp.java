@@ -12,20 +12,41 @@ import javafx.stage.Stage;
 
 public class SmartForumApp extends Application {
 
-    public static final String BASE_URL = "http://127.0.0.1:8001/api";
+    public static final String BASE_URL = "https://smart-discussion-forum-x0vd.onrender.com/api";
     public static Stage primaryStage;
 
     @Override
     public void start(Stage stage) {
-        primaryStage = stage;
-        stage.setTitle("SmartForum — Academic Discussion Platform");
-        stage.setMinWidth(960);
-        stage.setMinHeight(640);
-        stage.setWidth(1280);
-        stage.setHeight(800);
-        OfflineCache.getInstance();
-        showLogin();
-        stage.show();
+        try {
+            primaryStage = stage;
+            stage.setTitle("SmartForum — Academic Discussion Platform");
+            stage.setMinWidth(960);
+            stage.setMinHeight(640);
+            stage.setWidth(1280);
+            stage.setHeight(800);
+            OfflineCache.getInstance();
+            showLogin();
+            stage.show();
+        } catch (Exception e) {
+            // Write crash to a log file next to the EXE
+            try {
+                java.io.File log = new java.io.File(
+                    System.getProperty("user.dir"), "smartforum-crash.log");
+                try (java.io.PrintWriter pw = new java.io.PrintWriter(log)) {
+                    pw.println("SmartForum crashed at startup:");
+                    e.printStackTrace(pw);
+                }
+            } catch (Exception ignored) {}
+            // Also show an alert so the user knows something went wrong
+            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                    javafx.scene.control.Alert.AlertType.ERROR);
+            alert.setTitle("SmartForum — Startup Error");
+            alert.setHeaderText("Could not start the application.");
+            alert.setContentText(e.getClass().getSimpleName() + ": " + e.getMessage()
+                    + "\n\nA crash log has been saved to: smartforum-crash.log");
+            alert.showAndWait();
+            javafx.application.Platform.exit();
+        }
     }
 
     public static void showLogin() {

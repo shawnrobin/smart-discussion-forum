@@ -1,0 +1,8 @@
+# Ignore Maven and Java build folders
+/target/
+/dist/
+/installer/
+/installer2/
+/jpackage-input/
+*.zip
+*.class
