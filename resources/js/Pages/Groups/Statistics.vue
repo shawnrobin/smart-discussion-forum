@@ -5,7 +5,7 @@
         <div>
           <Link :href="backUrl" class="inline-flex items-center gap-1 text-sm font-medium text-gray-500 hover:text-orange-600"><ArrowLeftIcon class="h-4 w-4" /> Back</Link>
           <h1 class="mt-3 text-2xl font-bold text-gray-900">{{ group.name }} statistics</h1>
-          <p class="mt-1 text-sm text-gray-500">A group-specific view of participation, activity, and moderation.</p>
+          <p class="mt-1 text-sm text-gray-500">A group-specific view of participation, activity, and moderation. Live data refreshes every 30 seconds.</p>
         </div>
         <Link :href="route('groups.show', group.id)" class="rounded-lg bg-orange-600 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-700">Open group chat</Link>
       </div>
@@ -50,8 +50,8 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { Link } from '@inertiajs/vue3';
+import { computed, onBeforeUnmount, onMounted } from 'vue';
+import { Link, router } from '@inertiajs/vue3';
 import { ArrowLeft as ArrowLeftIcon } from 'lucide-vue-next';
 import { Bar } from 'vue-chartjs';
 import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Legend, Tooltip } from 'chart.js';
@@ -85,4 +85,18 @@ const statCards = computed(() => [
 ]);
 const chartData = computed(() => ({ labels: props.activity.map(day => day.label), datasets: [{ label: 'Conversations', data: props.activity.map(day => day.topics), backgroundColor: '#f97316', borderRadius: 5 }, { label: 'Replies', data: props.activity.map(day => day.replies), backgroundColor: '#475569', borderRadius: 5 }] }));
 const chartOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true, ticks: { precision: 0 } } } };
+
+let refreshTimer;
+
+onMounted(() => {
+  refreshTimer = window.setInterval(() => {
+    router.reload({
+      only: ['stats', 'activity', 'topContributors', 'recentTopics'],
+      preserveScroll: true,
+      preserveState: true,
+    });
+  }, 30000);
+});
+
+onBeforeUnmount(() => window.clearInterval(refreshTimer));
 </script>

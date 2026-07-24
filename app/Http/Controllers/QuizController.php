@@ -86,10 +86,8 @@ class QuizController extends Controller
         }
 
         if ($status === 'closed') {
-            $attempt = $quiz->attempts()->where('user_id', Auth::id())->first();
-            return $attempt
-                ? redirect()->route('quizzes.results', $attempt)
-                : redirect()->route('quizzes.performance', $quiz);
+            // All eligible group members can see the performance report once closed
+            return redirect()->route('quizzes.performance', $quiz);
         }
 
         // Active — hide answers before attempt
@@ -293,24 +291,64 @@ class QuizController extends Controller
         );
     }
 
+    /**
+     * Performance report — visible to ALL eligible group members after the quiz closes.
+     * Students see their own score + class summary.
+     * Lecturers/admins see the full per-student breakdown.
+     */
     public function performance(Quiz $quiz)
     {
         $user = Auth::user();
-        $canManage = $user && ($user->role === 'system_admin' || ($user->role === 'lecturer' && (int) $quiz->group->created_by === (int) $user->id));
-        abort_unless($this->canTakeQuiz($quiz, $user) || $canManage, 403);
-        abort_unless($this->getQuizStatus($quiz) === 'closed', 403, 'Performance is available after the quiz closes.');
+        $canManage = $user && (
+            $user->role === 'system_admin' ||
+            ($user->role === 'lecturer' && (int) $quiz->group->created_by === (int) $user->id)
+        );
 
-        $attempts = $quiz->attempts()->whereNotNull('submitted_at')->get();
+        // Any group member who could have taken the quiz (or a manager) can view the report
+        $isMember = $quiz->group->users()->whereKey($user->id)->exists();
+        abort_unless($isMember || $canManage, 403);
+        abort_unless($this->getQuizStatus($quiz) === 'closed', 403, 'Performance report is available after the quiz closes.');
+
+        $attempts = $quiz->attempts()
+            ->whereNotNull('submitted_at')
+            ->with('user:id,name,course,year_of_study')
+            ->get();
+
         $myAttempt = $attempts->firstWhere('user_id', Auth::id());
 
+        // Per-student leaderboard (visible to lecturers/admins only)
+        $leaderboard = $canManage
+            ? $attempts->sortByDesc('score')->values()->map(fn ($a) => [
+                'name'       => $a->user->name ?? 'Unknown',
+                'score'      => round((float) $a->score, 1),
+                'time_taken' => $a->time_taken_seconds,
+                'submitted_at' => $a->submitted_at?->toDateTimeString(),
+                'auto'       => (bool) $a->auto_submitted_at,
+              ])
+            : null;
+
+        // Distribution buckets: 0-49, 50-69, 70-84, 85-100
+        $distribution = [
+            '0–49'  => $attempts->where('score', '<',  50)->count(),
+            '50–69' => $attempts->whereBetween('score', [50, 69])->count(),
+            '70–84' => $attempts->whereBetween('score', [70, 84])->count(),
+            '85–100'=> $attempts->where('score', '>=', 85)->count(),
+        ];
+
         return Inertia::render('Quizzes/Performance', [
-            'quiz' => $quiz,
-            'summary' => [
-                'attempts' => $attempts->count(),
-                'average' => round((float) $attempts->avg('score'), 1),
-                'highest' => round((float) $attempts->max('score'), 1),
-                'myScore' => $myAttempt ? round((float) $myAttempt->score, 1) : null,
+            'quiz'         => $quiz->only('id', 'title', 'description', 'start_time', 'end_time', 'duration_minutes'),
+            'summary'      => [
+                'attempts'     => $attempts->count(),
+                'average'      => round((float) $attempts->avg('score'), 1),
+                'highest'      => round((float) $attempts->max('score'), 1),
+                'lowest'       => round((float) $attempts->min('score'), 1),
+                'myScore'      => $myAttempt ? round((float) $myAttempt->score, 1) : null,
+                'myTime'       => $myAttempt?->time_taken_seconds,
+                'myAutoSubmit' => $myAttempt ? (bool) $myAttempt->auto_submitted_at : false,
+                'distribution' => $distribution,
             ],
+            'leaderboard'  => $leaderboard,
+            'canManage'    => $canManage,
         ]);
     }
 

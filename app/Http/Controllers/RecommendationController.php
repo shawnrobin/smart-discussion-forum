@@ -10,10 +10,10 @@ class RecommendationController extends Controller
 {
     public function index()
     {
-        $recommendations = RecommendationService::getRecommendations(Auth::id());
+        $recommendations = RecommendationService::getRecommendations(Auth::id(), 20);
 
         return Inertia::render('Recommendations/Index', [
-            'recommendations' => $recommendations
+            'recommendations' => $recommendations,
         ]);
     }
 
@@ -21,7 +21,7 @@ class RecommendationController extends Controller
     {
         RecommendationService::generateRecommendations(Auth::id());
 
-        return redirect()->back()
-            ->with('success', 'Recommendations generated successfully.');
+        return redirect()->route('recommendations.index')
+            ->with('success', 'Recommendations refreshed successfully.');
     }
 }
