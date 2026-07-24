@@ -25,8 +25,6 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Models\User;
 
-use App\Models\User;
-
 Route::get('/make-admin', function () {
     try {
         $user = User::findOrFail(1);
