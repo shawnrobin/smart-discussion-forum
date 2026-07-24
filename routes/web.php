@@ -25,21 +25,14 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Models\User;
 
-Route::get('/make-admin', function () {
-    try {
-        $user = User::findOrFail(1);
+use Illuminate\Support\Facades\DB;
 
-        $user->role = 'admin';
-        $user->save();
-
-        return $user;
-    } catch (\Throwable $e) {
-        return response()->json([
-            'message' => $e->getMessage(),
-            'file' => basename($e->getFile()),
-            'line' => $e->getLine(),
-        ], 500);
-    }
+Route::get('/roles', function () {
+    return DB::select("
+        SELECT conname, pg_get_constraintdef(oid)
+        FROM pg_constraint
+        WHERE conname = 'users_role_check'
+    ");
 });
 
 // 1. Root
