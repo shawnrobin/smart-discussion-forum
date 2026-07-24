@@ -55,6 +55,25 @@
         </PrimaryButton>
       </form>
 
+      <section class="mt-8 rounded-xl border border-orange-100 bg-orange-50/60 p-4">
+        <div class="flex items-start gap-3">
+          <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-orange-100 text-sm font-bold text-orange-700">✓</div>
+          <div>
+            <h3 class="text-sm font-bold text-slate-900">Before you enter</h3>
+            <p class="mt-1 text-xs leading-5 text-slate-600">SmartForum is a respectful academic community. By continuing, you are expected to:</p>
+          </div>
+        </div>
+        <ul class="mt-4 space-y-2 text-xs leading-5 text-slate-700">
+          <li class="flex gap-2"><span class="text-orange-600">•</span><span>Keep discussions relevant to the group or academic topic.</span></li>
+          <li class="flex gap-2"><span class="text-orange-600">•</span><span>Treat every member with respect—no harassment or personal attacks.</span></li>
+          <li class="flex gap-2"><span class="text-orange-600">•</span><span>Protect other members’ privacy and avoid sharing private information.</span></li>
+          <li class="flex gap-2"><span class="text-orange-600">•</span><span>Report inappropriate content instead of escalating a dispute.</span></li>
+        </ul>
+        <Link :href="route('community.rules')" class="mt-4 inline-flex text-xs font-semibold text-orange-700 hover:text-orange-800 hover:underline">
+          Read the full community rules
+        </Link>
+      </section>
+
       <!-- Links -->
       <div class="mt-6 text-center space-y-2">
         <p class="text-sm text-slate-600">

@@ -23,9 +23,16 @@ use App\Http\Controllers\EngagementController;
 use App\Http\Controllers\GroupStatisticsController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\NewPasswordController;
+use App\Models\OnboardingRules;
 
 // 1. Root
 Route::get('/', function () { return Auth::check() ? redirect('dashboard') : redirect('/login'); });
+
+Route::get('/community-rules', function () {
+    return Inertia::render('Auth/Rules', [
+        'rules' => OnboardingRules::latest('version')->firstOrFail(),
+    ]);
+})->name('community.rules');
 
 // 2. Authentication routes
 require __DIR__ . '/auth.php';
