@@ -25,8 +25,15 @@ use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Models\User;
 
+use App\Models\User;
+
 Route::get('/make-admin', function () {
-    return User::select('id', 'name', 'email', 'role')->get();
+    $user = User::find(1);
+
+    $user->role = 'admin';
+    $user->save();
+
+    return $user;
 });
 
 // 1. Root
