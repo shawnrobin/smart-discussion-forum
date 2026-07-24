@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\OnboardingRules;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -39,6 +40,8 @@ class RegisteredUserController extends Controller
             'agreed_to_rules' => 'required|accepted',
         ]);
 
+        $rulesVersion = OnboardingRules::latest('version')->value('version') ?? 1;
+
         // 2. Creating the user: Added 'username', 'role', 'agreed_to_rules', and 'rules_version'
         $user = User::create([
             'name' => $request->name,
@@ -47,7 +50,7 @@ class RegisteredUserController extends Controller
             'password' => Hash::make($request->password),
             'role' => 'student', // Default role
             'agreed_to_rules' => $request->boolean('agreed_to_rules'),
-            'rules_version' => $request->rules_version ?? 1,
+            'rules_version' => $rulesVersion,
         ]);
 
         event(new Registered($user));

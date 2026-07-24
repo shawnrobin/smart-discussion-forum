@@ -35,9 +35,27 @@
       <div class="rounded-2xl border border-gray-100 bg-white p-5 text-center shadow-sm sm:p-8">
         <h3 class="text-lg font-bold text-gray-900">Group Members</h3>
         <p v-if="!group.users || group.users.length === 0" class="text-gray-500 mt-2">No members have joined this group yet.</p>
-        <div v-else class="mt-4">
-          </div>
+        <div v-else class="mt-4 flex flex-wrap justify-center gap-2">
+          <span v-for="member in group.users" :key="member.id" class="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-700">{{ member.name }}</span>
+        </div>
       </div>
+
+      <section class="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
+        <div class="border-b border-gray-100 px-5 py-4 sm:px-6">
+          <h3 class="text-lg font-bold text-gray-900">Group Quizzes</h3>
+          <p class="mt-1 text-sm text-gray-500">Quizzes created by any lecturer for this group.</p>
+        </div>
+        <div v-if="group.quizzes?.length" class="divide-y divide-gray-100">
+          <div v-for="quiz in group.quizzes" :key="quiz.id" class="flex flex-col gap-2 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <div>
+              <p class="font-semibold text-gray-900">{{ quiz.title }}</p>
+              <p class="mt-1 text-xs text-gray-500">Created by {{ quiz.creator?.name ?? 'Unknown lecturer' }} · {{ quiz.duration_minutes }} minutes</p>
+            </div>
+            <span class="w-fit rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-700">{{ quiz.published ? 'Published' : 'Draft' }}</span>
+          </div>
+        </div>
+        <p v-else class="px-5 py-6 text-sm text-gray-500 sm:px-6">No quizzes have been created for this group yet.</p>
+      </section>
     </div>
   </AuthenticatedLayout>
 </template>

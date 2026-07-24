@@ -14,13 +14,13 @@ class GroupController extends Controller
     public function index()
     {
         return Inertia::render('Lecturer/Groups/Index', [
-            'groups' => Group::where('created_by', auth()->id())->withCount('users')->get()
+            'groups' => Group::with('creator:id,name')->withCount('users')->latest()->get(),
         ]);
     }
 
     public function store(Request $request)
     {
-        abort_unless($request->user()->role === 'lecturer', 403, 'Only lecturers can create groups.');
+        abort_unless(in_array($request->user()->role, ['lecturer', 'system_admin'], true), 403, 'Only lecturers can create groups.');
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
@@ -37,7 +37,10 @@ class GroupController extends Controller
 
     public function show($id)
     {
-        $group = Group::withCount('users')->findOrFail($id);
+        $group = Group::with([
+            'users:id,name',
+            'quizzes.creator:id,name',
+        ])->withCount('users')->findOrFail($id);
 
         return Inertia::render('Lecturer/Groups/Show', [
             'group' => $group,
@@ -47,12 +50,10 @@ class GroupController extends Controller
 
     public function moderation()
     {
-        $group_ids = auth()->user()->createdGroups()->pluck('id');
-        $topicIds = Topic::whereIn('group_id', $group_ids)->pluck('id');
+        $topicIds = Topic::pluck('id');
         
         return Inertia::render('Lecturer/Groups/Moderation', [
-            'flaggedTopics' => Topic::whereIn('group_id', $group_ids)
-                                     ->where('flagged_status', 'flagged')
+            'flaggedTopics' => Topic::where('flagged_status', 'flagged')
                                      ->with(['user', 'group'])
                                      ->get(),
             'reports' => Report::where('reportable_type', Topic::class)
@@ -68,8 +69,6 @@ class GroupController extends Controller
     {
         abort_unless($report->reportable_type === Topic::class, 404);
         $topic = Topic::findOrFail($report->reportable_id);
-        abort_unless((int) $topic->group->created_by === (int) auth()->id(), 403);
-
         $report->update([
             'status' => 'resolved',
             'resolved_by' => auth()->id(),
@@ -81,10 +80,6 @@ class GroupController extends Controller
 
     public function destroy(Group $group)
     {
-        if ((int)$group->created_by !== (int)auth()->id()) {
-            abort(403);
-        }
-
         $group->delete();
 
         return redirect()->back()->with('success', 'Group deleted successfully.');
