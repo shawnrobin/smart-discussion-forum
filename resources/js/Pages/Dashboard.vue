@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <AuthenticatedLayout page-title="Dashboard" :user-name="auth?.user?.name">
     <div class="p-6 max-w-7xl mx-auto space-y-8">
 
@@ -9,15 +9,63 @@
       </div>
 
       <!-- Search Bar -->
-      <div class="relative">
-        <input
-          v-model="searchQuery"
-          @keyup.enter="search"
-          type="text"
-          placeholder="Search topics, posts, users..."
-          class="w-full px-4 py-3 pl-10 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none bg-white shadow-sm"
-        />
-        <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+      <div class="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3 items-center">
+        <div class="relative">
+          <input
+            v-model="searchQuery"
+            @keyup.enter="search"
+            type="text"
+            placeholder="Search topics, posts, users..."
+            class="w-full px-4 py-3 pl-10 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none bg-white shadow-sm"
+          />
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        </div>
+        <select
+          v-model="searchFilter"
+          class="w-full lg:w-auto px-4 py-3 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none bg-white shadow-sm"
+        >
+          <option value="latest">Latest</option>
+          <option value="group">Group</option>
+          <option value="replies">Replies</option>
+          <option value="quiz">Quiz</option>
+        </select>
+        <button
+          type="button"
+          @click="search"
+          class="inline-flex items-center justify-center px-5 py-3 rounded-xl bg-orange-500 text-white text-sm font-semibold hover:bg-orange-600 transition"
+        >
+          Search
+        </button>
+      </div>
+
+      <div v-if="searchQuery.trim() !== ''" class="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+        <h2 class="text-lg font-bold text-gray-900 mb-4">Search Results</h2>
+        <div v-if="searchResults.length > 0" class="space-y-3">
+          <Link
+            v-for="result in searchResults"
+            :key="result.id"
+            v-if="result.url"
+            :href="result.url"
+            class="block p-4 rounded-xl border border-gray-100 hover:border-orange-200 hover:bg-orange-50 transition"
+          >
+            <p class="text-xs font-bold uppercase tracking-[0.2em] text-orange-600">{{ result.type }}</p>
+            <p class="text-base font-semibold text-gray-900 mt-2">{{ result.title }}</p>
+            <p class="text-sm text-gray-500 mt-1">{{ result.subtitle }}</p>
+            <p class="text-sm text-gray-600 mt-2">{{ result.detail }}</p>
+          </Link>
+          <div
+            v-for="result in searchResults"
+            :key="result.id + '-plain'"
+            v-if="!result.url"
+            class="p-4 rounded-xl border border-gray-100 bg-gray-50"
+          >
+            <p class="text-xs font-bold uppercase tracking-[0.2em] text-orange-600">{{ result.type }}</p>
+            <p class="text-base font-semibold text-gray-900 mt-2">{{ result.title }}</p>
+            <p class="text-sm text-gray-500 mt-1">{{ result.subtitle }}</p>
+            <p class="text-sm text-gray-600 mt-2">{{ result.detail }}</p>
+          </div>
+        </div>
+        <p v-else class="text-sm text-gray-500">No results found for "{{ searchQuery }}".</p>
       </div>
 
       <!-- Stats Grid -->
@@ -134,6 +182,37 @@
         </div>
       </div>
 
+      <!-- ML Recommendations (students only) -->
+      <div v-if="isStudent && recommendations.length > 0" class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-gray-100 flex justify-between items-center">
+          <h2 class="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <svg class="w-5 h-5 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+            Recommended for you
+            <span class="text-xs font-normal text-gray-400 ml-1">┬╖ Based on your activity</span>
+          </h2>
+        </div>
+        <div class="divide-y divide-gray-50">
+          <Link
+            v-for="rec in recommendations"
+            :key="rec.id"
+            :href="route('topics.show', { group: rec.group_id, topic: rec.id })"
+            class="px-6 py-4 flex justify-between items-center hover:bg-gray-50/50 transition"
+          >
+            <div class="min-w-0 flex-1">
+              <div class="flex items-center gap-2">
+                <span v-if="rec.is_answered" class="px-2 py-0.5 bg-green-100 text-green-700 text-[10px] font-semibold rounded-full">Answered</span>
+                <p class="font-semibold text-gray-900 truncate text-sm">{{ rec.title }}</p>
+              </div>
+              <p class="text-xs text-gray-400 mt-0.5">{{ rec.group_name }} ┬╖ by {{ rec.author }} ┬╖ {{ rec.replies }} {{ rec.replies === 1 ? 'reply' : 'replies' }}</p>
+            </div>
+            <div class="flex items-center gap-3 ml-4 shrink-0">
+              <span class="text-xs font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded-full">{{ rec.score }}% match</span>
+              <svg class="w-4 h-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </div>
+          </Link>
+        </div>
+      </div>
+
     </div>
   </AuthenticatedLayout>
 </template>
@@ -143,26 +222,32 @@ import { ref, computed, onBeforeUnmount, onMounted, watch } from 'vue';
 import { usePage, router, Link } from '@inertiajs/vue3';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 
-const page = usePage();
-const auth = computed(() => page.props.auth || {});
-const isStudent = computed(() => auth.value?.user?.role === 'student');
-
-const searchQuery = ref('');
-const openingQuiz = ref(false);
-let activeQuizPoller;
-
 const props = defineProps({
   groups: { type: Array, default: () => [] },
   activities: { type: Array, default: () => [] },
   recentQuizzes: { type: Array, default: () => [] },
   stats: { type: Object, default: () => ({}) },
   activeQuiz: { type: Object, default: null },
+  recommendations: { type: Array, default: () => [] },
+  search: { type: String, default: '' },
+  filter: { type: String, default: 'latest' },
+  searchResults: { type: Array, default: () => [] },
 });
+
+const page = usePage();
+const auth = computed(() => page.props.auth || {});
+const isStudent = computed(() => auth.value?.user?.role === 'student');
+
+const searchQuery = ref(props.search || '');
+const searchFilter = ref(props.filter || 'latest');
+const openingQuiz = ref(false);
+let activeQuizPoller;
 
 const search = () => {
   if (searchQuery.value.trim()) {
     router.get(route('dashboard'), {
-      search: searchQuery.value
+      search: searchQuery.value,
+      filter: searchFilter.value,
     }, {
       preserveState: true,
       preserveScroll: true,

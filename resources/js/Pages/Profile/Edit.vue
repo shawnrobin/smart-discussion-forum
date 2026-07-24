@@ -20,7 +20,7 @@
             </div>
           </div>
 
-          <div class="space-y-2 border-b md:border-b-0 md:border-r border-gray-100 pb-4 md:pb-0 md:pr-4">
+          <div v-if="!isPrivilegedProfile" class="space-y-2 border-b md:border-b-0 md:border-r border-gray-100 pb-4 md:pb-0 md:pr-4">
             <div class="flex justify-between items-end">
               <div>
                 <p class="text-xs text-gray-400 font-medium uppercase tracking-wider">Total Score</p>
@@ -41,7 +41,14 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div v-else class="space-y-4 border-b md:border-b-0 md:border-r border-gray-100 pb-4 md:pb-0 md:pr-4">
+            <div class="rounded-2xl border border-orange-100 bg-orange-50 p-4 text-sm text-orange-800">
+              Staff profiles do not display participation score or streak metrics.
+            </div>
+            <div class="text-xs text-gray-400">Metrics like experience points, quiz average, and streak are only shown for student profiles.</div>
+          </div>
+
+          <div v-if="!isPrivilegedProfile" class="grid grid-cols-2 gap-3">
             <div class="bg-gray-50/60 border border-gray-100 p-3 rounded-xl text-center">
               <div class="text-orange-600 font-bold text-lg leading-none">{{ stats.answers_provided || 0 }}</div>
               <div class="text-[11px] text-gray-500 font-medium mt-1">Solutions Provided</div>
@@ -65,31 +72,37 @@
             </div>
           </div>
 
-          <div v-if="exams.length === 0" class="text-center py-8 text-gray-400 text-sm">
-            No quiz results yet. Complete a quiz to see your performance here.
+          <div v-if="isPrivilegedProfile" class="rounded-2xl border border-orange-100 bg-orange-50 p-6 text-sm text-orange-900">
+            Lecturer and admin profiles do not display quiz average, participation score, or streak data.
           </div>
 
-          <div v-else class="overflow-hidden border border-gray-100 rounded-xl">
-            <table class="min-w-full divide-y divide-gray-100 text-left text-sm">
-              <thead class="bg-gray-50 font-semibold text-gray-700">
-                <tr>
-                  <th class="px-4 py-3">Evaluation Element</th>
-                  <th class="px-4 py-3">Completed</th>
-                  <th class="px-4 py-3 text-right">Resulting Score</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-gray-100 text-gray-600">
-                <tr v-for="exam in exams" :key="exam.id" class="hover:bg-gray-50/50 transition">
-                  <td class="px-4 py-3 font-medium text-gray-900">{{ exam.title }}</td>
-                  <td class="px-4 py-3 text-xs text-gray-400">{{ exam.date }}</td>
-                  <td class="px-4 py-3 text-right font-bold">
-                    <span :class="exam.score >= 75 ? 'text-emerald-600' : 'text-amber-600'">
-                      {{ exam.score }}%
-                    </span>
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <div v-else>
+            <div v-if="exams.length === 0" class="text-center py-8 text-gray-400 text-sm">
+              No quiz results yet. Complete a quiz to see your performance here.
+            </div>
+
+            <div v-else class="overflow-hidden border border-gray-100 rounded-xl">
+              <table class="min-w-full divide-y divide-gray-100 text-left text-sm">
+                <thead class="bg-gray-50 font-semibold text-gray-700">
+                  <tr>
+                    <th class="px-4 py-3">Evaluation Element</th>
+                    <th class="px-4 py-3">Completed</th>
+                    <th class="px-4 py-3 text-right">Resulting Score</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 text-gray-600">
+                  <tr v-for="exam in exams" :key="exam.id" class="hover:bg-gray-50/50 transition">
+                    <td class="px-4 py-3 font-medium text-gray-900">{{ exam.title }}</td>
+                    <td class="px-4 py-3 text-xs text-gray-400">{{ exam.date }}</td>
+                    <td class="px-4 py-3 text-right font-bold">
+                      <span :class="exam.score >= 75 ? 'text-emerald-600' : 'text-amber-600'">
+                        {{ exam.score }}%
+                      </span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
@@ -218,17 +231,17 @@ import { Award as AwardIcon, GraduationCap as GraduationCapIcon } from 'lucide-v
 const page = usePage();
 const user = computed(() => page.props.auth?.user || {});
 const notifications = page.props.notifications || [];
+const isPrivilegedProfile = computed(() => page.props.isPrivilegedProfile ?? false);
 
 // Stats from participation scores (or defaults)
-const stats = ref({
-  total_points: page.props.total_points ?? 1250,
-  level: page.props.level ?? 5,
-  progress: page.props.progress ?? 75,
-  answers_provided: page.props.answers_provided ?? 14,
-  topics_created: page.props.topics_created ?? 8,
+const stats = ref(page.props.stats ?? {
+  total_points: 0,
+  level: 1,
+  progress: 0,
+  answers_provided: 0,
+  topics_created: 0,
 });
 
-// Quiz results passed from backend (or empty)
 const props = defineProps({
   exams: { type: Array, default: () => [] },
 });
