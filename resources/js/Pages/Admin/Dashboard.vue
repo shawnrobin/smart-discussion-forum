@@ -69,13 +69,13 @@
         </div>
 
         <section class="mt-8 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-            <div class="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+            <div class="flex items-center justify-between gap-4 border-b border-gray-100 px-4 py-4 sm:px-6">
                 <div><h2 class="text-lg font-bold text-gray-800">Group statistics</h2><p class="text-sm text-gray-500">Open any group for its full participation and moderation report.</p></div>
             </div>
             <div v-if="groupSummaries.length" class="divide-y divide-gray-100">
-                <Link v-for="group in groupSummaries" :key="group.id" :href="route('admin.groups.statistics', group.id)" class="flex items-center justify-between gap-4 px-6 py-4 hover:bg-orange-50 transition">
+                <Link v-for="group in groupSummaries" :key="group.id" :href="route('admin.groups.statistics', group.id)" class="flex flex-col gap-2 px-4 py-4 transition hover:bg-orange-50 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6">
                     <p class="font-semibold text-gray-900">{{ group.name }}</p>
-                    <div class="flex gap-4 text-xs text-gray-500"><span>{{ group.members }} members</span><span>{{ group.topics }} conversations</span><span :class="group.unanswered ? 'text-rose-600 font-semibold' : ''">{{ group.unanswered }} unanswered</span></div>
+                    <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500"><span>{{ group.members }} members</span><span>{{ group.topics }} conversations</span><span :class="group.unanswered ? 'text-rose-600 font-semibold' : ''">{{ group.unanswered }} unanswered</span></div>
                 </Link>
             </div>
             <p v-else class="px-6 py-5 text-sm text-gray-500">No groups have been created yet.</p>

@@ -1,6 +1,6 @@
 <template>
   <AuthenticatedLayout page-title="Groups" :user-name="auth?.user?.name ?? ''">
-    <div class="space-y-6">
+    <div class="mx-auto w-full max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
       <!-- Header -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -205,10 +205,7 @@ const joining = ref(false);
 
 const newGroup = ref({ name: '', description: '', keywords: '' });
 
-const canCreateGroups = computed(() => {
-  const role = auth.value?.user?.role;
-  return role === 'lecturer';
-});
+const canCreateGroups = computed(() => Boolean(auth.value?.user));
 
 const createGroup = () => {
   if (!newGroup.value.name.trim() || creating.value) return;

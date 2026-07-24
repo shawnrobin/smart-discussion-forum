@@ -24,7 +24,7 @@ const startQuiz = () => {
 
 <template>
     <AuthenticatedLayout :page-title="quiz.title">
-        <div class="max-w-3xl mx-auto p-6 space-y-6">
+        <div class="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
 
             <Link :href="route('quizzes.index')"
                   class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-orange-600 transition font-medium">
@@ -32,7 +32,7 @@ const startQuiz = () => {
             </Link>
 
             <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-                <div class="bg-gradient-to-r from-orange-500 to-amber-500 p-8 text-white">
+                <div class="bg-gradient-to-r from-orange-500 to-amber-500 p-5 text-white sm:p-8">
                     <h1 class="text-2xl font-bold">{{ quiz.title }}</h1>
                     <p class="text-orange-100 mt-2 text-sm">{{ quiz.description || 'No description provided.' }}</p>
                 </div>

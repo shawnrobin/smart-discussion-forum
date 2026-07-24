@@ -1,9 +1,9 @@
 <template>
   <AuthenticatedLayout page-title="Dashboard" :user-name="auth?.user?.name">
-    <div class="p-6 max-w-7xl mx-auto space-y-8">
+    <div class="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
 
       <!-- Welcome -->
-      <div class="bg-gradient-to-r from-orange-500 to-amber-500 rounded-2xl p-8 text-white shadow-md">
+      <div class="rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 p-5 text-white shadow-md sm:p-8">
         <h1 class="text-2xl font-bold">Welcome back, {{ auth?.user?.name || 'User' }}!</h1>
         <p class="text-orange-100 mt-1 text-sm">Here's what's happening across your groups.</p>
       </div>

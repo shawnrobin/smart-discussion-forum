@@ -1,13 +1,13 @@
 <template>
   <AuthenticatedLayout :page-title="'Group: ' + group.name">
-    <div class="p-8 max-w-5xl mx-auto space-y-6">
+    <div class="mx-auto max-w-5xl space-y-6 p-4 sm:p-6 lg:p-8">
       
-      <div class="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm flex justify-between items-start">
+      <div class="flex flex-col gap-5 rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-8 lg:flex-row lg:items-start lg:justify-between">
         <div>
           <h1 class="text-3xl font-black text-gray-900">{{ group.name }}</h1>
           <p class="text-gray-500 mt-1">Created on {{ new Date(group.created_at).toLocaleDateString() }}</p>
         </div>
-        <div class="flex gap-3">
+        <div class="flex flex-wrap gap-3">
           <Link :href="route('lecturer.groups.statistics', group.id)" class="px-4 py-2 text-sm font-bold text-orange-700 bg-orange-50 rounded-xl hover:bg-orange-100 transition">View Statistics</Link>
           <Link :href="route('quizzes.create', group.id)" class="px-4 py-2 text-sm font-bold text-white bg-blue-600 rounded-xl hover:bg-blue-700 transition">Create Quiz</Link>
           <button class="px-4 py-2 text-sm font-bold text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition">Edit Group</button>
@@ -32,7 +32,7 @@
         </div>
       </div>
 
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-8 text-center">
+      <div class="rounded-2xl border border-gray-100 bg-white p-5 text-center shadow-sm sm:p-8">
         <h3 class="text-lg font-bold text-gray-900">Group Members</h3>
         <p v-if="!group.users || group.users.length === 0" class="text-gray-500 mt-2">No members have joined this group yet.</p>
         <div v-else class="mt-4">

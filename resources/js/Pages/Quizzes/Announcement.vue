@@ -15,9 +15,9 @@ onUnmounted(() => clearInterval(timer));
 </script>
 
 <template>
-    <div class="max-w-2xl mx-auto mt-20 p-8 bg-blue-50 border border-blue-200 rounded-lg text-center">
-        <h1 class="text-3xl font-bold text-blue-800 mb-4">{{ quiz.title }}</h1>
-        <p class="text-lg text-blue-600 mb-6">{{ quiz.description }}</p>
+    <div class="mx-auto mt-10 max-w-2xl rounded-2xl border border-orange-200 bg-orange-50 p-5 text-center sm:mt-20 sm:p-8">
+        <h1 class="mb-4 text-2xl font-bold text-slate-900 sm:text-3xl">{{ quiz.title }}</h1>
+        <p class="mb-6 text-lg text-slate-600">{{ quiz.description }}</p>
         
         <div class="bg-white p-6 rounded shadow-sm inline-block">
             <p class="font-bold">Starts at:</p>
@@ -28,6 +28,6 @@ onUnmounted(() => clearInterval(timer));
         </div>
         
         <p class="mt-8 text-sm text-gray-500 italic">This quiz will automatically open here at the scheduled time.</p>
-        <p class="mt-2 font-mono text-sm text-blue-700">Starts in {{ Math.floor(secondsToStart / 60) }}:{{ String(secondsToStart % 60).padStart(2, '0') }}</p>
+        <p class="mt-2 font-mono text-sm text-orange-700">Starts in {{ Math.floor(secondsToStart / 60) }}:{{ String(secondsToStart % 60).padStart(2, '0') }}</p>
     </div>
 </template>

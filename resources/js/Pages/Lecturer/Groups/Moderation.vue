@@ -1,6 +1,6 @@
 <template>
   <AuthenticatedLayout page-title="Lecturer Moderation">
-    <div class="mx-auto max-w-6xl space-y-6 p-8">
+    <div class="mx-auto max-w-6xl space-y-6 p-4 sm:p-6 lg:p-8">
       <div><h1 class="text-2xl font-bold text-gray-900">Group moderation</h1><p class="mt-1 text-sm text-gray-500">Review reports and flagged conversations in the groups you teach.</p></div>
 
       <section class="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm">

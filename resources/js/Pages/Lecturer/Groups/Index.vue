@@ -1,19 +1,19 @@
 <template>
   <AuthenticatedLayout page-title="Manage Groups">
-    <div class="p-8 max-w-4xl mx-auto space-y-8">
-      <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+    <div class="mx-auto max-w-4xl space-y-6 p-4 sm:p-6 lg:p-8">
+      <div class="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-6">
         <h2 class="text-lg font-bold text-gray-900 mb-4">Create New Group</h2>
-        <form @submit.prevent="createGroup" class="flex gap-4">
-          <input v-model="form.name" placeholder="Group Name" class="flex-1 px-4 py-2 border border-gray-200 rounded-xl" required />
-          <input v-model="form.max_members" type="number" placeholder="Max Members" class="w-32 px-4 py-2 border border-gray-200 rounded-xl" />
-          <button type="submit" :disabled="form.processing" class="bg-orange-600 text-white px-6 py-2 rounded-xl font-bold hover:bg-orange-700">
+        <form @submit.prevent="createGroup" class="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+          <input v-model="form.name" placeholder="Group Name" class="w-full flex-1 rounded-xl border border-gray-200 px-4 py-2 sm:w-auto" required />
+          <input v-model="form.max_members" type="number" placeholder="Max Members" class="w-full rounded-xl border border-gray-200 px-4 py-2 sm:w-32" />
+          <button type="submit" :disabled="form.processing" class="rounded-xl bg-orange-600 px-6 py-2 font-bold text-white hover:bg-orange-700">
             {{ form.processing ? 'Creating...' : 'Create' }}
           </button>
         </form>
       </div>
 
-      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <table class="w-full text-left">
+      <div class="overflow-x-auto rounded-2xl border border-gray-100 bg-white shadow-sm">
+        <table class="min-w-[38rem] w-full text-left">
           <thead class="bg-gray-50 text-gray-400 text-[10px] font-bold uppercase">
             <tr>
               <th class="px-6 py-4">Group Name</th>

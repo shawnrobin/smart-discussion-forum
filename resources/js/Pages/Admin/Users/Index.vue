@@ -3,7 +3,7 @@
     <Head title="User Management" />
 
     <div class="max-w-5xl mx-auto">
-      <div class="flex justify-between items-center mb-8">
+      <div class="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between">
         <h1 class="text-3xl font-bold text-slate-900">User Management</h1>
         
         <div class="relative">
@@ -12,13 +12,13 @@
                 v-model="search" 
                 type="text" 
                 placeholder="Search users..." 
-                class="pl-10 pr-4 py-2 border border-slate-200 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none w-64"
+                class="w-full rounded-xl border border-slate-200 py-2 pl-10 pr-4 outline-none focus:ring-2 focus:ring-orange-500 sm:w-64"
             >
         </div>
       </div>
 
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <table class="min-w-full">
+      <div class="overflow-x-auto rounded-2xl border border-slate-100 bg-white shadow-sm">
+        <table class="min-w-[42rem]">
           <thead>
             <tr class="bg-slate-50 border-b border-slate-100">
               <th class="px-6 py-4 text-left text-xs font-bold text-slate-400 uppercase">User</th>

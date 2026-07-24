@@ -1,6 +1,6 @@
 <template>
   <component :is="isAdmin ? AdminLayout : AuthenticatedLayout" :page-title="`${group.name} Statistics`">
-    <div class="mx-auto max-w-7xl space-y-6">
+    <div class="mx-auto max-w-7xl space-y-6 p-4 sm:p-6 lg:p-8">
       <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <Link :href="backUrl" class="inline-flex items-center gap-1 text-sm font-medium text-gray-500 hover:text-orange-600"><ArrowLeftIcon class="h-4 w-4" /> Back</Link>
