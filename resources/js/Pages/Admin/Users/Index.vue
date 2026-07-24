@@ -48,6 +48,9 @@
                     <span v-if="u.is_admin" class="text-indigo-700 bg-indigo-50 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider w-max">
                         Admin
                     </span>
+                    <span v-if="u.role === 'lecturer'" class="w-max rounded-full bg-orange-50 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-orange-700">
+                        Lecturer
+                    </span>
                 </div>
               </td>
               <td class="px-6 py-4 text-right space-x-4">
@@ -57,6 +60,15 @@
                     class="font-bold text-xs flex items-center inline-flex"
                 >
                     {{ u.is_admin ? 'Revoke Admin' : 'Make Admin' }}
+                </button>
+
+                <button
+                    v-if="['student', 'lecturer'].includes(u.role)"
+                    @click="toggleLecturer(u.id)"
+                    :class="u.role === 'lecturer' ? 'text-orange-600 hover:text-orange-800' : 'text-slate-500 hover:text-slate-700'"
+                    class="inline-flex items-center font-bold text-xs"
+                >
+                    {{ u.role === 'lecturer' ? 'Revoke Lecturer' : 'Make Lecturer' }}
                 </button>
 
                 <button @click="warnUser(u.id)" class="text-amber-600 hover:text-amber-800 font-bold text-xs flex items-center inline-flex">
@@ -96,6 +108,12 @@ watch(search, (value) => {
 
 const toggleAdmin = (id) => {
     router.post(route('admin.users.toggle-admin', id), {}, {
+        preserveScroll: true,
+    });
+};
+
+const toggleLecturer = (id) => {
+    router.post(route('admin.users.toggle-lecturer', id), {}, {
         preserveScroll: true,
     });
 };

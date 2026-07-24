@@ -87,9 +87,6 @@ class UserManagementController extends Controller
     /**
      * Toggle the admin status for a specific user.
      */
-    /**
-     * Toggle the admin status for a specific user.
-     */
     public function toggleAdmin($id)
     {
         $user = User::findOrFail($id);
@@ -102,5 +99,22 @@ class UserManagementController extends Controller
         // We are skipping the log entry to avoid the database CHECK constraint error.
 
         return back()->with('success', 'Admin status updated!');
+    }
+
+    /**
+     * Toggle a standard user's lecturer role without changing admin access.
+     */
+    public function toggleLecturer($id)
+    {
+        $user = User::findOrFail($id);
+
+        if (!in_array($user->role, ['student', 'lecturer'], true)) {
+            return back()->with('error', 'System and group administrators cannot have their role changed here.');
+        }
+
+        $user->role = $user->role === 'lecturer' ? 'student' : 'lecturer';
+        $user->save();
+
+        return back()->with('success', 'Lecturer role updated!');
     }
 }

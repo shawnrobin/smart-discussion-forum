@@ -384,6 +384,7 @@ Route::middleware(['auth', 'ensureIsAdmin'])->prefix('admin')->as('admin.')->gro
     Route::post('/users/{id}/warn', [UserManagementController::class, 'warn'])->name('users.warn');
     Route::post('/users/{id}/toggle-blacklist', [UserManagementController::class, 'toggleBlacklist'])->name('users.toggle-blacklist');
     Route::post('/users/{id}/toggle-admin', [UserManagementController::class, 'toggleAdmin'])->name('users.toggle-admin');
+    Route::post('/users/{id}/toggle-lecturer', [UserManagementController::class, 'toggleLecturer'])->name('users.toggle-lecturer');
 });
 
 // 5. Lecturer Routes (Groups & Quizzes)
