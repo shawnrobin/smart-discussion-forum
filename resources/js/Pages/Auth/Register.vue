@@ -108,6 +108,7 @@ const form = useForm({
     username: "",
     password: "",
     password_confirmation: "",
+    agreed_to_rules: false,
 });
 
 const submit = () => {
