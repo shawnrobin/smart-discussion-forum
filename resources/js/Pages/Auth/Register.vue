@@ -1,9 +1,11 @@
 <template>
     <GuestLayout>
         <div>
-            <h2 class="text-2xl font-bold text-gray-900 mb-6">
-                Create Account
-            </h2>
+            <div class="mb-6">
+                <p class="text-xs font-bold uppercase tracking-widest text-orange-600">Join SmartForum</p>
+                <h2 class="mt-1 text-2xl font-bold text-slate-900">Create your account</h2>
+                <p class="mt-2 text-sm text-slate-500">Set up your profile to join academic discussions and groups.</p>
+            </div>
 
             <!-- Error Alert -->
             <Alert
@@ -53,14 +55,17 @@
                     placeholder="Confirm your password"
                     :error="form.errors.password_confirmation"
                 />
-                <!-- Agree to Rules Checkbox -->
-                <label class="flex items-center gap-2">
-                    <input type="checkbox" v-model="form.agreed_to_rules" />
-
-                    <span> I agree to the rules </span>
+                <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-orange-100 bg-orange-50/60 p-4">
+                    <input v-model="form.agreed_to_rules" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-gray-300 text-orange-600 focus:ring-orange-500" />
+                    <span class="text-sm leading-5 text-slate-700">
+                        I have read and agree to the SmartForum community rules.
+                        <Link :href="route('community.rules')" class="font-semibold text-orange-700 hover:text-orange-800 hover:underline" @click.stop>
+                            Read the full rules
+                        </Link>
+                    </span>
                 </label>
 
-                <p v-if="form.errors.agreed_to_rules" class="text-red-600">
+                <p v-if="form.errors.agreed_to_rules" class="text-sm text-rose-600">
                     {{ form.errors.agreed_to_rules }}
                 </p>
 
@@ -79,12 +84,12 @@
             </form>
 
             <!-- Links -->
-            <div class="mt-6 text-center text-sm text-gray-600">
+            <div class="mt-6 text-center text-sm text-slate-600">
                 <p>
                     Already have an account?
                     <Link
                         :href="route('login')"
-                        class="text-blue-600 hover:underline font-medium"
+                        class="font-medium text-orange-600 hover:text-orange-700 hover:underline"
                     >
                         Sign in here
                     </Link>
