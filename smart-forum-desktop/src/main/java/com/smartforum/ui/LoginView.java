@@ -15,7 +15,8 @@ import javafx.scene.text.TextFlow;
 
 /**
  * Login screen — mirrors the web GuestLayout + Login.vue.
- * Blue gradient background, centered white card.
+ * Matches the app's orange brand palette (see app.css), with the
+ * same logo mark used in the sidebar.
  */
 public class LoginView {
 
@@ -42,16 +43,28 @@ public class LoginView {
         centerBox.setMaxWidth(440);
 
         // ── Header ──────────────────────────────────────────────
-        VBox header = new VBox(4);
+        VBox header = new VBox(8);
         header.setAlignment(Pos.CENTER);
+
+        HBox logoRow = new HBox(10);
+        logoRow.setAlignment(Pos.CENTER);
+
+        Region logoSquare = new Region();
+        logoSquare.getStyleClass().add("logo-square");
+        StackPane logoMark = new StackPane(logoSquare);
+        Label logoLetter = new Label("S");
+        logoLetter.getStyleClass().add("avatar-text");
+        logoMark.getChildren().add(logoLetter);
 
         Label brandTitle = new Label("Smart Forum");
         brandTitle.getStyleClass().add("login-title");
 
+        logoRow.getChildren().addAll(logoMark, brandTitle);
+
         Label brandSubtitle = new Label("Academic Discussion Platform");
         brandSubtitle.getStyleClass().add("login-subtitle");
 
-        header.getChildren().addAll(brandTitle, brandSubtitle);
+        header.getChildren().addAll(logoRow, brandSubtitle);
 
         // ── Card ─────────────────────────────────────────────────
         VBox card = new VBox(16);
@@ -211,12 +224,16 @@ public class LoginView {
                     String token = response.get("token").getAsString();
                     User user = ApiService.getInstance().gson.fromJson(response.get("user"), User.class);
                     SessionManager.getInstance().login(token, user);
+                    System.out.println("[DEBUG-LOGIN] /auth/login raw user JSON = " + response.get("user"));
+                    System.out.println("[DEBUG-LOGIN] parsed user.role = '" + user.role + "'  isAdmin()=" + user.isAdmin());
 
                     // Fetch bootstrap data
                     JsonObject bootstrap = ApiService.getInstance().get("/desktop/bootstrap");
                     if (bootstrap.has("success") && bootstrap.get("success").getAsBoolean()) {
                         com.smartforum.model.BootstrapData bd = ApiService.getInstance().gson.fromJson(bootstrap, com.smartforum.model.BootstrapData.class);
                         SessionManager.getInstance().setBootstrapData(bd);
+                        System.out.println("[DEBUG-LOGIN] /desktop/bootstrap raw user JSON = " + bootstrap.get("user"));
+                        System.out.println("[DEBUG-LOGIN] bootstrap user.role = '" + (bd.user != null ? bd.user.role : "null") + "'");
                     }
 
                     Platform.runLater(SmartForumApp::showMain);

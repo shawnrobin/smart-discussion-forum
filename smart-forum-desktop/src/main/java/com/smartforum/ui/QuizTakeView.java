@@ -38,6 +38,8 @@ public class QuizTakeView {
     private Button submitBtn;
     private boolean submitting = false;
     private Label warningLabel;
+    private int focusLossCount = 0;
+    private javafx.beans.value.ChangeListener<Boolean> focusListener;
 
     public QuizTakeView(MainView shell, int quizId) {
         this.shell = shell;
@@ -48,6 +50,8 @@ public class QuizTakeView {
         // Enter fullscreen
         Stage stage = SmartForumApp.primaryStage;
         if (!stage.isFullScreen()) stage.setFullScreen(true);
+        stage.setFullScreenExitHint("");
+        stage.setFullScreenExitKeyCombination(javafx.scene.input.KeyCombination.NO_MATCH);
 
         ScrollPane scroll = new ScrollPane();
         scroll.setFitToWidth(true);
@@ -84,6 +88,21 @@ public class QuizTakeView {
         warningLabel.setStyle("-fx-background-color:#fef3c7;-fx-border-color:#fde047;-fx-border-radius:10;-fx-background-radius:10;-fx-padding:10 16 10 16;-fx-text-fill:#854d0e;-fx-font-size:13px;");
         warningLabel.setVisible(false);
         warningLabel.setManaged(false);
+
+        // Requirement (Quiz Screen Objects — Lockdown warning): detect the window losing
+        // focus (alt-tab / switching apps) and show a persistent, non-dismissible warning.
+        focusListener = (obs, wasFocused, isFocused) -> {
+            if (!isFocused) {
+                focusLossCount++;
+                Platform.runLater(() -> {
+                    warningLabel.setText("⚠ You left the quiz window (" + focusLossCount + (focusLossCount == 1 ? " time" : " times")
+                            + "). This has been recorded. Stay on this page until you submit.");
+                    warningLabel.setVisible(true);
+                    warningLabel.setManaged(true);
+                });
+            }
+        };
+        stage.focusedProperty().addListener(focusListener);
 
         // ── Questions box ──────────────────────────────────────────
         questionsBox = new VBox(16);
@@ -122,8 +141,18 @@ public class QuizTakeView {
                 quiz = ApiService.getInstance().gson.fromJson(resp.get("quiz"), Quiz.class);
                 int durationMinutes = resp.get("duration_minutes").getAsInt();
 
-                // Calculate deadline (current time + duration)
-                deadlineMillis = System.currentTimeMillis() + (durationMinutes * 60 * 1000);
+                // Requirement #10: "Those who join late shall not be given extra time."
+                // The naive deadline is start + full duration, but a late joiner must not
+                // run past the quiz's actual end_time — take whichever is sooner.
+                long naiveDeadline = System.currentTimeMillis() + (durationMinutes * 60 * 1000L);
+                long deadline = naiveDeadline;
+                try {
+                    long quizEndMillis = java.time.Instant.parse(quiz.endTime).toEpochMilli();
+                    deadline = Math.min(naiveDeadline, quizEndMillis);
+                } catch (Exception ignored) {
+                    // Fall back to the naive deadline if end_time can't be parsed.
+                }
+                deadlineMillis = deadline;
 
                 Platform.runLater(() -> {
                     Label titleLbl = (Label) questionsBox.getScene().lookup("#quiz-title");
@@ -256,6 +285,7 @@ public class QuizTakeView {
                     double score = resp.has("score") ? resp.get("score").getAsDouble() : 0;
                     Platform.runLater(() -> {
                         exitFullscreen();
+                        shell.onQuizFinished();
                         showResultAlert(score);
                         shell.navigateTo(MainView.Page.QUIZZES);
                     });
@@ -285,6 +315,11 @@ public class QuizTakeView {
 
     private void exitFullscreen() {
         Stage stage = SmartForumApp.primaryStage;
+        if (focusListener != null) {
+            stage.focusedProperty().removeListener(focusListener);
+            focusListener = null;
+        }
+        stage.setFullScreenExitKeyCombination(javafx.scene.input.KeyCombination.keyCombination("ESC"));
         if (stage.isFullScreen()) stage.setFullScreen(false);
     }
 
@@ -301,6 +336,7 @@ public class QuizTakeView {
         alert.setTitle("Quiz Error");
         alert.showAndWait();
         exitFullscreen();
+        shell.onQuizFinished();
         shell.navigateTo(MainView.Page.QUIZZES);
     }
 }

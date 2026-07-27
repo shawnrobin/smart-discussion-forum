@@ -6,6 +6,7 @@ import com.google.gson.JsonObject;
 import com.smartforum.model.BootstrapData;
 import com.smartforum.model.Group;
 import com.smartforum.model.Quiz;
+import com.smartforum.model.Recommendation;
 import com.smartforum.model.User;
 import com.smartforum.service.ApiService;
 import com.smartforum.service.SessionManager;
@@ -89,11 +90,10 @@ public class DashboardView {
             rightCol.getChildren().add(quizzesCard);
         }
 
-        // Recommendations card (ML — students only)
-        if (user != null && user.isStudent() && bd != null
-                && bd.recommendations != null && !bd.recommendations.isEmpty()) {
-            VBox recsCard = buildRecommendationsCard(bd.recommendations);
-            rightCol.getChildren().add(recsCard);
+        // Recommended topics (ML-based, Requirement #11)
+        if (user != null && user.isStudent() && bd != null && bd.recommendations != null && !bd.recommendations.isEmpty()) {
+            VBox recCard = buildRecommendationsCard(bd.recommendations);
+            rightCol.getChildren().add(recCard);
         }
 
         // Activity card (from bootstrap - notifications as activity)
@@ -268,64 +268,53 @@ public class DashboardView {
         };
     }
 
-    // ── Recommendations card (ML) ─────────────────────────────────
-    private VBox buildRecommendationsCard(List<com.smartforum.model.BootstrapData.Recommendation> recs) {
+    // ── Recommendations card (Requirement #11) ─────────────────────
+    private VBox buildRecommendationsCard(List<Recommendation> recs) {
         VBox card = new VBox();
         card.getStyleClass().add("card");
 
         HBox header = new HBox();
         header.getStyleClass().add("card-header");
         header.setAlignment(Pos.CENTER_LEFT);
-        Label title = new Label("✨  Recommended for you");
+        Label title = new Label("✨  Recommended For You");
         title.getStyleClass().add("card-title");
-        Label sub = new Label("Based on your activity");
-        sub.setStyle("-fx-font-size:11px;-fx-text-fill:#9ca3af;");
-        VBox titleBlock = new VBox(2, title, sub);
-        header.getChildren().add(titleBlock);
+        header.getChildren().add(title);
 
         VBox body = new VBox(0);
         body.setPadding(Insets.EMPTY);
 
-        int limit = Math.min(5, recs.size());
-        for (int i = 0; i < limit; i++) {
-            com.smartforum.model.BootstrapData.Recommendation r = recs.get(i);
-            HBox row = new HBox(12);
-            row.setAlignment(Pos.CENTER_LEFT);
-            row.setPadding(new Insets(11, 24, 11, 24));
-            row.setStyle("-fx-border-color:#f9fafb;-fx-border-width:0 0 1 0;-fx-cursor:hand;");
-            row.setOnMouseEntered(ev -> row.setStyle("-fx-background-color:#f9fafb;-fx-border-color:#f3f4f6;-fx-border-width:0 0 1 0;-fx-cursor:hand;"));
-            row.setOnMouseExited(ev  -> row.setStyle("-fx-border-color:#f9fafb;-fx-border-width:0 0 1 0;-fx-cursor:hand;"));
-
-            final int topicId = r.getTopicId();
-            final int groupId = r.groupId;
-            final String groupName = r.groupName != null ? r.groupName : "Group";
-            row.setOnMouseClicked(ev -> shell.openTopic(groupId, groupName, topicId));
-
-            VBox info = new VBox(2);
-            HBox.setHgrow(info, Priority.ALWAYS);
-            Label nameLbl = new Label(r.title != null ? r.title : "");
-            nameLbl.setStyle("-fx-font-weight:600;-fx-text-fill:#111827;-fx-font-size:13px;");
-            nameLbl.setWrapText(false);
-            Label meta = new Label(groupName + " · " + r.replies + " replies");
-            meta.getStyleClass().add("meta-text");
-            info.getChildren().addAll(nameLbl, meta);
-
-            // Match score badge
-            Label score = new Label(Math.round(r.score) + "%");
-            score.setStyle("-fx-background-color:#fff7ed;-fx-text-fill:#ea580c;-fx-font-size:10px;" +
-                           "-fx-font-weight:bold;-fx-background-radius:20;-fx-padding:2 7 2 7;");
-
-            if (r.isAnswered) {
-                Label answered = UiHelper.badge("✓", "badge-answered");
-                row.getChildren().addAll(info, answered, score);
-            } else {
-                row.getChildren().addAll(info, score);
-            }
-            body.getChildren().add(row);
+        for (Recommendation r : recs.subList(0, Math.min(6, recs.size()))) {
+            body.getChildren().add(recommendationRow(r));
         }
 
         card.getChildren().addAll(header, body);
         return card;
+    }
+
+    private HBox recommendationRow(Recommendation r) {
+        HBox row = new HBox(12);
+        row.setAlignment(Pos.CENTER_LEFT);
+        row.setPadding(new Insets(12, 24, 12, 24));
+        row.setStyle("-fx-border-color:#f9fafb;-fx-border-width:0 0 1 0;-fx-cursor:hand;");
+        row.setOnMouseEntered(ev -> row.setStyle("-fx-background-color:#f9fafb;-fx-border-color:#f3f4f6;-fx-border-width:0 0 1 0;-fx-cursor:hand;"));
+        row.setOnMouseExited(ev -> row.setStyle("-fx-border-color:#f9fafb;-fx-border-width:0 0 1 0;-fx-cursor:hand;"));
+        row.setOnMouseClicked(ev -> shell.openTopic(r.groupId, r.groupName, r.topicId));
+
+        VBox info = new VBox(2);
+        Label name = new Label(r.title);
+        name.setStyle("-fx-font-weight:600;-fx-text-fill:#111827;-fx-font-size:13px;");
+        name.setWrapText(true);
+        String metaText = r.groupName + " · " + r.replies + " replies" + (r.isAnswered ? " · answered" : "");
+        Label meta = new Label(metaText);
+        meta.getStyleClass().add("meta-text");
+        info.getChildren().addAll(name, meta);
+
+        Label matchBadge = new Label(Math.round(r.score) + "% match");
+        matchBadge.setStyle("-fx-background-color:#fef3c7;-fx-text-fill:#92400e;-fx-font-size:10px;-fx-font-weight:bold;-fx-background-radius:20;-fx-padding:2 8 2 8;");
+
+        HBox.setHgrow(info, Priority.ALWAYS);
+        row.getChildren().addAll(info, matchBadge);
+        return row;
     }
 
     // ── Activity card ──────────────────────────────────────────────

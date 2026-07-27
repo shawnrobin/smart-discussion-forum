@@ -342,19 +342,21 @@
 
 /* ── Login Screen ──────────────────────────────────────────── */
 .login-root {
-    -fx-background-color: linear-gradient(to bottom right, #fff7ed, #ffedd5);
+    -fx-background-color: #f9fafb;
 }
 
 .login-card {
     -fx-background-color: white;
     -fx-background-radius: 12;
-    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.12), 24, 0, 0, 8);
+    -fx-border-color: #e5e7eb;
+    -fx-border-radius: 12;
+    -fx-effect: dropshadow(three-pass-box, rgba(0,0,0,0.06), 16, 0, 0, 4);
     -fx-padding: 32;
     -fx-max-width: 420;
 }
 
 .login-title {
-    -fx-font-size: 30px;
+    -fx-font-size: 28px;
     -fx-font-weight: bold;
     -fx-text-fill: #ea580c;
 }

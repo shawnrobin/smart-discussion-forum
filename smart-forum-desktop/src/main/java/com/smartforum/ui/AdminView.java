@@ -103,59 +103,60 @@ public class AdminView {
     // OVERVIEW TAB — mirrors Admin/Dashboard.vue
     // ─────────────────────────────────────────────────────────────
     private Node buildOverview() {
-        VBox box = new VBox(20);
-        box.setFillWidth(true);
+        VBox box = new VBox(24);
 
-        // Stat grid — 3-column TilePane so cards never get squished
-        javafx.scene.layout.TilePane statGrid = new javafx.scene.layout.TilePane(12, 12);
-        statGrid.setPrefColumns(3);
-        statGrid.setTileAlignment(Pos.CENTER_LEFT);
+        // Stat grid placeholder
+        javafx.scene.layout.FlowPane statGrid = new javafx.scene.layout.FlowPane(12, 12);
+        statGrid.setPrefWrapLength(Double.MAX_VALUE);
         Label statLoading = new Label("Loading statistics...");
         statLoading.getStyleClass().add("muted-text");
         statGrid.getChildren().add(statLoading);
 
-        // Chart card — full width
+        // Chart card
         VBox chartCard = card();
-        chartCard.setMaxWidth(Double.MAX_VALUE);
         Label chartTitle = new Label("Topics Created — Last 7 Days");
         chartTitle.setStyle("-fx-font-size:15px;-fx-font-weight:bold;-fx-text-fill:#1e293b;");
         VBox chartBody = new VBox(6);
+        chartBody.setId("admin-chart-body");
         chartBody.setPadding(new Insets(12, 0, 0, 0));
         chartCard.getChildren().addAll(chartTitle, chartBody);
 
-        // Recent Discussions + Moderation Logs — side by side
+        // Recent Discussions + Moderation Logs (side by side)
         HBox twoCol = new HBox(16);
-        twoCol.setFillHeight(false);
-
         VBox recentTopicsCard = card();
-        recentTopicsCard.setMaxWidth(Double.MAX_VALUE);
         Label rtTitle = new Label("Recent Discussions");
         rtTitle.setStyle("-fx-font-size:15px;-fx-font-weight:bold;-fx-text-fill:#1e293b;");
         VBox rtBody = new VBox(0);
+        rtBody.setId("admin-recent-topics");
         rtBody.getChildren().add(muted("Loading..."));
-        recentTopicsCard.getChildren().addAll(rtTitle, new Separator(), rtBody);
+        recentTopicsCard.getChildren().addAll(rtTitle, rtBody);
         HBox.setHgrow(recentTopicsCard, Priority.ALWAYS);
 
         VBox logsCard = card();
-        logsCard.setMaxWidth(Double.MAX_VALUE);
         Label logsTitle = new Label("Recent Moderation Activity");
         logsTitle.setStyle("-fx-font-size:15px;-fx-font-weight:bold;-fx-text-fill:#1e293b;");
         VBox logsBody = new VBox(0);
+        logsBody.setId("admin-logs-body");
         logsBody.getChildren().add(muted("Loading..."));
-        logsCard.getChildren().addAll(logsTitle, new Separator(), logsBody);
+        logsCard.getChildren().addAll(logsTitle, logsBody);
         HBox.setHgrow(logsCard, Priority.ALWAYS);
         twoCol.getChildren().addAll(recentTopicsCard, logsCard);
 
-        // Group summaries card — full width
+        // Group summaries card
         VBox groupsCard = card();
-        groupsCard.setMaxWidth(Double.MAX_VALUE);
+        HBox groupsHeader = new HBox();
+        groupsHeader.setAlignment(Pos.CENTER_LEFT);
         Label grpTitle = new Label("Group Statistics");
         grpTitle.setStyle("-fx-font-size:15px;-fx-font-weight:bold;-fx-text-fill:#1e293b;");
         Label grpSub = new Label("Open any group for its full participation report.");
         grpSub.setStyle("-fx-font-size:12px;-fx-text-fill:#94a3b8;");
+        VBox grpTitleBlock = new VBox(2, grpTitle, grpSub);
+        HBox.setHgrow(grpTitleBlock, Priority.ALWAYS);
+        groupsHeader.getChildren().add(grpTitleBlock);
         VBox grpBody = new VBox(0);
+        grpBody.setId("admin-groups-body");
         grpBody.getChildren().add(muted("Loading..."));
-        groupsCard.getChildren().addAll(grpTitle, grpSub, new Separator(), grpBody);
+        groupsCard.getChildren().addAll(groupsHeader, new Separator(), grpBody);
 
         box.getChildren().addAll(statGrid, chartCard, twoCol, groupsCard);
 
@@ -173,7 +174,7 @@ public class AdminView {
     }
 
     private void populateOverview(JsonObject resp,
-                                   javafx.scene.layout.TilePane statGrid,
+                                   javafx.scene.layout.FlowPane statGrid,
                                    VBox chartBody, VBox rtBody,
                                    VBox logsBody, VBox grpBody) {
         // API returns {"success":true,"dashboard":{...}}
@@ -623,12 +624,10 @@ public class AdminView {
     // ─────────────────────────────────────────────────────────────
     // Shared widget helpers
     // ─────────────────────────────────────────────────────────────
-    private void addStat(javafx.scene.layout.TilePane grid, String label, String value, String valColor) {
+    private void addStat(javafx.scene.layout.FlowPane grid, String label, String value, String valColor) {
         VBox c = new VBox(4);
         c.setStyle("-fx-background-color:#ffffff;-fx-border-color:#e2e8f0;-fx-border-radius:12;" +
-                   "-fx-background-radius:12;-fx-padding:20 24 20 24;");
-        c.setPrefWidth(200);
-        c.setMinWidth(160);
+                   "-fx-background-radius:12;-fx-padding:20 24 20 24;-fx-min-width:160;");
         Label lbl = new Label(label.toUpperCase());
         lbl.setStyle("-fx-font-size:10px;-fx-font-weight:bold;-fx-text-fill:#94a3b8;");
         Label val = new Label(value);

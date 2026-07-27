@@ -3,11 +3,12 @@ package com.smartforum.ui;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.smartforum.model.GroupMember;
 import com.smartforum.model.Message;
 import com.smartforum.model.Topic;
 import com.smartforum.model.User;
 import com.smartforum.service.ApiService;
-import com.smartforum.service.RealtimeService;
+import com.smartforum.service.PdfExportService;
 import com.smartforum.service.SessionManager;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -15,13 +16,15 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import javafx.stage.FileChooser;
 
 import java.awt.Desktop;
+import java.io.File;
 import java.net.URI;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Topic detail + threaded replies — mirrors Topics/Show.vue.
@@ -42,14 +45,17 @@ public class TopicDetailView {
     private TextArea replyInput;
     private CheckBox markAnswerBox;
     private Label replyError;
-    private final String realtimeChannel; // private-topic.{topicId}
+
+    private List<Message> currentMessages = new ArrayList<>();
+    private List<GroupMember> groupMembers = new ArrayList<>();
+    private final Set<Integer> excludedUserIds = new HashSet<>();
+    private Label excludeSummaryLabel;
 
     public TopicDetailView(MainView shell, int groupId, String groupName, int topicId) {
         this.shell = shell;
         this.groupId = groupId;
         this.groupName = groupName;
         this.topicId = topicId;
-        this.realtimeChannel = "private-topic." + topicId;
     }
 
     public Node build() {
@@ -83,26 +89,7 @@ public class TopicDetailView {
         scroll.setContent(root);
 
         loadTopic();
-        subscribeRealtime();
         return scroll;
-    }
-
-    /** Subscribe to live reply/like events from Reverb. */
-    private void subscribeRealtime() {
-        RealtimeService rt = RealtimeService.getInstance();
-        // New reply pushed from the server
-        rt.subscribe(realtimeChannel, "App\\Events\\ReplyCreated", data -> {
-            Platform.runLater(this::loadTopic);
-        });
-        // Like count updated
-        rt.subscribe(realtimeChannel, "App\\Events\\LikeUpdated", data -> {
-            Platform.runLater(this::loadTopic);
-        });
-    }
-
-    /** Unsubscribe when navigating away (called by MainView). */
-    public void cleanup() {
-        RealtimeService.getInstance().unsubscribe(realtimeChannel);
     }
 
     private void loadTopic() {
@@ -131,10 +118,13 @@ public class TopicDetailView {
                 }
 
                 final List<Message> finalMessages = messages;
+                currentMessages = messages;
                 Platform.runLater(() -> {
                     if (currentTopic != null) renderTopicCard(topicCardRef, currentTopic);
                     renderReplies(finalMessages);
                 });
+
+                loadGroupMembers();
             } catch (Exception e) {
                 Platform.runLater(() -> {
                     topicCardRef.getChildren().clear();
@@ -144,6 +134,21 @@ public class TopicDetailView {
                 });
             }
         }).start();
+    }
+
+    private void loadGroupMembers() {
+        try {
+            JsonObject resp = ApiService.getInstance().get("/groups/" + groupId + "/members");
+            List<GroupMember> members = new ArrayList<>();
+            if (resp.has("members")) {
+                for (JsonElement el : resp.getAsJsonArray("members")) {
+                    members.add(ApiService.getInstance().gson.fromJson(el, GroupMember.class));
+                }
+            }
+            groupMembers = members;
+        } catch (Exception ignored) {
+            // Offline or endpoint unavailable — exclusion picker will just show "no members found".
+        }
     }
 
     private List<Message> flattenReplies(List<Message> replies, int depth) {
@@ -206,16 +211,26 @@ public class TopicDetailView {
 
         Label likesLbl = new Label("👍 " + t.likes);
         likesLbl.setStyle("-fx-font-size:13px;-fx-text-fill:#6b7280;-fx-cursor:hand;");
+        likesLbl.setOnMouseClicked(ev -> doToggleTopicLike(likesLbl));
         int replyCount = t.messages != null ? t.messages.size() : 0;
         Label repliesLbl = new Label("💬 " + replyCount + " replies");
         repliesLbl.setStyle("-fx-font-size:13px;-fx-text-fill:#6b7280;");
 
-        // Social sharing buttons (Gap 13)
-        Button shareBtn = new Button("🔗 Share");
-        shareBtn.setStyle("-fx-background-color:transparent;-fx-text-fill:#6b7280;-fx-font-size:12px;-fx-cursor:hand;-fx-border-color:#e5e7eb;-fx-border-radius:6;-fx-background-radius:6;-fx-padding:4 10 4 10;");
-        shareBtn.setOnAction(ev -> showShareDialog(t.title));
+        Button exportBtn = new Button("📄 Export PDF");
+        exportBtn.getStyleClass().add("btn-secondary");
+        exportBtn.setStyle("-fx-font-size:12px;-fx-cursor:hand;-fx-padding:4 10 4 10;");
+        exportBtn.setOnAction(ev -> doExportPdf());
 
-        actionBar.getChildren().addAll(likesLbl, repliesLbl, UiHelper.hSpacer(), shareBtn);
+        Button shareBtn = new Button("🔗 Share");
+        shareBtn.getStyleClass().add("btn-secondary");
+        shareBtn.setStyle("-fx-font-size:12px;-fx-cursor:hand;-fx-padding:4 10 4 10;");
+        shareBtn.setOnAction(ev -> doShare());
+
+        Button reportBtn = new Button("🚩 Report");
+        reportBtn.setStyle("-fx-background-color:transparent;-fx-text-fill:#9ca3af;-fx-font-size:12px;-fx-cursor:hand;-fx-padding:4 10 4 10;");
+        reportBtn.setOnAction(ev -> doReport("topics/" + t.id));
+
+        actionBar.getChildren().addAll(likesLbl, repliesLbl, UiHelper.hSpacer(), exportBtn, shareBtn, reportBtn);
 
         content.getChildren().addAll(authorMeta, titleLbl, bodyLbl, sep, actionBar);
         topRow.getChildren().addAll(avatar, content);
@@ -293,10 +308,15 @@ public class TopicDetailView {
 
         Label likesLbl = new Label("👍 " + m.likes);
         likesLbl.setStyle("-fx-font-size:12px;-fx-text-fill:#6b7280;-fx-cursor:hand;");
+        likesLbl.setOnMouseClicked(ev -> doToggleMessageLike(m.id, likesLbl));
 
         Button replyBtn = new Button("↩ Reply");
         replyBtn.setStyle("-fx-background-color:transparent;-fx-text-fill:#6b7280;-fx-font-size:12px;-fx-cursor:hand;-fx-padding:0;");
         replyBtn.setOnAction(ev -> setReplyParent(m));
+
+        Button reportBtn = new Button("🚩 Report");
+        reportBtn.setStyle("-fx-background-color:transparent;-fx-text-fill:#9ca3af;-fx-font-size:12px;-fx-cursor:hand;-fx-padding:0;");
+        reportBtn.setOnAction(ev -> doReport("messages/" + m.id));
 
         // Mark as answer (topic owner or admin/lecturer)
         User currentUser = SessionManager.getInstance().getCurrentUser();
@@ -306,9 +326,9 @@ public class TopicDetailView {
             Button markBtn = new Button("✓ Mark Answer");
             markBtn.setStyle("-fx-background-color:transparent;-fx-text-fill:#16a34a;-fx-font-size:12px;-fx-cursor:hand;-fx-padding:0;");
             markBtn.setOnAction(ev -> doMarkAnswer(m.id));
-            actionRow.getChildren().addAll(likesLbl, replyBtn, markBtn);
+            actionRow.getChildren().addAll(likesLbl, replyBtn, markBtn, reportBtn);
         } else {
-            actionRow.getChildren().addAll(likesLbl, replyBtn);
+            actionRow.getChildren().addAll(likesLbl, replyBtn, reportBtn);
         }
 
         content.getChildren().addAll(metaFull, body, actionRow);
@@ -355,6 +375,20 @@ public class TopicDetailView {
         markAnswerBox = new CheckBox("Mark as answer");
         markAnswerBox.setStyle("-fx-text-fill:#374151;-fx-font-size:13px;");
 
+        Button excludeBtn = new Button("🚫 Exclude members...");
+        excludeBtn.getStyleClass().add("btn-secondary");
+        excludeBtn.setStyle("-fx-font-size:12px;-fx-cursor:hand;-fx-padding:4 10 4 10;");
+        excludeBtn.setOnAction(e -> openExcludePicker());
+
+        excludeSummaryLabel = new Label();
+        excludeSummaryLabel.setStyle("-fx-font-size:12px;-fx-text-fill:#b45309;-fx-font-style:italic;");
+        excludeSummaryLabel.setVisible(false);
+        excludeSummaryLabel.setManaged(false);
+
+        HBox excludeRow = new HBox(10);
+        excludeRow.setAlignment(Pos.CENTER_LEFT);
+        excludeRow.getChildren().addAll(excludeBtn, excludeSummaryLabel);
+
         HBox bottomRow = new HBox(12);
         bottomRow.setAlignment(Pos.CENTER_LEFT);
 
@@ -382,8 +416,62 @@ public class TopicDetailView {
 
         bottomRow.getChildren().addAll(UiHelper.hSpacer(), cancelReplyBtn, postBtn);
 
-        form.getChildren().addAll(formTitle, replyParentLabel, replyInput, replyError, bottomRow);
+        form.getChildren().addAll(formTitle, replyParentLabel, replyInput, replyError, excludeRow, bottomRow);
         return form;
+    }
+
+    /** Requirement #3: let the author pick group members to exclude from this message's notifications. */
+    private void openExcludePicker() {
+        if (groupMembers.isEmpty()) {
+            Alert alert = new Alert(Alert.AlertType.INFORMATION,
+                    "No other group members were found to exclude (or the list hasn't loaded yet — try again in a moment).",
+                    ButtonType.OK);
+            alert.setTitle("Exclude members");
+            alert.showAndWait();
+            return;
+        }
+
+        Dialog<Set<Integer>> dialog = new Dialog<>();
+        dialog.setTitle("Exclude members from this message");
+        dialog.setHeaderText("Selected members will not be notified about this reply.");
+
+        VBox box = new VBox(6);
+        box.setPadding(new Insets(12));
+        List<CheckBox> boxes = new ArrayList<>();
+        for (GroupMember gm : groupMembers) {
+            CheckBox cb = new CheckBox(gm.name + (gm.role != null && !gm.role.equals("student") ? " (" + gm.role + ")" : ""));
+            cb.setUserData(gm.id);
+            cb.setSelected(excludedUserIds.contains(gm.id));
+            boxes.add(cb);
+            box.getChildren().add(cb);
+        }
+        ScrollPane scroll = new ScrollPane(box);
+        scroll.setFitToWidth(true);
+        scroll.setPrefViewportHeight(Math.min(240, boxes.size() * 32 + 20));
+        dialog.getDialogPane().setContent(scroll);
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
+
+        dialog.setResultConverter(bt -> {
+            if (bt != ButtonType.OK) return null;
+            Set<Integer> selected = new HashSet<>();
+            for (CheckBox cb : boxes) {
+                if (cb.isSelected()) selected.add((Integer) cb.getUserData());
+            }
+            return selected;
+        });
+
+        dialog.showAndWait().ifPresent(selected -> {
+            excludedUserIds.clear();
+            excludedUserIds.addAll(selected);
+            if (excludedUserIds.isEmpty()) {
+                excludeSummaryLabel.setVisible(false);
+                excludeSummaryLabel.setManaged(false);
+            } else {
+                excludeSummaryLabel.setText("Excluding " + excludedUserIds.size() + " member(s) from this reply");
+                excludeSummaryLabel.setVisible(true);
+                excludeSummaryLabel.setManaged(true);
+            }
+        });
     }
 
     private void doPostReply(Button postBtn) {
@@ -403,6 +491,7 @@ public class TopicDetailView {
 
         final Integer parentId = replyParentId;
         final boolean isAnswer = markAnswerBox.isSelected();
+        final Set<Integer> excludedSnapshot = new HashSet<>(excludedUserIds);
 
         new Thread(() -> {
             try {
@@ -410,6 +499,11 @@ public class TopicDetailView {
                 payload.addProperty("content", content);
                 payload.addProperty("is_answer", isAnswer);
                 if (parentId != null) payload.addProperty("parent_message_id", parentId);
+                if (!excludedSnapshot.isEmpty()) {
+                    JsonArray excludedArr = new JsonArray();
+                    for (int id : excludedSnapshot) excludedArr.add(id);
+                    payload.add("excluded_users", excludedArr);
+                }
 
                 JsonObject resp = ApiService.getInstance().post("/topics/" + topicId + "/messages", payload);
 
@@ -419,6 +513,9 @@ public class TopicDetailView {
                     replyParentId = null;
                     replyParentLabel.setVisible(false);
                     replyParentLabel.setManaged(false);
+                    excludedUserIds.clear();
+                    excludeSummaryLabel.setVisible(false);
+                    excludeSummaryLabel.setManaged(false);
                     loadTopic();
                 });
             } catch (Exception ex) {
@@ -430,6 +527,136 @@ public class TopicDetailView {
                 });
             }
         }).start();
+    }
+
+    /** Requirement #6: export this topic + all its replies to a real PDF file. */
+    private void doExportPdf() {
+        if (currentTopic == null) return;
+
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Export discussion to PDF");
+        String suggested = (currentTopic.title != null ? currentTopic.title : "topic")
+                .replaceAll("[^a-zA-Z0-9-_ ]", "").trim().replace(" ", "_");
+        chooser.setInitialFileName((suggested.isEmpty() ? "topic" : suggested) + ".pdf");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF files", "*.pdf"));
+
+        File dest = chooser.showSaveDialog(topicCardRef.getScene().getWindow());
+        if (dest == null) return;
+
+        final Topic topicSnapshot = currentTopic;
+        final List<Message> messagesSnapshot = new ArrayList<>(currentMessages);
+
+        new Thread(() -> {
+            try {
+                PdfExportService.export(topicSnapshot, messagesSnapshot, dest);
+                // Best-effort audit call to the server; export itself already succeeded locally.
+                try { ApiService.getInstance().post("/topics/" + topicId + "/export-pdf"); } catch (Exception ignored) {}
+
+                Platform.runLater(() -> {
+                    Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                    alert.setTitle("Exported");
+                    alert.setHeaderText("Discussion exported to PDF");
+                    alert.setContentText(dest.getAbsolutePath());
+                    ButtonType openBtn = new ButtonType("Open file");
+                    alert.getButtonTypes().add(openBtn);
+                    alert.showAndWait().ifPresent(bt -> {
+                        if (bt == openBtn) {
+                            try { Desktop.getDesktop().open(dest); } catch (Exception ignored) {}
+                        }
+                    });
+                });
+            } catch (Exception ex) {
+                Platform.runLater(() -> showReplyError("Could not export PDF: " + ex.getMessage()));
+            }
+        }).start();
+    }
+
+    /** Requirement #12: forward this post to a social media platform of choice. */
+    private void doShare() {
+        if (currentTopic == null) return;
+
+        ChoiceDialog<String> dialog = new ChoiceDialog<>("twitter", List.of("twitter", "facebook", "linkedin"));
+        dialog.setTitle("Share to social media");
+        dialog.setHeaderText("Forward \"" + currentTopic.title + "\" to:");
+        dialog.setContentText("Platform:");
+        dialog.showAndWait().ifPresent(platform -> new Thread(() -> {
+            try {
+                JsonObject payload = new JsonObject();
+                payload.addProperty("platform", platform);
+                JsonObject resp = ApiService.getInstance().post("/topics/" + topicId + "/share", payload);
+                if (resp.has("success") && resp.get("success").getAsBoolean() && resp.has("share_url")) {
+                    String shareUrl = resp.get("share_url").getAsString();
+                    Platform.runLater(() -> {
+                        try {
+                            Desktop.getDesktop().browse(new URI(shareUrl));
+                        } catch (Exception ex) {
+                            showReplyError("Could not open browser: " + ex.getMessage());
+                        }
+                    });
+                } else {
+                    Platform.runLater(() -> showReplyError("Could not build share link."));
+                }
+            } catch (Exception ex) {
+                Platform.runLater(() -> showReplyError("Sharing requires an internet connection."));
+            }
+        }).start());
+    }
+
+    /** Toggles a like on the topic itself and updates the label in place. */
+    private void doToggleTopicLike(Label likesLbl) {
+        if (currentTopic == null) return;
+        new Thread(() -> {
+            try {
+                JsonObject resp = ApiService.getInstance().post("/topics/" + topicId + "/like");
+                if (resp.has("success") && resp.get("success").getAsBoolean()) {
+                    int likes = resp.get("likes").getAsInt();
+                    currentTopic.likes = likes;
+                    Platform.runLater(() -> likesLbl.setText("👍 " + likes));
+                }
+            } catch (Exception ex) {
+                Platform.runLater(() -> showReplyError("Could not update like — check your connection."));
+            }
+        }).start();
+    }
+
+    /** Toggles a like on a single reply and updates the label in place. */
+    private void doToggleMessageLike(int messageId, Label likesLbl) {
+        new Thread(() -> {
+            try {
+                JsonObject resp = ApiService.getInstance().post("/messages/" + messageId + "/like");
+                if (resp.has("success") && resp.get("success").getAsBoolean()) {
+                    int likes = resp.get("likes").getAsInt();
+                    Platform.runLater(() -> likesLbl.setText("👍 " + likes));
+                }
+            } catch (Exception ex) {
+                Platform.runLater(() -> showReplyError("Could not update like — check your connection."));
+            }
+        }).start();
+    }
+
+    /** Requirement (Forum Thread screen objects): Report action on a topic or reply. */
+    private void doReport(String path) {
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Report content");
+        dialog.setHeaderText("Why are you reporting this?");
+        dialog.setContentText("Reason:");
+        dialog.showAndWait().ifPresent(reason -> {
+            if (reason.isBlank()) return;
+            new Thread(() -> {
+                try {
+                    JsonObject payload = new JsonObject();
+                    payload.addProperty("reason", reason.trim());
+                    ApiService.getInstance().post("/" + path + "/report", payload);
+                    Platform.runLater(() -> {
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION, "Report submitted for review.", ButtonType.OK);
+                        alert.setTitle("Reported");
+                        alert.showAndWait();
+                    });
+                } catch (Exception ex) {
+                    Platform.runLater(() -> showReplyError("Could not submit report — check your connection."));
+                }
+            }).start();
+        });
     }
 
     private void doMarkAnswer(int messageId) {
@@ -452,87 +679,5 @@ public class TopicDetailView {
     private void hideReplyError() {
         replyError.setVisible(false);
         replyError.setManaged(false);
-    }
-
-    /** Social sharing dialog — mirrors Topics/Show.vue share modal (Gap 13). */
-    private void showShareDialog(String title) {
-        String encodedTitle = URLEncoder.encode(title, StandardCharsets.UTF_8);
-        // Build a shareable web URL pointing to the topic on the web app
-        String topicUrl = "https://smart-discussion-forum-x0vd.onrender.com/groups/" + groupId + "/topics/" + topicId;
-        String encodedUrl  = URLEncoder.encode(topicUrl, StandardCharsets.UTF_8);
-
-        String[][] platforms = {
-            {"Twitter / X",  "https://twitter.com/intent/tweet?text=" + encodedTitle + "%20" + encodedUrl},
-            {"Facebook",     "https://www.facebook.com/sharer/sharer.php?u=" + encodedUrl},
-            {"LinkedIn",     "https://www.linkedin.com/sharing/share-offsite/?url=" + encodedUrl},
-            {"WhatsApp",     "https://wa.me/?text=" + encodedTitle + "%20" + encodedUrl},
-        };
-
-        Dialog<Void> dialog = new Dialog<>();
-        dialog.setTitle("Share Topic");
-        dialog.setHeaderText("Share \"" + (title.length() > 50 ? title.substring(0, 50) + "…" : title) + "\"");
-
-        VBox content = new VBox(8);
-        content.setPadding(new Insets(8));
-        content.setMinWidth(320);
-
-        Label sub = new Label("Open on social media:");
-        sub.setStyle("-fx-text-fill:#6b7280;-fx-font-size:12px;");
-        content.getChildren().add(sub);
-
-        for (String[] p : platforms) {
-            Button btn = new Button(p[0]);
-            btn.setMaxWidth(Double.MAX_VALUE);
-            btn.setStyle("-fx-background-color:white;-fx-border-color:#e5e7eb;-fx-border-radius:8;" +
-                         "-fx-background-radius:8;-fx-font-size:13px;-fx-padding:10 16 10 16;" +
-                         "-fx-cursor:hand;-fx-alignment:CENTER_LEFT;");
-            btn.setOnMouseEntered(e -> btn.setStyle("-fx-background-color:#f9fafb;-fx-border-color:#d1d5db;" +
-                                                    "-fx-border-radius:8;-fx-background-radius:8;-fx-font-size:13px;" +
-                                                    "-fx-padding:10 16 10 16;-fx-cursor:hand;-fx-alignment:CENTER_LEFT;"));
-            btn.setOnMouseExited(e  -> btn.setStyle("-fx-background-color:white;-fx-border-color:#e5e7eb;" +
-                                                    "-fx-border-radius:8;-fx-background-radius:8;-fx-font-size:13px;" +
-                                                    "-fx-padding:10 16 10 16;-fx-cursor:hand;-fx-alignment:CENTER_LEFT;"));
-            final String url = p[1];
-            btn.setOnAction(e -> {
-                try {
-                    if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-                        Desktop.getDesktop().browse(new URI(url));
-                    } else {
-                        // Fallback: copy URL to clipboard
-                        javafx.scene.input.Clipboard cb = javafx.scene.input.Clipboard.getSystemClipboard();
-                        javafx.scene.input.ClipboardContent cc = new javafx.scene.input.ClipboardContent();
-                        cc.putString(topicUrl);
-                        cb.setContent(cc);
-                        showAlert("Copied", "Link copied to clipboard.");
-                    }
-                } catch (Exception ex) {
-                    showAlert("Error", "Could not open browser: " + ex.getMessage());
-                }
-                dialog.close();
-            });
-            content.getChildren().add(btn);
-        }
-
-        // Copy link button
-        Button copyBtn = UiHelper.secondaryButton("📋 Copy Link");
-        copyBtn.setMaxWidth(Double.MAX_VALUE);
-        copyBtn.setOnAction(e -> {
-            javafx.scene.input.Clipboard cb = javafx.scene.input.Clipboard.getSystemClipboard();
-            javafx.scene.input.ClipboardContent cc = new javafx.scene.input.ClipboardContent();
-            cc.putString(topicUrl);
-            cb.setContent(cc);
-            copyBtn.setText("✓ Copied!");
-        });
-        content.getChildren().add(copyBtn);
-
-        dialog.getDialogPane().setContent(content);
-        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
-        dialog.showAndWait();
-    }
-
-    private void showAlert(String title, String msg) {
-        Alert a = new Alert(Alert.AlertType.INFORMATION, msg, ButtonType.OK);
-        a.setTitle(title);
-        a.showAndWait();
     }
 }

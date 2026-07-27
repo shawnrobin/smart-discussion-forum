@@ -13,8 +13,10 @@ import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
+import org.kordamp.ikonli.fontawesome5.FontAwesomeSolid;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -25,8 +27,10 @@ import java.util.List;
 public class GroupsView {
 
     private final MainView shell;
-    private VBox listBox;
+    private FlowPane grid;
+    private StackPane gridHolder;
     private TextField searchField;
+    private ComboBox<String> sortBox;
     private List<Group> allGroups = new ArrayList<>();
 
     public GroupsView(MainView shell) {
@@ -52,40 +56,68 @@ public class GroupsView {
         Label h1sub = new Label("Browse and open your discussion groups");
         h1sub.getStyleClass().add("muted-text");
         titleBox.getChildren().addAll(h1, h1sub);
+        HBox.setHgrow(titleBox, Priority.ALWAYS);
 
         User user = SessionManager.getInstance().getCurrentUser();
+        headerRow.getChildren().add(titleBox);
         if (user != null && user.isLecturer()) {
             Button createBtn = UiHelper.primaryButton("+ Create Group");
             createBtn.setOnAction(e -> showCreateGroupDialog());
-            headerRow.getChildren().addAll(titleBox, UiHelper.hSpacer(), createBtn);
-        } else {
-            headerRow.getChildren().addAll(titleBox);
+            headerRow.getChildren().add(createBtn);
         }
 
-        // ── Search bar ────────────────────────────────────────────
-        HBox searchRow = new HBox(12);
-        searchRow.setAlignment(Pos.CENTER_LEFT);
+        // ── Toolbar: search + sort ──────────────────────────────────
+        HBox toolbar = new HBox(12);
+        toolbar.setAlignment(Pos.CENTER_LEFT);
+
+        StackPane searchWrap = new StackPane();
         searchField = new TextField();
-        searchField.setPromptText("Search groups...");
+        searchField.setPromptText("🔍  Search groups by name or description...");
         searchField.getStyleClass().add("text-field");
-        HBox.setHgrow(searchField, Priority.ALWAYS);
-        searchField.textProperty().addListener((obs, o, n) -> filterGroups(n));
-        searchRow.getChildren().add(searchField);
+        HBox.setHgrow(searchWrap, Priority.ALWAYS);
+        searchField.textProperty().addListener((obs, o, n) -> applyFilterAndSort());
+        searchWrap.getChildren().add(searchField);
+
+        Label sortLbl = new Label("Sort:");
+        sortLbl.getStyleClass().add("muted-text");
+        sortBox = new ComboBox<>();
+        sortBox.getStyleClass().add("combo-box");
+        sortBox.getItems().addAll("Name (A–Z)", "Most members", "Most topics");
+        sortBox.setValue("Name (A–Z)");
+        sortBox.valueProperty().addListener((obs, o, n) -> applyFilterAndSort());
+
+        toolbar.getChildren().addAll(searchWrap, sortLbl, sortBox);
 
         // ── Groups grid ───────────────────────────────────────────
-        listBox = new VBox(12);
+        grid = new FlowPane(16, 16);
+        grid.setPrefWrapLength(1000); // re-measured responsively by the ScrollPane width
 
-        Label loadingLbl = new Label("Loading groups...");
-        loadingLbl.getStyleClass().add("muted-text");
-        loadingLbl.setPadding(new Insets(32, 0, 0, 0));
-        listBox.getChildren().add(loadingLbl);
+        gridHolder = new StackPane(grid);
+        gridHolder.setAlignment(Pos.TOP_LEFT);
+        showLoadingState();
 
-        root.getChildren().addAll(headerRow, searchRow, listBox);
+        // Re-wrap columns as the window resizes
+        scroll.widthProperty().addListener((obs, o, n) -> grid.setPrefWrapLength(Math.max(320, n.doubleValue() - 60)));
+
+        root.getChildren().addAll(headerRow, toolbar, gridHolder);
         scroll.setContent(root);
 
-        // Async load
         loadGroups();
         return scroll;
+    }
+
+    private void showLoadingState() {
+        grid.getChildren().clear();
+        VBox loading = new VBox(10);
+        loading.setAlignment(Pos.CENTER);
+        loading.setPadding(new Insets(48));
+        ProgressIndicator spinner = new ProgressIndicator();
+        spinner.getStyleClass().add("progress-indicator");
+        spinner.setMaxSize(28, 28);
+        Label loadingLbl = new Label("Loading your groups...");
+        loadingLbl.getStyleClass().add("muted-text");
+        loading.getChildren().addAll(spinner, loadingLbl);
+        grid.getChildren().add(loading);
     }
 
     private void loadGroups() {
@@ -99,93 +131,117 @@ public class GroupsView {
                     }
                 }
                 allGroups = groups;
-                Platform.runLater(() -> renderGroups(groups));
+                Platform.runLater(this::applyFilterAndSort);
             } catch (Exception e) {
                 Platform.runLater(() -> {
-                    listBox.getChildren().clear();
+                    grid.getChildren().clear();
                     Label err = new Label("Could not load groups: " + e.getMessage());
                     err.getStyleClass().add("error-text");
-                    listBox.getChildren().add(err);
+                    grid.getChildren().add(err);
                 });
             }
         }).start();
     }
 
-    private void filterGroups(String query) {
-        String q = query.toLowerCase().trim();
+    private void applyFilterAndSort() {
+        String q = searchField.getText() == null ? "" : searchField.getText().toLowerCase().trim();
         List<Group> filtered = allGroups.stream()
                 .filter(g -> g.name.toLowerCase().contains(q) ||
                         (g.description != null && g.description.toLowerCase().contains(q)))
-                .toList();
+                .collect(java.util.stream.Collectors.toList());
+
+        Comparator<Group> comparator = switch (sortBox.getValue()) {
+            case "Most members" -> Comparator.comparingInt((Group g) -> g.members).reversed();
+            case "Most topics" -> Comparator.comparingInt((Group g) -> g.topics).reversed();
+            default -> Comparator.comparing(g -> g.name.toLowerCase());
+        };
+        filtered.sort(comparator);
+
         renderGroups(filtered);
     }
 
     private void renderGroups(List<Group> groups) {
-        listBox.getChildren().clear();
+        grid.getChildren().clear();
         if (groups.isEmpty()) {
-            VBox empty = new VBox(8);
+            VBox empty = new VBox(10);
             empty.setAlignment(Pos.CENTER);
-            empty.setPadding(new Insets(48));
-            Label emptyIcon = new Label("👥");
-            emptyIcon.setStyle("-fx-font-size:36px;");
-            Label emptyMsg = new Label("No groups found");
-            emptyMsg.getStyleClass().add("muted-text");
-            empty.getChildren().addAll(emptyIcon, emptyMsg);
-            listBox.getChildren().add(empty);
+            empty.setPadding(new Insets(56));
+            empty.setPrefWidth(600);
+            Label emptyIcon = new Label();
+            emptyIcon.setGraphic(Icons.of(FontAwesomeSolid.USERS, 40, "#d1d5db"));
+            Label emptyMsg = new Label(allGroups.isEmpty() ? "You haven't joined any groups yet" : "No groups match your search");
+            emptyMsg.setStyle("-fx-font-size:14px;-fx-font-weight:600;-fx-text-fill:#374151;");
+            Label emptyHint = new Label(allGroups.isEmpty()
+                    ? "Groups you join or that a lecturer adds you to will show up here."
+                    : "Try a different search term or clear the search box.");
+            emptyHint.getStyleClass().add("muted-text");
+            empty.getChildren().addAll(emptyIcon, emptyMsg, emptyHint);
+            grid.getChildren().add(empty);
             return;
         }
 
-        // 2-column grid
-        int cols = 2;
-        HBox row = null;
-        for (int i = 0; i < groups.size(); i++) {
-            if (i % cols == 0) {
-                row = new HBox(12);
-                row.setFillHeight(false);
-                listBox.getChildren().add(row);
-            }
-            VBox card = groupCard(groups.get(i));
-            HBox.setHgrow(card, Priority.ALWAYS);
-            row.getChildren().add(card);
-        }
-        // fill last row if odd
-        if (groups.size() % cols != 0 && row != null) {
-            Region spacer = new Region();
-            HBox.setHgrow(spacer, Priority.ALWAYS);
-            row.getChildren().add(spacer);
+        for (Group g : groups) {
+            grid.getChildren().add(groupCard(g));
         }
     }
 
     private VBox groupCard(Group g) {
-        VBox card = new VBox(12);
+        VBox card = new VBox(14);
         card.getStyleClass().add("card");
-        card.setPadding(new Insets(20, 24, 20, 24));
-        card.setStyle("-fx-cursor:hand;" + card.getStyle());
+        card.setPadding(new Insets(20, 22, 20, 22));
+        card.setPrefWidth(320);
+        card.setMinWidth(280);
+        card.setMaxWidth(360);
+        card.setStyle(card.getStyle() + "-fx-cursor:hand;");
 
-        // Name + description
+        // Header: avatar + name
+        HBox headerRow = new HBox(12);
+        headerRow.setAlignment(Pos.CENTER_LEFT);
+        String initial = (g.name != null && !g.name.isEmpty()) ? g.name.substring(0, 1).toUpperCase() : "?";
+        StackPane avatar = UiHelper.orangeAvatar(initial);
+
+        VBox nameBox = new VBox(2);
         Label name = new Label(g.name);
-        name.setStyle("-fx-font-size:16px;-fx-font-weight:bold;-fx-text-fill:#111827;");
-        Label desc = new Label(g.description != null ? g.description : "");
+        name.setStyle("-fx-font-size:15px;-fx-font-weight:bold;-fx-text-fill:#111827;");
+        name.setWrapText(true);
+        nameBox.getChildren().add(name);
+        HBox.setHgrow(nameBox, Priority.ALWAYS);
+
+        headerRow.getChildren().addAll(avatar, nameBox);
+
+        // Description (clamped to a few lines by fixed max height)
+        Label desc = new Label(g.description != null && !g.description.isBlank() ? g.description : "No description provided.");
         desc.getStyleClass().add("muted-text");
         desc.setWrapText(true);
+        desc.setMaxHeight(54);
+        desc.setStyle(desc.getStyle() + ";-fx-font-size:12px;");
 
-        // Meta row
-        HBox metaRow = new HBox(16);
+        // Meta pills
+        HBox metaRow = new HBox(8);
         metaRow.setAlignment(Pos.CENTER_LEFT);
-        Label membersMeta = new Label("👥 " + g.members + " members");
-        membersMeta.getStyleClass().add("meta-text");
-        Label topicsMeta = new Label("💬 " + g.topics + " topics");
-        topicsMeta.getStyleClass().add("meta-text");
+        Label membersMeta = pill(FontAwesomeSolid.USERS, g.members + (g.members == 1 ? " member" : " members"));
+        Label topicsMeta = pill(FontAwesomeSolid.COMMENTS, g.topics + (g.topics == 1 ? " topic" : " topics"));
         metaRow.getChildren().addAll(membersMeta, topicsMeta);
 
+        Separator sep = new Separator();
+
         // Open button
-        Button openBtn = UiHelper.primaryButton("Open Group");
+        Button openBtn = UiHelper.primaryButton("Open Group  →");
         openBtn.setMaxWidth(Double.MAX_VALUE);
         openBtn.setOnAction(e -> shell.openGroup(g.id, g.name));
 
         card.setOnMouseClicked(e -> shell.openGroup(g.id, g.name));
-        card.getChildren().addAll(name, desc, metaRow, openBtn);
+        card.getChildren().addAll(headerRow, desc, metaRow, sep, openBtn);
         return card;
+    }
+
+    private Label pill(FontAwesomeSolid icon, String text) {
+        Label l = new Label(text);
+        l.setGraphic(Icons.of(icon, 11, "#4b5563"));
+        l.setStyle("-fx-background-color:#f9fafb;-fx-text-fill:#4b5563;-fx-font-size:11px;-fx-font-weight:600;" +
+                "-fx-background-radius:20;-fx-padding:4 10 4 10;-fx-border-color:#f3f4f6;-fx-border-radius:20;" +
+                "-fx-graphic-text-gap:6;");
+        return l;
     }
 
     // ── Create group dialog (lecturers only) ──────────────────────

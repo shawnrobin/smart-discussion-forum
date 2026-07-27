@@ -10,4 +10,8 @@ public class Notification {
     public boolean read;
     @SerializedName("created_at")
     public String createdAt;
+    @SerializedName("related_entity_id")
+    public Integer relatedEntityId;
+    @SerializedName("related_entity_type")
+    public String relatedEntityType;
 }

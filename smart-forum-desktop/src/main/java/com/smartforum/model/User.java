@@ -14,9 +14,14 @@ public class User {
     public String faculty;
     @SerializedName("year_of_study")
     public int yearOfStudy;
+    @SerializedName("is_admin")
+    public boolean isAdminFlag;
 
     public boolean isAdmin() {
-        return "system_admin".equals(role);
+        return isAdminFlag
+                || "system_admin".equals(role)
+                || "group_admin".equals(role)
+                || "lecturer".equals(role);
     }
 
     public boolean isLecturer() {
