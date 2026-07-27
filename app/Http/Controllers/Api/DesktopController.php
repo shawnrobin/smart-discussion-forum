@@ -55,7 +55,7 @@ class DesktopController extends Controller
 
         return response()->json([
             'success' => true,
-            'user' => $user->only(['id', 'name', 'email', 'role', 'course', 'faculty', 'year_of_study']),
+            'user' => $user->only(['id', 'name', 'email', 'role', 'course', 'faculty', 'year_of_study','is_admin']),
             'summary' => [
                 'groups'               => $groupIds->count(),
                 'topics'               => $topicIds->count(),
